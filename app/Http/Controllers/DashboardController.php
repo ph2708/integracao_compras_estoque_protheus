@@ -10,16 +10,26 @@ use Illuminate\Support\Facades\DB;
 class DashboardController extends Controller
 {
     /**
-     * Dashboard com Indicadores Quantitativos, Financeiros (R$) e Filtro por Pedido de Venda
+     * Dashboard com Indicadores Quantitativos, Financeiros (R$) e Filtros por Pedido de Venda e Status em Lista Suspensa
      */
     public function index(Request $request)
     {
         $searchPedido = $request->get('pedido');
+        $searchStatusPcp = $request->get('status_pcp');
+        $searchStatusPagamento = $request->get('status_pagamento');
 
         // Query Base Estoque
         $estoqueQuery = EstoqueItem::query();
         if ($searchPedido) {
             $estoqueQuery->where('pedido', 'like', '%' . $searchPedido . '%');
+        }
+        if ($searchStatusPcp) {
+            $estoqueQuery->where('status', $searchStatusPcp);
+        }
+        if ($searchStatusPagamento) {
+            $estoqueQuery->whereHas('compraItem', function ($q) use ($searchStatusPagamento) {
+                $q->where('status_pagamento', $searchStatusPagamento);
+            });
         }
 
         // Query Base Compras
@@ -28,6 +38,14 @@ class DashboardController extends Controller
             $comprasQuery->whereHas('estoqueItem', function ($q) use ($searchPedido) {
                 $q->where('pedido', 'like', '%' . $searchPedido . '%');
             });
+        }
+        if ($searchStatusPcp) {
+            $comprasQuery->whereHas('estoqueItem', function ($q) use ($searchStatusPcp) {
+                $q->where('status', $searchStatusPcp);
+            });
+        }
+        if ($searchStatusPagamento) {
+            $comprasQuery->where('status_pagamento', $searchStatusPagamento);
         }
 
         // Métricas quantitativas de estoque
@@ -69,6 +87,12 @@ class DashboardController extends Controller
         if ($searchPedido) {
             $topPedidosQuery->where('estoque_items.pedido', 'like', '%' . $searchPedido . '%');
         }
+        if ($searchStatusPcp) {
+            $topPedidosQuery->where('estoque_items.status', $searchStatusPcp);
+        }
+        if ($searchStatusPagamento) {
+            $topPedidosQuery->where('compras_items.status_pagamento', $searchStatusPagamento);
+        }
 
         $topPedidosValores = $topPedidosQuery->groupBy('estoque_items.pedido')
             ->orderBy('total_valor', 'desc')
@@ -95,7 +119,9 @@ class DashboardController extends Controller
             'statusComprasValores',
             'topPedidosValores',
             'pedidosDisponiveis',
-            'searchPedido'
+            'searchPedido',
+            'searchStatusPcp',
+            'searchStatusPagamento'
         ));
     }
 }

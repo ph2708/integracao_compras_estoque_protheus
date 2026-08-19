@@ -15,29 +15,47 @@
     </div>
 </div>
 
-<!-- Filtro por Pedido de Venda no Dashboard -->
+<!-- Filtros no Dashboard (Pedido de Venda + Status PCP + Status Pagamento) -->
 <div class="card" style="border-color: rgba(99, 102, 241, 0.4); margin-bottom: 1.25rem;">
     <form action="{{ route('dashboard') }}" method="GET" style="display: flex; flex-wrap: wrap; gap: 0.85rem; align-items: flex-end;">
-        <div class="form-group" style="margin-bottom: 0; min-width: 200px; flex: 2;">
-            <label class="form-label">Selecionar Pedido de Venda Cadastrado</label>
+        <div class="form-group" style="margin-bottom: 0; min-width: 180px; flex: 2;">
+            <label class="form-label">Pedido de Venda</label>
             <select name="pedido" class="form-select" onchange="this.form.submit()">
-                <option value="">-- Todos os Pedidos de Venda --</option>
+                <option value="">-- Todos os Pedidos --</option>
                 @foreach($pedidosDisponiveis as $p)
                     <option value="{{ $p }}" {{ $searchPedido == $p ? 'selected' : '' }}>Pedido: {{ $p }}</option>
                 @endforeach
             </select>
         </div>
 
-        <div class="form-group" style="margin-bottom: 0; min-width: 200px; flex: 2;">
-            <label class="form-label">Ou Digite N° do Pedido</label>
-            <input type="text" name="pedido" value="{{ $searchPedido }}" class="form-control" placeholder="Ex: 006614...">
+        <div class="form-group" style="margin-bottom: 0; min-width: 180px; flex: 2;">
+            <label class="form-label">Status PCP / Almoxarifado</label>
+            <select name="status_pcp" class="form-select" onchange="this.form.submit()">
+                <option value="">-- Todos Status PCP --</option>
+                <option value="FALTA" {{ $searchStatusPcp == 'FALTA' ? 'selected' : '' }}>FALTA</option>
+                <option value="SEPARADO" {{ $searchStatusPcp == 'SEPARADO' ? 'selected' : '' }}>SEPARADO</option>
+                <option value="RETIRADO" {{ $searchStatusPcp == 'RETIRADO' ? 'selected' : '' }}>RETIRADO</option>
+                <option value="FABRICA" {{ $searchStatusPcp == 'FABRICA' ? 'selected' : '' }}>FABRICA</option>
+                <option value="FABRICAR INTERNO KANBAN" {{ $searchStatusPcp == 'FABRICAR INTERNO KANBAN' ? 'selected' : '' }}>KANBAN</option>
+            </select>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 0; min-width: 180px; flex: 2;">
+            <label class="form-label">Status de Pagamento / Compras</label>
+            <select name="status_pagamento" class="form-select" onchange="this.form.submit()">
+                <option value="">-- Todos Status Pagamento --</option>
+                <option value="PENDENTE" {{ $searchStatusPagamento == 'PENDENTE' ? 'selected' : '' }}>PENDENTE</option>
+                <option value="PAGAMENTO ANTECIPADO" {{ $searchStatusPagamento == 'PAGAMENTO ANTECIPADO' ? 'selected' : '' }}>PAGAMENTO ANTECIPADO</option>
+                <option value="FATURADO" {{ $searchStatusPagamento == 'FATURADO' ? 'selected' : '' }}>FATURADO</option>
+                <option value="PAGO" {{ $searchStatusPagamento == 'PAGO' ? 'selected' : '' }}>PAGO</option>
+            </select>
         </div>
 
         <div style="min-width: 120px; flex: 1; display: flex; gap: 0.5rem;">
             <button type="submit" class="btn btn-primary" style="flex: 1; justify-content: center;">
                 🔍 Filtrar
             </button>
-            @if($searchPedido)
+            @if($searchPedido || $searchStatusPcp || $searchStatusPagamento)
                 <a href="{{ route('dashboard') }}" class="btn btn-secondary" style="padding: 0.45rem 0.65rem;">
                     ✕ Limpar
                 </a>

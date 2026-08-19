@@ -48,7 +48,7 @@
 
     <div id="resultado_status_label" style="margin-bottom: 0.85rem; font-size: 0.8rem; font-weight: 500;"></div>
 
-    <form action="{{ route('estoque.store-batch') }}" method="POST" id="formImportBatch" style="display: none;">
+    <form action="{{ route('estoque.store-batch') }}" method="POST" id="formImportBatch" style="display: none;" onsubmit="window.mostrarLoading('📥 Importando selecionados para o Estoque... Aguarde...')">
         @csrf
         <input type="hidden" name="items_json" id="input_items_json">
 
@@ -90,7 +90,7 @@
         <h3 style="font-size: 1rem;">Adicionar Item Manualmente</h3>
         <button type="button" class="btn btn-secondary" style="padding: 0.2rem 0.5rem;" onclick="document.getElementById('modalAddManual').style.display='none'">✕</button>
     </div>
-    <form action="{{ route('estoque.store') }}" method="POST">
+    <form action="{{ route('estoque.store') }}" method="POST" onsubmit="window.mostrarLoading('📦 Adicionando item ao estoque... Aguarde...')">
         @csrf
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.85rem;">
             <div class="form-group">
@@ -157,17 +157,17 @@
 <div id="modalOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); z-index: 9999;" onclick="fecharModalConfirmacao()"></div>
 
 <!-- Formulário Oculto de Filtros por Colunas -->
-<form action="{{ route('estoque.index') }}" method="GET" id="formFilterEstoque"></form>
+<form action="{{ route('estoque.index') }}" method="GET" id="formFilterEstoque" onsubmit="window.mostrarLoading('🔍 Filtrando itens de estoque...')"></form>
 
 <!-- Tabela de Itens de Estoque Salvos no MySQL -->
 <div class="card">
-    <form action="{{ route('estoque.update-batch') }}" method="POST" id="formBatchEstoque">
+    <form action="{{ route('estoque.update-batch') }}" method="POST" id="formBatchEstoque" onsubmit="window.mostrarLoading('💾 Salvando todas as alterações do Estoque... Aguarde...')">
         @csrf
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem; flex-wrap: wrap; gap: 0.5rem;">
             <h3 style="font-size: 1rem;">📋 Itens Cadastrados no Estoque Local (MySQL)</h3>
             <div style="display: flex; gap: 0.5rem; align-items: center;">
                 @if(request()->hasAny(['f_pedido', 'f_produto', 'f_descricao', 'f_op', 'f_status', 'f_cliente']))
-                    <a href="{{ route('estoque.index') }}" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">
+                    <a href="{{ route('estoque.index') }}" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="window.mostrarLoading('⏳ Limpando filtros...')">
                         ✕ Limpar Filtros
                     </a>
                 @endif
@@ -413,6 +413,7 @@ document.getElementById('btnConfirmarSaveAction').addEventListener('click', () =
     document.getElementById('single_status').value = document.getElementById(`select_status_${id}`).value;
 
     fecharModalConfirmacao();
+    window.mostrarLoading('💾 Gravando dados do item de estoque...');
     form.submit();
 });
 
@@ -438,6 +439,8 @@ async function buscarItensProtheus() {
     tbody.innerHTML = '';
     window.protheusQueryResultItems = [];
 
+    window.mostrarLoading('🔍 Consultando itens do Pedido de Venda no Protheus... Aguarde...');
+
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
     try {
@@ -451,6 +454,7 @@ async function buscarItensProtheus() {
         });
 
         const result = await response.json();
+        window.ocultarLoading();
 
         if (result.success && result.items.length > 0) {
             window.protheusQueryResultItems = result.items;
@@ -484,6 +488,7 @@ async function buscarItensProtheus() {
             labelStatus.style.color = '#fcd34d';
         }
     } catch (e) {
+        window.ocultarLoading();
         labelStatus.innerHTML = '❌ Ocorreu um erro ao consultar o Protheus. Verifique a conexão.';
         labelStatus.style.color = '#fca5a5';
     }

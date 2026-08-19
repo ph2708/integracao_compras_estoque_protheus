@@ -41,46 +41,9 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction --ignore-pl
 
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Configuração Nginx
-COPY <<EOF /etc/nginx/http.d/default.conf
-server {
-    listen 8008;
-    index index.php index.html;
-    error_log  /var/log/nginx/error.log;
-    access_log /var/log/nginx/access.log;
-    root /var/www/html/public;
-    location ~ \.php$ {
-        try_files \$uri =404;
-        fastcgi_split_path_info ^(.+\.php)(/.+)$;
-        fastcgi_pass 127.0.0.1:9000;
-        fastcgi_index index.php;
-        include fastcgi_params;
-        fastcgi_param SCRIPT_FILENAME \$document_root\$fastcgi_script_name;
-        fastcgi_param PATH_INFO \$fastcgi_path_info;
-    }
-    location / {
-        try_files \$uri \$uri/ /index.php?\$query_string;
-        gzip_static on;
-    }
-}
-EOF
-
-# Configuração Supervisor
-COPY <<EOF /etc/supervisor/conf.d/supervisord.conf
-[supervisord]
-nodaemon=true
-user=root
-
-[program:php-fpm]
-command=php-fpm
-autostart=true
-autorestart=true
-
-[program:nginx]
-command=nginx -g "daemon off;"
-autostart=true
-autorestart=true
-EOF
+# Configuração Nginx e Supervisor
+COPY docker/nginx.conf /etc/nginx/http.d/default.conf
+COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 EXPOSE 8008
 

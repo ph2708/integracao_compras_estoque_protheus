@@ -110,7 +110,11 @@ def get_pedido_items(c2_pedido, filial=None):
 
     return formatted_rows
 
-def get_fornecedor_compra(pedido, produto=None):
+def get_ultimo_preco_produto(codigo_produto):
+    """
+    Consulta o último preço unitário (C7_PRECO) e fornecedor (C7_FORNECE) da SC7010
+    pela data de emissão mais recente do pedido de compras para o produto
+    """
     conn = get_connection()
     cursor = conn.cursor(as_dict=True)
     sql = """
@@ -118,16 +122,16 @@ def get_fornecedor_compra(pedido, produto=None):
         RTRIM(C.C7_NUM) AS C7_NUM,
         RTRIM(C.C7_FORNECE) AS C7_FORNECE,
         RTRIM(C.C7_LOJA) AS C7_LOJA,
-        RTRIM(C.C7_COND) AS C7_COND,
+        C.C7_PRECO AS C7_PRECO,
+        RTRIM(C.C7_EMISSAO) AS C7_EMISSAO,
         RTRIM(A.A2_NOME) AS A2_NOME,
-        RTRIM(A.A2_NREDUZ) AS A2_NREDUZ,
-        COALESCE(RTRIM(E.E4_DESCRI), RTRIM(C.C7_COND)) AS CONDICAO_PAGAMENTO_DESC
+        RTRIM(A.A2_NREDUZ) AS A2_NREDUZ
     FROM SC7010 C
     LEFT JOIN SA2010 A ON RTRIM(C.C7_FORNECE) = RTRIM(A.A2_COD) AND RTRIM(C.C7_LOJA) = RTRIM(A.A2_LOJA) AND A.D_E_L_E_T_ = ' '
-    LEFT JOIN SE4010 E ON RTRIM(C.C7_COND) = RTRIM(E.E4_CODIGO) AND E.D_E_L_E_T_ = ' '
-    WHERE C.D_E_L_E_T_ = ' ' AND (RTRIM(C.C7_NUM) = %s OR RTRIM(C.C7_FORNECE) = %s OR RTRIM(C.C7_PRODUTO) = %s)
+    WHERE C.D_E_L_E_T_ = ' ' AND RTRIM(C.C7_PRODUTO) = %s AND C.C7_PRECO > 0
+    ORDER BY C.C7_EMISSAO DESC, C.R_E_C_N_O_ DESC
     """
-    cursor.execute(sql, (pedido, pedido, produto or pedido))
+    cursor.execute(sql, (codigo_produto,))
     row = cursor.fetchone()
     conn.close()
 
@@ -139,6 +143,43 @@ def get_fornecedor_compra(pedido, produto=None):
         return {
             'pedido_compra': row.get('C7_NUM') or '',
             'codigo_fornecedor': forn_full,
+            'valor_unitario': float(row.get('C7_PRECO') or 0),
+            'data_emissao': row.get('C7_EMISSAO') or ''
+        }
+    return None
+
+def get_fornecedor_compra(pedido, produto=None):
+    conn = get_connection()
+    cursor = conn.cursor(as_dict=True)
+    sql = """
+    SELECT TOP 1 
+        RTRIM(C.C7_NUM) AS C7_NUM,
+        RTRIM(C.C7_FORNECE) AS C7_FORNECE,
+        RTRIM(C.C7_LOJA) AS C7_LOJA,
+        RTRIM(C.C7_COND) AS C7_COND,
+        C.C7_PRECO AS C7_PRECO,
+        RTRIM(A.A2_NOME) AS A2_NOME,
+        RTRIM(A.A2_NREDUZ) AS A2_NREDUZ,
+        COALESCE(RTRIM(E.E4_DESCRI), RTRIM(C.C7_COND)) AS CONDICAO_PAGAMENTO_DESC
+    FROM SC7010 C
+    LEFT JOIN SA2010 A ON RTRIM(C.C7_FORNECE) = RTRIM(A.A2_COD) AND RTRIM(C.C7_LOJA) = RTRIM(A.A2_LOJA) AND A.D_E_L_E_T_ = ' '
+    LEFT JOIN SE4010 E ON RTRIM(C.C7_COND) = RTRIM(E.E4_CODIGO) AND E.D_E_L_E_T_ = ' '
+    WHERE C.D_E_L_E_T_ = ' ' AND (RTRIM(C.C7_PRODUTO) = %s OR RTRIM(C.C7_NUM) = %s OR RTRIM(C.C7_FORNECE) = %s)
+    ORDER BY C.C7_EMISSAO DESC, C.R_E_C_N_O_ DESC
+    """
+    cursor.execute(sql, (produto or pedido, pedido, pedido))
+    row = cursor.fetchone()
+    conn.close()
+
+    if row:
+        forn_nome = (row.get('A2_NOME') or row.get('A2_NREDUZ') or '').strip()
+        forn_cod = (row.get('C7_FORNECE') or '').strip()
+        forn_full = f"{forn_cod} ({forn_nome})" if forn_nome else forn_cod
+
+        return {
+            'pedido_compra': row.get('C7_NUM') or '',
+            'codigo_fornecedor': forn_full,
+            'valor_unitario': float(row.get('C7_PRECO') or 0),
             'condicao_pagamento': row.get('CONDICAO_PAGAMENTO_DESC') or row.get('C7_COND') or ''
         }
     return None
@@ -161,6 +202,10 @@ if __name__ == '__main__':
             c2_pedido = sys.argv[2]
             filial = sys.argv[3] if len(sys.argv) > 3 and sys.argv[3] != 'null' else None
             res = get_pedido_items(c2_pedido, filial)
+            print(json.dumps({"success": True, "data": res}))
+        elif cmd == 'get_ultimo_preco' and len(sys.argv) > 2:
+            produto = sys.argv[2]
+            res = get_ultimo_preco_produto(produto)
             print(json.dumps({"success": True, "data": res}))
         elif cmd == 'get_fornecedor' and len(sys.argv) > 2:
             pedido = sys.argv[2]

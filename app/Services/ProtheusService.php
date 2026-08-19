@@ -101,6 +101,25 @@ class ProtheusService
     }
 
     /**
+     * Busca a última compra emitida no Protheus para determinado produto (SC7010 por C7_EMISSAO)
+     */
+    public function getUltimoPrecoProduto(string $codigoProduto): ?object
+    {
+        try {
+            $command = "python3 " . escapeshellarg($this->scriptPath) . " get_ultimo_preco " . escapeshellarg(trim($codigoProduto));
+            $output = shell_exec($command);
+            
+            $json = json_decode($output, true);
+            if (isset($json['success']) && !empty($json['data'])) {
+                return (object) $json['data'];
+            }
+            return null;
+        } catch (Exception $e) {
+            return null;
+        }
+    }
+
+    /**
      * Consult Supplier and Purchase Order info from Protheus (SC7010, SA2010, SE4010)
      */
     public function getFornecedorEPedidoCompra(string $c7Num, ?string $produto = null): ?object

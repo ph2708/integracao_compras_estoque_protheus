@@ -1,0 +1,26 @@
+services:
+  mysql:
+    image: 'mysql:8.0'
+    container_name: pcp_compras_mysql
+    restart: always
+    tty: true
+    ports:
+      - '${FORWARD_DB_PORT:-33066}:3306'
+    environment:
+      MYSQL_DATABASE: '${DB_DATABASE:-pcp_compras}'
+      MYSQL_USER: '${DB_USERNAME:-pcp_user}'
+      MYSQL_PASSWORD: '${DB_PASSWORD:-pcp_secret}'
+      MYSQL_ROOT_PASSWORD: '${DB_PASSWORD:-pcp_secret}'
+      MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
+    volumes:
+      - 'pcp_mysql_data:/var/lib/mysql'
+    networks:
+      - pcp_network
+
+networks:
+  pcp_network:
+    driver: bridge
+
+volumes:
+  pcp_mysql_data:
+    driver: local

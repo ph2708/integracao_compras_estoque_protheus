@@ -156,163 +156,129 @@
 
 <!-- Tabela de Itens de Estoque Salvos no MySQL -->
 <div class="card">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem; flex-wrap: wrap; gap: 0.5rem;">
-        <h3 style="font-size: 1rem;">📋 Itens Cadastrados no Estoque Local (MySQL)</h3>
-        @if(request()->hasAny(['f_pedido', 'f_produto', 'f_descricao', 'f_op', 'f_status', 'f_cliente']))
-            <a href="{{ route('estoque.index') }}" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">
-                ✕ Limpar Filtros
-            </a>
-        @endif
-    </div>
+    <form action="{{ route('estoque.update-batch') }}" method="POST" id="formBatchEstoque">
+        @csrf
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem; flex-wrap: wrap; gap: 0.5rem;">
+            <h3 style="font-size: 1rem;">📋 Itens Cadastrados no Estoque Local (MySQL)</h3>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                @if(request()->hasAny(['f_pedido', 'f_produto', 'f_descricao', 'f_op', 'f_status', 'f_cliente']))
+                    <a href="{{ route('estoque.index') }}" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">
+                        ✕ Limpar Filtros
+                    </a>
+                @endif
+                <button type="submit" class="btn btn-primary" style="padding: 0.4rem 0.85rem; font-size: 0.8rem; background-color: #059669;" onclick="return confirm('Deseja salvar todas as alterações editadas nesta página?')">
+                    💾 Salvar Todas as Alterações da Página
+                </button>
+            </div>
+        </div>
 
-    <!-- Filtros de Topo -->
-    <form action="{{ route('estoque.index') }}" method="GET" id="formFilterEstoque"></form>
-
-    <div class="table-responsive" style="overflow-x: auto;">
-        <table>
-            <thead>
-                <tr>
-                    <th>Pedido (C2_PEDIDO)</th>
-                    <th>Código Produto</th>
-                    <th>Descrição</th>
-                    <th>OP</th>
-                    <th style="text-align: center;">Qtd OP</th>
-                    <th style="color: #fcd34d; text-align: center;">Qtd Estoque ✏️</th>
-                    <th style="color: #6ee7b7; text-align: center;">Qtd a Comprar</th>
-                    <th>Status PCP Atual</th>
-                    <th>Nome do Cliente (C2_OBS)</th>
-                    <th style="color: #38bdf8;">Observação Estoque ✏️</th>
-                    <th>Alterar Status PCP ✏️</th>
-                    <th style="text-align: center; color: #a5b4fc;">Ações</th>
-                </tr>
-                <tr class="filter-row">
-                    <th>
-                        <input type="text" name="f_pedido" value="{{ request('f_pedido') }}" class="filter-input" placeholder="Ped..." form="formFilterEstoque" onchange="document.getElementById('formFilterEstoque').submit()">
-                    </th>
-                    <th>
-                        <input type="text" name="f_produto" value="{{ request('f_produto') }}" class="filter-input" placeholder="Prod..." form="formFilterEstoque" onchange="document.getElementById('formFilterEstoque').submit()">
-                    </th>
-                    <th>
-                        <input type="text" name="f_descricao" value="{{ request('f_descricao') }}" class="filter-input" placeholder="Desc..." form="formFilterEstoque" onchange="document.getElementById('formFilterEstoque').submit()">
-                    </th>
-                    <th>
-                        <input type="text" name="f_op" value="{{ request('f_op') }}" class="filter-input" placeholder="OP..." form="formFilterEstoque" onchange="document.getElementById('formFilterEstoque').submit()">
-                    </th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th>
-                        <select name="f_status" class="filter-input" form="formFilterEstoque" onchange="document.getElementById('formFilterEstoque').submit()">
-                            <option value="">-- Todos --</option>
-                            <option value="FALTA" {{ request('f_status') == 'FALTA' ? 'selected' : '' }}>FALTA</option>
-                            <option value="SEPARADO" {{ request('f_status') == 'SEPARADO' ? 'selected' : '' }}>SEPARADO</option>
-                            <option value="RETIRADO" {{ request('f_status') == 'RETIRADO' ? 'selected' : '' }}>RETIRADO</option>
-                            <option value="FABRICA" {{ request('f_status') == 'FABRICA' ? 'selected' : '' }}>FABRICA</option>
-                            <option value="FABRICAR INTERNO KANBAN" {{ request('f_status') == 'FABRICAR INTERNO KANBAN' ? 'selected' : '' }}>KANBAN</option>
-                        </select>
-                    </th>
-                    <th>
-                        <input type="text" name="f_cliente" value="{{ request('f_cliente') }}" class="filter-input" placeholder="Cliente..." form="formFilterEstoque" onchange="document.getElementById('formFilterEstoque').submit()">
-                    </th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse($items as $item)
-                <tr id="row_estoque_{{ $item->id }}">
-                    <td><strong>{{ $item->pedido ?? '-' }}</strong></td>
-                    <td><strong>{{ $item->codigo_produto }}</strong></td>
-                    <td style="font-size: 0.775rem;">{{ $item->descricao ?? '-' }}</td>
-                    <td><code style="color: var(--accent); font-size: 0.75rem;">{{ $item->op ?? '-' }}</code></td>
-                    <td style="text-align: center;">
-                        <strong id="qtd_op_{{ $item->id }}" style="color: #38bdf8; font-size: 0.85rem;">{{ floatval($item->quantidade) }}</strong>
-                    </td>
-                    <td style="text-align: center;">
-                        @php
-                            $valQtdEstoque = floatval($item->quantidade_estoque);
-                        @endphp
-                        <input type="number" 
-                               step="0.01" 
-                               id="input_qtd_est_{{ $item->id }}"
-                               value="{{ $valQtdEstoque }}" 
-                               class="form-control" 
-                               style="padding: 0.25rem 0.4rem; font-size: 0.75rem; width: 75px; color: #fcd34d; font-weight: 600; text-align: center;" 
-                               placeholder="{{ floatval($item->quantidade) }}"
-                               oninput="recalcularQtdComprarTela({{ $item->id }})">
-                    </td>
-                    <td style="text-align: center;">
-                        @php
-                            $qtdComprarVal = max(0, floatval($item->quantidade) - $valQtdEstoque);
-                        @endphp
-                        <div style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 0.3rem; padding: 0.2rem 0.4rem; display: inline-block;">
-                            <strong id="display_qtd_comprar_{{ $item->id }}" style="color: #6ee7b7; font-size: 0.85rem;">{{ $qtdComprarVal }}</strong>
-                        </div>
-                    </td>
-                    <td>
-                        @php
-                            $badgeClass = match($item->status) {
-                                'FALTA' => 'badge-falta',
-                                'SEPARADO' => 'badge-separado',
-                                'RETIRADO' => 'badge-retirado',
-                                'FABRICA' => 'badge-fabrica',
-                                'FABRICAR INTERNO KANBAN' => 'badge-kanban',
-                                default => 'badge-falta'
-                            };
-                        @endphp
-                        <span id="badge_status_{{ $item->id }}" class="badge {{ $badgeClass }}">{{ $item->status }}</span>
-                    </td>
-                    <td style="font-size: 0.75rem; color: #cbd5e1;">
-                        {{ $item->cliente_obs ?? '-' }}
-                    </td>
-                    <td>
-                        <input type="text" 
-                               id="input_obs_{{ $item->id }}"
-                               value="{{ $item->observacao_estoque }}" 
-                               class="form-control" 
-                               style="padding: 0.25rem 0.4rem; font-size: 0.75rem;" 
-                               placeholder="Observação estoque...">
-                    </td>
-                    <td>
-                        <select id="select_status_{{ $item->id }}" 
-                                class="form-select" 
-                                style="padding: 0.25rem 0.4rem; font-size: 0.7rem;">
-                            <option value="FALTA" {{ $item->status == 'FALTA' ? 'selected' : '' }}>FALTA</option>
-                            <option value="SEPARADO" {{ $item->status == 'SEPARADO' ? 'selected' : '' }}>SEPARADO</option>
-                            <option value="RETIRADO" {{ $item->status == 'RETIRADO' ? 'selected' : '' }}>RETIRADO</option>
-                            <option value="FABRICA" {{ $item->status == 'FABRICA' ? 'selected' : '' }}>FABRICA</option>
-                            <option value="FABRICAR INTERNO KANBAN" {{ $item->status == 'FABRICAR INTERNO KANBAN' ? 'selected' : '' }}>KANBAN</option>
-                        </select>
-                    </td>
-                    <td style="text-align: center;">
-                        <!-- Formulário nativo encapsulado com seguranca dentro da célula Ações -->
-                        <form action="{{ route('estoque.update', $item->id) }}" method="POST" id="form_row_{{ $item->id }}" style="margin: 0; display: inline-block;">
-                            @csrf
-                            @method('PUT')
-                            <input type="hidden" name="quantidade_estoque" id="hidden_qtd_est_{{ $item->id }}">
-                            <input type="hidden" name="observacao_estoque" id="hidden_obs_{{ $item->id }}">
-                            <input type="hidden" name="status" id="hidden_status_{{ $item->id }}">
-
+        <div class="table-responsive" style="overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Pedido (C2_PEDIDO)</th>
+                        <th>Código Produto</th>
+                        <th>Descrição</th>
+                        <th>OP</th>
+                        <th style="text-align: center;">Qtd OP</th>
+                        <th style="color: #fcd34d; text-align: center;">Qtd Estoque ✏️</th>
+                        <th style="color: #6ee7b7; text-align: center;">Qtd a Comprar</th>
+                        <th>Status PCP Atual</th>
+                        <th>Nome do Cliente (C2_OBS)</th>
+                        <th style="color: #38bdf8;">Observação Estoque ✏️</th>
+                        <th>Alterar Status PCP ✏️</th>
+                        <th style="text-align: center; color: #a5b4fc;">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($items as $item)
+                    <tr id="row_estoque_{{ $item->id }}">
+                        <td><strong>{{ $item->pedido ?? '-' }}</strong></td>
+                        <td><strong>{{ $item->codigo_produto }}</strong></td>
+                        <td style="font-size: 0.775rem;">{{ $item->descricao ?? '-' }}</td>
+                        <td><code style="color: var(--accent); font-size: 0.75rem;">{{ $item->op ?? '-' }}</code></td>
+                        <td style="text-align: center;">
+                            <strong id="qtd_op_{{ $item->id }}" style="color: #38bdf8; font-size: 0.85rem;">{{ floatval($item->quantidade) }}</strong>
+                        </td>
+                        <td style="text-align: center;">
+                            @php
+                                $valQtdEstoque = floatval($item->quantidade_estoque);
+                            @endphp
+                            <input type="number" 
+                                   step="0.01" 
+                                   name="items[{{ $item->id }}][quantidade_estoque]"
+                                   id="input_qtd_est_{{ $item->id }}"
+                                   value="{{ $valQtdEstoque }}" 
+                                   class="form-control" 
+                                   style="padding: 0.25rem 0.4rem; font-size: 0.75rem; width: 75px; color: #fcd34d; font-weight: 600; text-align: center;" 
+                                   placeholder="{{ floatval($item->quantidade) }}"
+                                   oninput="recalcularQtdComprarTela({{ $item->id }})">
+                        </td>
+                        <td style="text-align: center;">
+                            @php
+                                $qtdComprarVal = max(0, floatval($item->quantidade) - $valQtdEstoque);
+                            @endphp
+                            <div style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 0.3rem; padding: 0.2rem 0.4rem; display: inline-block;">
+                                <strong id="display_qtd_comprar_{{ $item->id }}" style="color: #6ee7b7; font-size: 0.85rem;">{{ $qtdComprarVal }}</strong>
+                            </div>
+                        </td>
+                        <td>
+                            @php
+                                $badgeClass = match($item->status) {
+                                    'FALTA' => 'badge-falta',
+                                    'SEPARADO' => 'badge-separado',
+                                    'RETIRADO' => 'badge-retirado',
+                                    'FABRICA' => 'badge-fabrica',
+                                    'FABRICAR INTERNO KANBAN' => 'badge-kanban',
+                                    default => 'badge-falta'
+                                };
+                            @endphp
+                            <span id="badge_status_{{ $item->id }}" class="badge {{ $badgeClass }}">{{ $item->status }}</span>
+                        </td>
+                        <td style="font-size: 0.75rem; color: #cbd5e1;">
+                            {{ $item->cliente_obs ?? '-' }}
+                        </td>
+                        <td>
+                            <input type="text" 
+                                   name="items[{{ $item->id }}][observacao_estoque]"
+                                   id="input_obs_{{ $item->id }}"
+                                   value="{{ $item->observacao_estoque }}" 
+                                   class="form-control" 
+                                   style="padding: 0.25rem 0.4rem; font-size: 0.75rem;" 
+                                   placeholder="Observação estoque...">
+                        </td>
+                        <td>
+                            <select name="items[{{ $item->id }}][status]"
+                                    id="select_status_{{ $item->id }}" 
+                                    class="form-select" 
+                                    style="padding: 0.25rem 0.4rem; font-size: 0.7rem;">
+                                <option value="FALTA" {{ $item->status == 'FALTA' ? 'selected' : '' }}>FALTA</option>
+                                <option value="SEPARADO" {{ $item->status == 'SEPARADO' ? 'selected' : '' }}>SEPARADO</option>
+                                <option value="RETIRADO" {{ $item->status == 'RETIRADO' ? 'selected' : '' }}>RETIRADO</option>
+                                <option value="FABRICA" {{ $item->status == 'FABRICA' ? 'selected' : '' }}>FABRICA</option>
+                                <option value="FABRICAR INTERNO KANBAN" {{ $item->status == 'FABRICAR INTERNO KANBAN' ? 'selected' : '' }}>KANBAN</option>
+                            </select>
+                        </td>
+                        <td style="text-align: center;">
                             <button type="button" 
                                     class="btn btn-primary" 
                                     style="padding: 0.3rem 0.6rem; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 0.2rem;"
                                     onclick="solicitarConfirmacaoSave({{ $item->id }}, '{{ $item->codigo_produto }}')">
-                                💾 Salvar
+                                💾 Salvar Item
                             </button>
-                        </form>
-                    </td>
-                </tr>
-                @empty
-                <tr>
-                    <td colspan="12" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">
-                        Nenhum item encontrado no estoque local.
-                    </td>
-                </tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="12" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">
+                            Nenhum item encontrado no estoque local.
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </form>
 
     <!-- Controles de Paginação -->
     <div class="pagination-container">
@@ -325,6 +291,15 @@
     </div>
 </div>
 
+<!-- Formulário Oculto Auxiliar para Salvar Linha Única -->
+<form action="" method="POST" id="formSingleRowEstoque" style="display: none;">
+    @csrf
+    @method('PUT')
+    <input type="hidden" name="quantidade_estoque" id="single_qtd_est">
+    <input type="hidden" name="observacao_estoque" id="single_obs">
+    <input type="hidden" name="status" id="single_status">
+</form>
+
 <script>
 let itemIdParaSalvar = null;
 
@@ -335,7 +310,7 @@ function recalcularQtdComprarTela(itemId) {
     document.getElementById(`display_qtd_comprar_${itemId}`).innerText = qtdComprar;
 }
 
-// 1. Abrir Modal de Confirmação antes de Salvar
+// 1. Abrir Modal de Confirmação antes de Salvar Linha Única
 function solicitarConfirmacaoSave(itemId, codigoProduto) {
     const statusVal = document.getElementById(`select_status_${itemId}`).value;
     const qtdEstVal = document.getElementById(`input_qtd_est_${itemId}`).value || '0';
@@ -361,20 +336,20 @@ function fecharModalConfirmacao() {
     itemIdParaSalvar = null;
 }
 
-// 2. Sincronizar campos e submeter formulário da linha
+// 2. Submeter formulário de linha única
 document.getElementById('btnConfirmarSaveAction').addEventListener('click', () => {
     if (!itemIdParaSalvar) return;
 
     const id = itemIdParaSalvar;
-    document.getElementById(`hidden_qtd_est_${id}`).value = document.getElementById(`input_qtd_est_${id}`).value || '0';
-    document.getElementById(`hidden_obs_${id}`).value = document.getElementById(`input_obs_${id}`).value || '';
-    document.getElementById(`hidden_status_${id}`).value = document.getElementById(`select_status_${id}`).value;
+    const form = document.getElementById('formSingleRowEstoque');
+    form.action = `/estoque/${id}`;
 
-    const form = document.getElementById(`form_row_${id}`);
+    document.getElementById('single_qtd_est').value = document.getElementById(`input_qtd_est_${id}`).value || '0';
+    document.getElementById('single_obs').value = document.getElementById(`input_obs_${id}`).value || '';
+    document.getElementById('single_status').value = document.getElementById(`select_status_${id}`).value;
+
     fecharModalConfirmacao();
-    if (form) {
-        form.submit();
-    }
+    form.submit();
 });
 
 function abrirModalConsultaProtheus() {

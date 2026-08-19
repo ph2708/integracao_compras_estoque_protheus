@@ -27,12 +27,14 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/estoque', [EstoqueController::class, 'index'])->name('estoque.index');
     Route::post('/estoque/consultar-pedido', [EstoqueController::class, 'consultarPedido'])->name('estoque.consultar-pedido');
     Route::post('/estoque/store-batch', [EstoqueController::class, 'storeBatch'])->name('estoque.store-batch');
+    Route::post('/estoque/update-batch', [EstoqueController::class, 'updateBatch'])->name('estoque.update-batch');
     Route::post('/estoque', [EstoqueController::class, 'store'])->name('estoque.store');
     Route::put('/estoque/{id}', [EstoqueController::class, 'update'])->name('estoque.update');
 
     // Painel de Compras
     Route::get('/compras', [ComprasController::class, 'index'])->name('compras.index');
     Route::post('/compras/consultar-protheus', [ComprasController::class, 'consultarProtheus'])->name('compras.consultar-protheus');
+    Route::post('/compras/update-batch', [ComprasController::class, 'updateBatch'])->name('compras.update-batch');
     Route::put('/compras/{id}', [ComprasController::class, 'update'])->name('compras.update');
 
     // Gestão de Usuários (Apenas Administradores)

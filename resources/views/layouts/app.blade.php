@@ -8,6 +8,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chart.js para Gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
             --bg-color: #0f172a;
@@ -44,8 +46,6 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            flex-wrap: wrap;
-            gap: 1rem;
         }
 
         .brand {
@@ -53,7 +53,7 @@
             align-items: center;
             gap: 0.75rem;
             font-weight: 700;
-            font-size: 1.15rem;
+            font-size: 1.1rem;
             color: var(--text-main);
             text-decoration: none;
         }
@@ -65,7 +65,6 @@
         nav {
             display: flex;
             gap: 0.5rem;
-            align-items: center;
         }
 
         .nav-link {
@@ -83,10 +82,15 @@
             background-color: rgba(99, 102, 241, 0.15);
         }
 
+        .nav-link.active {
+            color: #a5b4fc;
+            border: 1px solid rgba(99, 102, 241, 0.3);
+        }
+
         main {
             flex: 1;
             padding: 1.5rem;
-            max-width: 1400px;
+            max-width: 1600px;
             width: 100%;
             margin: 0 auto;
         }
@@ -94,243 +98,251 @@
         .card {
             background-color: var(--card-bg);
             border: 1px solid var(--border-color);
-            border-radius: 0.75rem;
+            border-radius: 0.5rem;
             padding: 1.25rem;
             margin-bottom: 1.25rem;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
 
-        /* KPI Grid & KPI Cards */
+        /* Responsive Grid de KPIs */
         .kpi-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
             gap: 1rem;
+            margin-bottom: 1.25rem;
         }
 
         .kpi-card {
             background-color: var(--card-bg);
             border: 1px solid var(--border-color);
             border-left: 4px solid var(--accent);
-            border-radius: 0.75rem;
-            padding: 1rem 1.25rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
+            border-radius: 0.5rem;
+            padding: 1rem;
         }
 
         .kpi-title {
             font-size: 0.75rem;
-            font-weight: 600;
             color: var(--text-muted);
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            margin-bottom: 0.4rem;
+            margin-bottom: 0.35rem;
         }
 
         .kpi-value {
-            font-size: 1.75rem;
+            font-size: 1.6rem;
             font-weight: 700;
             color: var(--text-main);
-            line-height: 1.2;
-            margin-bottom: 0.3rem;
         }
 
         .kpi-subtitle {
             font-size: 0.7rem;
             color: var(--text-muted);
+            margin-top: 0.25rem;
         }
 
         .table-responsive {
-            width: 100%;
             overflow-x: auto;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 0.8rem;
             text-align: left;
-        }
-
-        th, td {
-            padding: 0.65rem 0.75rem;
-            border-bottom: 1px solid var(--border-color);
-            vertical-align: middle;
+            font-size: 0.825rem;
         }
 
         th {
-            background-color: rgba(15, 23, 42, 0.6);
+            background-color: #0f172a;
             color: var(--text-muted);
             font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            font-size: 0.7rem;
+            padding: 0.65rem 0.85rem;
+            border-bottom: 1px solid var(--border-color);
             white-space: nowrap;
+        }
+
+        td {
+            padding: 0.65rem 0.85rem;
+            border-bottom: 1px solid var(--border-color);
+            vertical-align: middle;
         }
 
         tr:hover td {
             background-color: rgba(255, 255, 255, 0.02);
         }
 
+        /* Estilo da Linha de Filtros na Tabela */
         .filter-row th {
-            padding: 0.35rem;
-            background-color: rgba(30, 41, 59, 0.9);
+            padding: 0.35rem 0.5rem !important;
+            background-color: #1e293b !important;
         }
 
         .filter-input {
             width: 100%;
             background-color: #0f172a;
             border: 1px solid var(--border-color);
-            border-radius: 0.3rem;
-            padding: 0.25rem 0.4rem;
             color: var(--text-main);
-            font-size: 0.725rem;
+            border-radius: 0.25rem;
+            padding: 0.25rem 0.4rem;
+            font-size: 0.75rem;
+        }
+
+        .filter-input:focus {
+            border-color: var(--accent);
             outline: none;
         }
 
-        .badge {
-            display: inline-block;
-            padding: 0.25rem 0.5rem;
+        .form-control, .form-select {
+            width: 100%;
+            background-color: #0f172a;
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
             border-radius: 0.375rem;
-            font-size: 0.65rem;
-            font-weight: 700;
-            text-transform: uppercase;
+            padding: 0.45rem 0.75rem;
+            font-size: 0.825rem;
         }
 
-        .badge-falta { background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); }
-        .badge-separado { background: rgba(245, 158, 11, 0.2); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.3); }
-        .badge-retirado { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.3); }
-        .badge-fabrica { background: rgba(99, 102, 241, 0.2); color: #a5b4fc; border: 1px solid rgba(99, 102, 241, 0.3); }
-        .badge-kanban { background: rgba(168, 85, 247, 0.2); color: #d8b4fe; border: 1px solid rgba(168, 85, 247, 0.3); }
+        .form-control:focus, .form-select:focus {
+            border-color: var(--accent);
+            outline: none;
+        }
 
-        .badge-pendente { background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); }
-        .badge-antecipado { background: rgba(245, 158, 11, 0.2); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.3); }
-        .badge-faturado { background: rgba(59, 130, 246, 0.2); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.3); }
-        .badge-pago { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.3); }
+        .form-group {
+            margin-bottom: 0.85rem;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 0.35rem;
+        }
 
         .btn {
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 0.4rem;
-            padding: 0.4rem 0.85rem;
+            padding: 0.45rem 0.85rem;
             border-radius: 0.375rem;
-            font-size: 0.8rem;
-            font-weight: 600;
+            font-size: 0.825rem;
+            font-weight: 500;
             cursor: pointer;
             border: none;
             transition: all 0.2s;
             text-decoration: none;
         }
 
-        .btn-primary { background-color: var(--accent); color: white; }
-        .btn-primary:hover { background-color: var(--accent-hover); }
-        .btn-secondary { background-color: var(--border-color); color: var(--text-main); }
-        .btn-secondary:hover { background-color: #475569; }
-
-        .form-group { margin-bottom: 0.85rem; }
-        .form-label { display: block; font-size: 0.75rem; font-weight: 500; color: var(--text-muted); margin-bottom: 0.25rem; }
-        .form-control, .form-select {
-            width: 100%;
-            background-color: #0f172a;
-            border: 1px solid var(--border-color);
-            border-radius: 0.375rem;
-            padding: 0.4rem 0.6rem;
-            color: var(--text-main);
-            font-size: 0.8rem;
-            outline: none;
+        .btn-primary {
+            background-color: var(--accent);
+            color: #ffffff;
         }
 
+        .btn-primary:hover {
+            background-color: var(--accent-hover);
+        }
+
+        .btn-secondary {
+            background-color: var(--border-color);
+            color: var(--text-main);
+        }
+
+        .btn-secondary:hover {
+            background-color: #475569;
+        }
+
+        .btn-danger {
+            background-color: var(--danger);
+            color: #ffffff;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-falta { background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.4); }
+        .badge-separado { background: rgba(245, 158, 11, 0.2); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.4); }
+        .badge-retirado { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.4); }
+        .badge-fabrica { background: rgba(59, 130, 246, 0.2); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.4); }
+        .badge-kanban { background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.4); }
+
+        .badge-pendente { background: rgba(245, 158, 11, 0.2); color: #fcd34d; }
+        .badge-faturado { background: rgba(59, 130, 246, 0.2); color: #93c5fd; }
+        .badge-pago { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; }
+
+        .alert {
+            padding: 0.75rem 1rem;
+            border-radius: 0.375rem;
+            margin-bottom: 1.25rem;
+            font-size: 0.85rem;
+        }
+        .alert-success { background-color: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); color: #6ee7b7; }
+        .alert-danger { background-color: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; }
+
+        /* Custom Dark Mode Pagination Styles */
         .pagination-container {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-top: 1rem;
-            padding-top: 0.75rem;
+            padding-top: 1rem;
             border-top: 1px solid var(--border-color);
-            font-size: 0.8rem;
-            color: var(--text-muted);
             flex-wrap: wrap;
             gap: 0.5rem;
+            font-size: 0.8rem;
+            color: var(--text-muted);
         }
 
-        /* Estilização Customizada Dark Mode da Paginação */
-        .pagination, ul.pagination {
-            display: flex !important;
-            gap: 0.25rem !important;
-            align-items: center !important;
-            list-style: none !important;
-            padding: 0 !important;
-            margin: 0 !important;
+        .pagination-container ul.pagination {
+            display: flex;
+            list-style: none;
+            gap: 0.25rem;
+            margin: 0;
+            padding: 0;
         }
 
-        .pagination .page-item, ul.pagination li {
-            display: inline-block !important;
+        .pagination-container .page-item .page-link {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.35rem 0.7rem;
+            border-radius: 0.375rem;
+            background-color: #0f172a;
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            text-decoration: none;
+            font-size: 0.8rem;
+            transition: all 0.2s;
         }
 
-        .pagination .page-link, ul.pagination a, ul.pagination span {
-            display: inline-flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            padding: 0.3rem 0.65rem !important;
-            font-size: 0.775rem !important;
-            font-weight: 600 !important;
-            color: #cbd5e1 !important;
-            background-color: #0f172a !important;
-            border: 1px solid var(--border-color) !important;
-            border-radius: 0.375rem !important;
-            text-decoration: none !important;
-            transition: all 0.2s !important;
+        .pagination-container .page-item.active .page-link {
+            background-color: var(--accent);
+            border-color: var(--accent);
+            color: #ffffff;
+            font-weight: 600;
         }
 
-        .pagination .page-link:hover, ul.pagination a:hover {
-            background-color: var(--accent) !important;
-            color: #ffffff !important;
-            border-color: var(--accent) !important;
+        .pagination-container .page-item.disabled .page-link {
+            opacity: 0.4;
+            cursor: not-allowed;
         }
 
-        .pagination .page-item.active .page-link, ul.pagination li.active span, ul.pagination li.active a {
-            background-color: var(--accent) !important;
-            color: #ffffff !important;
-            border-color: var(--accent) !important;
-            font-weight: 700 !important;
+        .pagination-container .page-item .page-link:hover:not(.disabled) {
+            background-color: var(--border-color);
         }
 
-        .pagination .page-item.disabled .page-link, ul.pagination li.disabled span {
-            color: #475569 !important;
-            background-color: #0f172a !important;
-            border-color: var(--border-color) !important;
-            cursor: not-allowed !important;
-        }
-
-        /* Controlar tamanho máximo de ícones SVG e ocultar duplicidades */
-        svg, svg.w-5, svg.h-5 {
+        .pagination-container svg {
             width: 14px !important;
             height: 14px !important;
             max-width: 14px !important;
             max-height: 14px !important;
+            fill: currentColor;
+            display: inline-block;
         }
-
-        nav p.text-sm {
-            display: none !important;
-        }
-
-        .alert-toast {
-            position: fixed;
-            bottom: 1.5rem;
-            right: 1.5rem;
-            padding: 0.85rem 1.25rem;
-            border-radius: 0.5rem;
-            font-size: 0.85rem;
-            font-weight: 500;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
-            z-index: 9999;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .alert-toast-success { background-color: #065f46; color: #a7f3d0; border: 1px solid #059669; }
-        .alert-toast-error { background-color: #991b1b; color: #fecaca; border: 1px solid #dc2626; }
     </style>
 </head>
 <body>
@@ -342,60 +354,45 @@
             <a href="{{ route('dashboard') }}" class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
                 📊 Dashboard
             </a>
-            @if(auth()->user() && auth()->user()->isEstoque())
-                <a href="{{ route('estoque.index') }}" class="nav-link {{ request()->routeIs('estoque.*') ? 'active' : '' }}">
-                    📦 Estoque PCP
-                </a>
-            @endif
-            @if(auth()->user() && auth()->user()->isCompras())
-                <a href="{{ route('compras.index') }}" class="nav-link {{ request()->routeIs('compras.*') ? 'active' : '' }}">
-                    🛒 Compras
-                </a>
-            @endif
-            @if(auth()->user() && auth()->user()->isAdmin())
+            <a href="{{ route('estoque.index') }}" class="nav-link {{ request()->routeIs('estoque.*') ? 'active' : '' }}">
+                📦 Estoque PCP
+            </a>
+            <a href="{{ route('compras.index') }}" class="nav-link {{ request()->routeIs('compras.*') ? 'active' : '' }}">
+                🛒 Compras
+            </a>
+            @if(auth()->check() && auth()->user()->isAdmin())
                 <a href="{{ route('users.index') }}" class="nav-link {{ request()->routeIs('users.*') ? 'active' : '' }}">
                     👥 Usuários
                 </a>
             @endif
         </nav>
-
-        @auth
-            <div style="display: flex; align-items: center; gap: 0.75rem; border-left: 1px solid var(--border-color); padding-left: 1rem;">
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+            @auth
                 <div style="text-align: right; font-size: 0.75rem;">
-                    <div style="font-weight: 600; color: #f8fafc;">{{ auth()->user()->name }}</div>
-                    @php
-                        $userBadge = match(auth()->user()->role) {
-                            'ADMIN' => 'badge-faturado',
-                            'COMPRAS' => 'badge-antecipado',
-                            'ESTOQUE' => 'badge-separado',
-                            default => 'badge-pendente'
-                        };
-                    @endphp
-                    <span class="badge {{ $userBadge }}">{{ auth()->user()->role }}</span>
+                    <div style="font-weight: 600; color: var(--text-main);">{{ auth()->user()->name }}</div>
+                    <span class="badge badge-fabrica" style="font-size: 0.6rem; padding: 0.1rem 0.3rem;">{{ auth()->user()->role }}</span>
                 </div>
                 <form action="{{ route('logout') }}" method="POST" style="margin: 0;">
                     @csrf
-                    <button type="submit" class="btn btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; color: #fca5a5;">
+                    <button type="submit" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; background-color: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3);">
                         🚪 Sair
                     </button>
                 </form>
-            </div>
-        @endauth
+            @endauth
+        </div>
     </header>
 
     <main>
         @if(session('success'))
-            <div class="alert-toast alert-toast-success" id="toastSuccess">
-                ✅ {{ session('success') }}
+            <div class="alert alert-success">
+                {{ session('success') }}
             </div>
-            <script>setTimeout(() => { document.getElementById('toastSuccess')?.remove(); }, 4000);</script>
         @endif
 
         @if(session('error'))
-            <div class="alert-toast alert-toast-error" id="toastError">
-                ❌ {{ session('error') }}
+            <div class="alert alert-danger">
+                {{ session('error') }}
             </div>
-            <script>setTimeout(() => { document.getElementById('toastError')?.remove(); }, 4000);</script>
         @endif
 
         @yield('content')

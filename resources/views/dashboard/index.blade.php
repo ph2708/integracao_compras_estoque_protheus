@@ -1,6 +1,9 @@
 @extends('layouts.app')
 
 @section('content')
+<!-- Plugin ChartDataLabels CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
     <div>
         <h1 style="font-size: 1.5rem; font-weight: 700;">📊 Dashboard de Indicadores & Gráficos</h1>
@@ -10,6 +13,37 @@
         <a href="{{ route('estoque.index') }}" class="btn btn-secondary">📦 Ir para Estoque</a>
         <a href="{{ route('compras.index') }}" class="btn btn-primary">🛒 Ir para Compras</a>
     </div>
+</div>
+
+<!-- Filtro por Pedido de Venda no Dashboard -->
+<div class="card" style="border-color: rgba(99, 102, 241, 0.4); margin-bottom: 1.25rem;">
+    <form action="{{ route('dashboard') }}" method="GET" style="display: flex; flex-wrap: wrap; gap: 0.85rem; align-items: flex-end;">
+        <div class="form-group" style="margin-bottom: 0; min-width: 200px; flex: 2;">
+            <label class="form-label">Selecionar Pedido de Venda Cadastrado</label>
+            <select name="pedido" class="form-select" onchange="this.form.submit()">
+                <option value="">-- Todos os Pedidos de Venda --</option>
+                @foreach($pedidosDisponiveis as $p)
+                    <option value="{{ $p }}" {{ $searchPedido == $p ? 'selected' : '' }}>Pedido: {{ $p }}</option>
+                @endforeach
+            </select>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 0; min-width: 200px; flex: 2;">
+            <label class="form-label">Ou Digite N° do Pedido</label>
+            <input type="text" name="pedido" value="{{ $searchPedido }}" class="form-control" placeholder="Ex: 006614...">
+        </div>
+
+        <div style="min-width: 120px; flex: 1; display: flex; gap: 0.5rem;">
+            <button type="submit" class="btn btn-primary" style="flex: 1; justify-content: center;">
+                🔍 Filtrar
+            </button>
+            @if($searchPedido)
+                <a href="{{ route('dashboard') }}" class="btn btn-secondary" style="padding: 0.45rem 0.65rem;">
+                    ✕ Limpar
+                </a>
+            @endif
+        </div>
+    </form>
 </div>
 
 <!-- Grid de Indicadores Quantitativos -->
@@ -71,7 +105,7 @@
     <!-- Gráfico 1: Status PCP / Estoque -->
     <div class="card">
         <h3 style="font-size: 1rem; margin-bottom: 1rem; color: #a5b4fc;">📦 Distribuição por Status no PCP/Estoque</h3>
-        <div style="position: relative; height: 260px; display: flex; justify-content: center;">
+        <div style="position: relative; height: 280px; display: flex; justify-content: center;">
             <canvas id="chartStatusEstoque"></canvas>
         </div>
     </div>
@@ -79,7 +113,7 @@
     <!-- Gráfico 2: Montantes Financeiros em Compras (R$) -->
     <div class="card">
         <h3 style="font-size: 1rem; margin-bottom: 1rem; color: #38bdf8;">💳 Montantes Financeiros por Status de Pagamento (R$)</h3>
-        <div style="position: relative; height: 260px;">
+        <div style="position: relative; height: 280px;">
             <canvas id="chartStatusCompras"></canvas>
         </div>
     </div>
@@ -88,7 +122,7 @@
 <!-- Gráfico 3: Demandas por Pedido de Venda em R$ -->
 <div class="card">
     <h3 style="font-size: 1rem; margin-bottom: 1rem; color: #c084fc;">📋 Top Pedidos de Venda por Valor Total em Compras (R$)</h3>
-    <div style="position: relative; height: 250px;">
+    <div style="position: relative; height: 270px;">
         <canvas id="chartTopPedidos"></canvas>
     </div>
 </div>
@@ -96,6 +130,11 @@
 <!-- Script Chart.js -->
 <script>
 document.addEventListener('DOMContentLoaded', () => {
+    // Registrar o plugin de rótulos de dados (datalabels)
+    if (typeof ChartDataLabels !== 'undefined') {
+        Chart.register(ChartDataLabels);
+    }
+
     // Chart 1: Donut Chart - Status PCP
     const ctx1 = document.getElementById('chartStatusEstoque').getContext('2d');
     new Chart(ctx1, {
@@ -128,6 +167,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 legend: {
                     position: 'bottom',
                     labels: { color: '#f8fafc', font: { family: 'Inter', size: 11 } }
+                },
+                datalabels: {
+                    color: '#ffffff',
+                    font: { weight: 'bold', size: 12 },
+                    formatter: function(value) {
+                        return value > 0 ? value : '';
+                    }
                 }
             }
         }
@@ -159,6 +205,7 @@ document.addEventListener('DOMContentLoaded', () => {
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            layout: { padding: { top: 25 } },
             plugins: {
                 legend: { display: false },
                 tooltip: {
@@ -167,6 +214,15 @@ document.addEventListener('DOMContentLoaded', () => {
                             let value = context.raw || 0;
                             return 'R$ ' + value.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
                         }
+                    }
+                },
+                datalabels: {
+                    anchor: 'end',
+                    align: 'top',
+                    color: '#38bdf8',
+                    font: { weight: 'bold', size: 11 },
+                    formatter: function(value) {
+                        return value > 0 ? 'R$ ' + value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : 'R$ 0,00';
                     }
                 }
             },
@@ -211,6 +267,7 @@ document.addEventListener('DOMContentLoaded', () => {
             indexAxis: 'y',
             responsive: true,
             maintainAspectRatio: false,
+            layout: { padding: { right: 80 } },
             plugins: {
                 legend: { display: false },
                 tooltip: {
@@ -219,6 +276,15 @@ document.addEventListener('DOMContentLoaded', () => {
                             let value = context.raw || 0;
                             return 'R$ ' + value.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
                         }
+                    }
+                },
+                datalabels: {
+                    anchor: 'end',
+                    align: 'right',
+                    color: '#c084fc',
+                    font: { weight: 'bold', size: 11 },
+                    formatter: function(value) {
+                        return value > 0 ? 'R$ ' + value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : 'R$ 0,00';
                     }
                 }
             },

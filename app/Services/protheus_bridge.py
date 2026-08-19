@@ -37,13 +37,13 @@ def list_pedidos(filial=None):
     conn = get_connection()
     cursor = conn.cursor(as_dict=True)
     sql = """
-    SELECT DISTINCT TOP 50 RTRIM(C2_PEDIDO) AS C2_PEDIDO 
+    SELECT DISTINCT TOP 100 RTRIM(C2_PEDIDO) AS C2_PEDIDO 
     FROM SC2010 
     WHERE D_E_L_E_T_ = ' ' AND C2_PEDIDO IS NOT NULL AND RTRIM(C2_PEDIDO) != ''
     """
     params = []
     if filial:
-        sql += " AND RTRIM(C2_FILIAL) = %s"
+        sql += " AND RTRIM(S.C2_FILIAL) = %s"
         params.append(filial)
 
     sql += " ORDER BY C2_PEDIDO DESC"
@@ -54,12 +54,12 @@ def list_pedidos(filial=None):
 
 def get_pedido_items(c2_pedido, filial=None):
     """
-    Opção A: Consulta Matérias-Primas / Componentes Requisitados da OP na SD4010 + SC2010
+    Consulta TODOS os componentes/matérias-primas requisitados da OP na SD4010 + SC2010 (Sem limite TOP 100)
     """
     conn = get_connection()
     cursor = conn.cursor(as_dict=True)
     sql = """
-    SELECT DISTINCT TOP 100
+    SELECT DISTINCT
         RTRIM(S.C2_FILIAL) AS C2_FILIAL,
         RTRIM(S.C2_PEDIDO) AS C2_PEDIDO,
         RTRIM(D.D4_OP) AS D4_OP,

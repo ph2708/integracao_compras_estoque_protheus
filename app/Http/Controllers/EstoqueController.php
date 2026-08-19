@@ -91,7 +91,7 @@ class EstoqueController extends Controller
 
         foreach ($request->items as $itemData) {
             $qtdOp = floatval($itemData['quantidade'] ?? 1);
-            $qtdEstoque = isset($itemData['quantidade_estoque']) ? floatval($itemData['quantidade_estoque']) : $qtdOp;
+            $qtdEstoque = isset($itemData['quantidade_estoque']) ? floatval($itemData['quantidade_estoque']) : 0;
 
             EstoqueItem::updateOrCreate(
                 [
@@ -133,7 +133,7 @@ class EstoqueController extends Controller
         ]);
 
         if (!isset($validated['quantidade_estoque'])) {
-            $validated['quantidade_estoque'] = $validated['quantidade'];
+            $validated['quantidade_estoque'] = 0;
         }
 
         EstoqueItem::create($validated);
@@ -184,7 +184,7 @@ class EstoqueController extends Controller
             if ($estoqueItem) {
                 $estoqueItem->update([
                     'status' => $itemData['status'] ?? $estoqueItem->status,
-                    'quantidade_estoque' => isset($itemData['quantidade_estoque']) ? floatval($itemData['quantidade_estoque']) : $estoqueItem->quantidade_estoque,
+                    'quantidade_estoque' => isset($itemData['quantidade_estoque']) ? floatval($itemData['quantidade_estoque']) : 0,
                     'observacao_estoque' => $itemData['observacao_estoque'] ?? $estoqueItem->observacao_estoque,
                 ]);
                 $updatedCount++;

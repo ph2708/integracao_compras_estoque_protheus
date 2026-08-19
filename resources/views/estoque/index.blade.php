@@ -109,11 +109,11 @@
             </div>
             <div class="form-group">
                 <label class="form-label">Quantidade OP *</label>
-                <input type="number" step="0.01" id="manual_qtd_op" name="quantidade" class="form-control" value="1" placeholder="Ex: 10" oninput="document.getElementById('manual_qtd_est').value = this.value">
+                <input type="number" step="0.01" id="manual_qtd_op" name="quantidade" class="form-control" value="1" placeholder="Ex: 10">
             </div>
             <div class="form-group">
-                <label class="form-label">Qtd em Estoque (Padrão = Qtd OP)</label>
-                <input type="number" step="0.01" id="manual_qtd_est" name="quantidade_estoque" class="form-control" value="1" placeholder="Ex: 10">
+                <label class="form-label">Qtd em Estoque (Inicial = 0)</label>
+                <input type="number" step="0.01" id="manual_qtd_est" name="quantidade_estoque" class="form-control" value="0" placeholder="Ex: 0">
             </div>
             <div class="form-group">
                 <label class="form-label">Nome do Cliente (C2_OBS)</label>
@@ -211,7 +211,7 @@
                                    value="{{ $valQtdEstoque }}" 
                                    class="form-control" 
                                    style="padding: 0.25rem 0.4rem; font-size: 0.75rem; width: 75px; color: #fcd34d; font-weight: 600; text-align: center;" 
-                                   placeholder="{{ floatval($item->quantidade) }}"
+                                   placeholder="0"
                                    oninput="recalcularQtdComprarTela({{ $item->id }})">
                         </td>
                         <td style="text-align: center;">
@@ -403,7 +403,7 @@ async function buscarItensProtheus() {
                         <input type="hidden" name="items[${index}][pedido]" value="${item.pedido}">
                         <input type="hidden" name="items[${index}][cliente_obs]" value="${item.cliente_obs}">
                         <input type="hidden" name="items[${index}][quantidade]" value="${item.quantidade}">
-                        <input type="hidden" name="items[${index}][quantidade_estoque]" value="${item.quantidade}">
+                        <input type="hidden" name="items[${index}][quantidade_estoque]" value="0">
                         <input type="hidden" name="items[${index}][status]" value="FALTA">
                     </td>
                     <td><span class="badge badge-faturado">${item.filial}</span></td>

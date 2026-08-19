@@ -54,7 +54,8 @@ def list_pedidos(filial=None):
 
 def get_pedido_items(c2_pedido, filial=None):
     """
-    Consulta TODOS os componentes/matérias-primas requisitados da OP na SD4010 + SC2010 (Sem limite TOP 100)
+    Consulta componentes/matérias-primas requisitados da OP na SD4010 + SC2010
+    EXCLUINDO produtos do tipo PI (Produto Intermediário) e PA (Produto Acabado) na SB1010 (B1_TIPO NOT IN ('PI', 'PA'))
     """
     conn = get_connection()
     cursor = conn.cursor(as_dict=True)
@@ -67,12 +68,15 @@ def get_pedido_items(c2_pedido, filial=None):
         RTRIM(B.B1_DESC) AS B1_DESC,
         RTRIM(B5.B5_CEME) AS B5_CEME,
         RTRIM(S.C2_OBS) AS C2_OBS,
+        RTRIM(B.B1_TIPO) AS B1_TIPO,
         D.D4_QTDEORI AS QUANTIDADE
     FROM SD4010 D
     INNER JOIN SC2010 S ON RTRIM(D.D4_OP) LIKE RTRIM(S.C2_NUM) + '%' AND S.D_E_L_E_T_ = ' '
     LEFT JOIN SB1010 B ON RTRIM(D.D4_COD) = RTRIM(B.B1_COD) AND B.D_E_L_E_T_ = ' '
     LEFT JOIN SB5010 B5 ON RTRIM(D.D4_COD) = RTRIM(B5.B5_COD) AND B5.D_E_L_E_T_ = ' '
-    WHERE D.D_E_L_E_T_ = ' ' AND (RTRIM(S.C2_PEDIDO) = %s OR RTRIM(S.C2_OBS) LIKE %s)
+    WHERE D.D_E_L_E_T_ = ' ' 
+      AND (RTRIM(S.C2_PEDIDO) = %s OR RTRIM(S.C2_OBS) LIKE %s)
+      AND (B.B1_TIPO IS NULL OR RTRIM(B.B1_TIPO) NOT IN ('PI', 'PA'))
     """
     search_obs = f"%{c2_pedido}%"
     params = [c2_pedido, search_obs]
@@ -88,6 +92,10 @@ def get_pedido_items(c2_pedido, filial=None):
 
     formatted_rows = []
     for r in rows:
+        b1_tipo = (r.get('B1_TIPO') or '').strip().upper()
+        if b1_tipo in ['PI', 'PA']:
+            continue
+
         desc = r.get('B5_CEME') or r.get('B1_DESC') or ''
         formatted_rows.append({
             'filial': r.get('C2_FILIAL') or '',
@@ -96,6 +104,7 @@ def get_pedido_items(c2_pedido, filial=None):
             'codigo_produto': r.get('C2_PRODUTO') or '',
             'descricao': desc.strip(),
             'cliente_obs': (r.get('C2_OBS') or '').strip(),
+            'b1_tipo': b1_tipo,
             'quantidade': float(r.get('QUANTIDADE') or 1)
         })
 

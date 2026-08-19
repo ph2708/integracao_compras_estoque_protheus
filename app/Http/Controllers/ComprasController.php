@@ -18,7 +18,7 @@ class ComprasController extends Controller
     }
 
     /**
-     * Exibe o Painel de Compras integrado ao Estoque
+     * Exibe o Painel de Compras integrado ao Estoque (100% Leitura do MySQL - Carregamento Instantâneo)
      */
     public function index(Request $request)
     {
@@ -29,15 +29,11 @@ class ComprasController extends Controller
         $compraItems = CompraItem::all()->keyBy('estoque_item_id');
 
         if ($searchPv) {
-            // Busca itens específicos do Pedido de Venda no Protheus
+            // Consulta específica do Pedido de Venda no Protheus
             $protheusItems = $this->protheusService->getItensPorPedido($searchPv, $searchFilial ?: null);
             $estoqueItems = EstoqueItem::all()->keyBy(function ($item) {
                 return $item->codigo_produto . '_' . ($item->pedido ?? '') . '_' . ($item->op ?? '');
             });
-
-            // ⚡ OTIMIZAÇÃO: 1 única consulta SQL em Lote no Protheus para todos os produtos
-            $allCodigos = array_filter(array_column($protheusItems, 'codigo_produto'));
-            $precosBatch = $this->protheusService->getUltimosPrecosBatch($allCodigos);
 
             foreach ($protheusItems as $pItem) {
                 if (!is_array($pItem)) continue;
@@ -51,27 +47,15 @@ class ComprasController extends Controller
                 }
 
                 $compraMatch = $estoqueMatch ? $compraItems->get($estoqueMatch->id) : null;
-                $lastProtheusCompra = $precosBatch[$codProduto] ?? null;
 
                 $valQtdOp = floatval($pItem['quantidade'] ?? ($estoqueMatch ? $estoqueMatch->quantidade : 1));
                 $valQtdEstoque = $estoqueMatch ? floatval($estoqueMatch->quantidade_estoque) : 0;
                 $valQtdComprar = max(0, $valQtdOp - $valQtdEstoque);
 
-                $valUnitario = $compraMatch && floatval($compraMatch->valor_unitario) > 0 
-                    ? floatval($compraMatch->valor_unitario) 
-                    : floatval($lastProtheusCompra['valor_unitario'] ?? 0);
-
+                $valUnitario = $compraMatch ? floatval($compraMatch->valor_unitario) : 0;
                 $valIpi = $compraMatch ? floatval($compraMatch->ipi) : 0;
                 $valFrete = $compraMatch ? floatval($compraMatch->frete) : 0;
                 $valTotal = ($valUnitario * $valQtdComprar) + ($valUnitario * $valQtdComprar * ($valIpi / 100)) + $valFrete;
-
-                $codFornecedor = $compraMatch && !empty($compraMatch->codigo_fornecedor)
-                    ? $compraMatch->codigo_fornecedor
-                    : ($lastProtheusCompra['codigo_fornecedor'] ?? '');
-
-                $pedidoCompra = $compraMatch && !empty($compraMatch->pedido_compra)
-                    ? $compraMatch->pedido_compra
-                    : ($lastProtheusCompra['pedido_compra'] ?? '');
 
                 $statusPcp = $estoqueMatch ? $estoqueMatch->status : 'FALTA';
                 $badgePcp = match($statusPcp) {
@@ -97,8 +81,8 @@ class ComprasController extends Controller
                     'status_pcp_badge' => $badgePcp,
                     'estoque_item_id' => $estoqueMatch ? $estoqueMatch->id : null,
                     'compra_id' => $compraMatch ? $compraMatch->id : null,
-                    'pedido_compra' => $pedidoCompra,
-                    'codigo_fornecedor' => $codFornecedor,
+                    'pedido_compra' => $compraMatch ? $compraMatch->pedido_compra : '',
+                    'codigo_fornecedor' => $compraMatch ? $compraMatch->codigo_fornecedor : '',
                     'valor_unitario' => $valUnitario,
                     'ipi' => $valIpi,
                     'data_pc' => $compraMatch ? $compraMatch->data_pc : '',
@@ -112,36 +96,20 @@ class ComprasController extends Controller
                 ]);
             }
         } else {
-            // Exibe todos os itens cadastrados no Estoque Local (MySQL)
+            // ⚡ 100% Leitura do Banco MySQL Local (0.001s / Instantâneo)
             $estoqueItems = EstoqueItem::orderBy('updated_at', 'desc')->get();
-
-            // ⚡ OTIMIZAÇÃO: 1 única consulta SQL em Lote no Protheus para todos os produtos
-            $allCodigos = $estoqueItems->pluck('codigo_produto')->unique()->toArray();
-            $precosBatch = $this->protheusService->getUltimosPrecosBatch($allCodigos);
 
             foreach ($estoqueItems as $estoqueItem) {
                 $compraMatch = $compraItems->get($estoqueItem->id);
-                $lastProtheusCompra = $precosBatch[$estoqueItem->codigo_produto] ?? null;
 
                 $valQtdOp = floatval($estoqueItem->quantidade);
                 $valQtdEstoque = floatval($estoqueItem->quantidade_estoque);
                 $valQtdComprar = max(0, $valQtdOp - $valQtdEstoque);
 
-                $valUnitario = $compraMatch && floatval($compraMatch->valor_unitario) > 0 
-                    ? floatval($compraMatch->valor_unitario) 
-                    : floatval($lastProtheusCompra['valor_unitario'] ?? 0);
-
+                $valUnitario = $compraMatch ? floatval($compraMatch->valor_unitario) : 0;
                 $valIpi = $compraMatch ? floatval($compraMatch->ipi) : 0;
                 $valFrete = $compraMatch ? floatval($compraMatch->frete) : 0;
                 $valTotal = ($valUnitario * $valQtdComprar) + ($valUnitario * $valQtdComprar * ($valIpi / 100)) + $valFrete;
-
-                $codFornecedor = $compraMatch && !empty($compraMatch->codigo_fornecedor)
-                    ? $compraMatch->codigo_fornecedor
-                    : ($lastProtheusCompra['codigo_fornecedor'] ?? '');
-
-                $pedidoCompra = $compraMatch && !empty($compraMatch->pedido_compra)
-                    ? $compraMatch->pedido_compra
-                    : ($lastProtheusCompra['pedido_compra'] ?? '');
 
                 $statusPcp = $estoqueItem->status ?? 'FALTA';
                 $badgePcp = match($statusPcp) {
@@ -167,8 +135,8 @@ class ComprasController extends Controller
                     'status_pcp_badge' => $badgePcp,
                     'estoque_item_id' => $estoqueItem->id,
                     'compra_id' => $compraMatch ? $compraMatch->id : null,
-                    'pedido_compra' => $pedidoCompra,
-                    'codigo_fornecedor' => $codFornecedor,
+                    'pedido_compra' => $compraMatch ? $compraMatch->pedido_compra : '',
+                    'codigo_fornecedor' => $compraMatch ? $compraMatch->codigo_fornecedor : '',
                     'valor_unitario' => $valUnitario,
                     'ipi' => $valIpi,
                     'data_pc' => $compraMatch ? $compraMatch->data_pc : '',

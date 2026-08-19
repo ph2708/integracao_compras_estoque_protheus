@@ -1,22 +1,42 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\EstoqueController;
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ComprasController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\EstoqueController;
+use App\Http\Controllers\UserController;
+use Illuminate\Support\Facades\Route;
 
+// Redirecionamento da raiz
 Route::get('/', function () {
-    return redirect()->route('dashboard.index');
+    return redirect()->route('dashboard');
 });
 
-// Dashboard & Indicadores
-Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
+// Rotas de Autenticação (Públicas)
+Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+Route::post('/login', [AuthController::class, 'login']);
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-// Painel de Estoque (PCP)
-Route::post('estoque/consultar-pedido', [EstoqueController::class, 'consultarPedido'])->name('estoque.consultar-pedido');
-Route::post('estoque/store-batch', [EstoqueController::class, 'storeBatch'])->name('estoque.store-batch');
-Route::resource('estoque', EstoqueController::class)->only(['index', 'store', 'update']);
+// Rotas Protegidas por Autenticação (Requer Login)
+Route::middleware(['auth'])->group(function () {
 
-// Painel de Compras
-Route::resource('compras', ComprasController::class)->only(['index', 'update']);
-Route::post('compras/consultar-protheus', [ComprasController::class, 'consultarProtheus'])->name('compras.consultar-protheus');
+    // Dashboard Geral
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Painel de Estoque (PCP)
+    Route::get('/estoque', [EstoqueController::class, 'index'])->name('estoque.index');
+    Route::post('/estoque/consultar-pedido', [EstoqueController::class, 'consultarPedido'])->name('estoque.consultar-pedido');
+    Route::post('/estoque/store-batch', [EstoqueController::class, 'storeBatch'])->name('estoque.store-batch');
+    Route::post('/estoque', [EstoqueController::class, 'store'])->name('estoque.store');
+    Route::put('/estoque/{id}', [EstoqueController::class, 'update'])->name('estoque.update');
+
+    // Painel de Compras
+    Route::get('/compras', [ComprasController::class, 'index'])->name('compras.index');
+    Route::post('/compras/consultar-protheus', [ComprasController::class, 'consultarProtheus'])->name('compras.consultar-protheus');
+    Route::put('/compras/{id}', [ComprasController::class, 'update'])->name('compras.update');
+
+    // Gestão de Usuários (Apenas Administradores)
+    Route::middleware([\App\Http\Middleware\AdminMiddleware::class])->group(function () {
+        Route::resource('users', UserController::class)->except(['create', 'edit', 'show']);
+    });
+});

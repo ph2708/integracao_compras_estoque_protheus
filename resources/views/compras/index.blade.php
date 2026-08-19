@@ -10,7 +10,7 @@
 
 <!-- Filtro e Busca por PV (Pedido de Venda) no Protheus -->
 <div class="card" style="border-color: rgba(99, 102, 241, 0.4); margin-bottom: 1.25rem;">
-    <form action="{{ route('compras.index') }}" method="GET" style="display: flex; flex-wrap: wrap; gap: 0.85rem; align-items: flex-end;">
+    <form action="{{ route('compras.index') }}" method="GET" style="display: flex; flex-wrap: wrap; gap: 0.85rem; align-items: flex-end;" onsubmit="window.mostrarLoading('🔍 Consultando Pedido de Venda no Protheus... Aguarde...')">
         <div class="form-group" style="margin-bottom: 0; min-width: 150px; flex: 1;">
             <label class="form-label">Filial Protheus</label>
             <select name="filial" class="form-select">
@@ -46,7 +46,7 @@
 
 <!-- Tabela de Itens de Compras (Com Edição Linear e Botão Salvar Tudo) -->
 <div class="card">
-    <form action="{{ route('compras.update-batch') }}" method="POST" id="formBatchCompras">
+    <form action="{{ route('compras.update-batch') }}" method="POST" id="formBatchCompras" onsubmit="window.mostrarLoading('💾 Salvando todas as alterações em Compras... Aguarde...')">
         @csrf
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem; flex-wrap: wrap; gap: 0.5rem;">
             <h3 style="font-size: 1rem;">
@@ -58,7 +58,7 @@
             </h3>
             <div style="display: flex; gap: 0.5rem; align-items: center;">
                 @if($searchPv || request()->hasAny(['f_produto', 'f_descricao', 'f_op', 'f_cliente', 'f_status_pcp', 'f_pedido_compra', 'f_fornecedor', 'f_status_pagamento']))
-                    <a href="{{ route('compras.index') }}" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">
+                    <a href="{{ route('compras.index') }}" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="window.mostrarLoading('⏳ Limpando filtros...')">
                         ✕ Limpar Todos os Filtros
                     </a>
                 @endif
@@ -349,6 +349,7 @@ function salvarUnicoCompras(estoqueItemId, compraId) {
     document.getElementById('single_c_frete').value = document.getElementById(`frete_${estoqueItemId}`)?.value || '0';
     document.getElementById('single_c_status').value = document.querySelector(`select[name="items[${estoqueItemId}][status_pagamento]"]`)?.value || 'PENDENTE';
 
+    window.mostrarLoading('💾 Salvando item de compras...');
     form.submit();
 }
 
@@ -363,6 +364,8 @@ async function consultarFornecedorLinha(estoqueItemId, codigoProduto) {
         return;
     }
 
+    window.mostrarLoading('🔍 Buscando dados do Fornecedor e Pedido de Compra no Protheus... Aguarde...');
+
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
     try {
@@ -376,6 +379,7 @@ async function consultarFornecedorLinha(estoqueItemId, codigoProduto) {
         });
 
         const result = await response.json();
+        window.ocultarLoading();
 
         if (result.success && result.data.codigo_fornecedor) {
             fornInput.value = result.data.codigo_fornecedor;
@@ -384,6 +388,7 @@ async function consultarFornecedorLinha(estoqueItemId, codigoProduto) {
             alert('⚠️ Pedido de Compra não encontrado no Protheus.');
         }
     } catch (e) {
+        window.ocultarLoading();
         alert('❌ Erro de conexão ao buscar no Protheus.');
     }
 }

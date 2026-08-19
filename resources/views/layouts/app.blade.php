@@ -343,9 +343,32 @@
             fill: currentColor;
             display: inline-block;
         }
+
+        /* Overlay Spinner Global */
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(99, 102, 241, 0.2);
+            border-top-color: #6366f1;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
+    <!-- Global Loading Overlay Spinner -->
+    <div id="globalLoadingOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(4px); z-index: 99999; flex-direction: column; align-items: center; justify-content: center; gap: 1.25rem; color: #f8fafc;">
+        <div class="loading-spinner"></div>
+        <div id="globalLoadingText" style="font-size: 1.15rem; font-weight: 600; color: #a5b4fc; text-align: center; max-width: 400px; padding: 0 1rem; line-height: 1.5;">
+            ⏳ Buscando dados no Protheus... Aguarde...
+        </div>
+    </div>
+
     <header>
         <a href="{{ route('dashboard') }}" class="brand">
             ⚡ TOTVS Protheus <span>PCP & Compras</span>
@@ -397,5 +420,33 @@
 
         @yield('content')
     </main>
+
+    <script>
+        window.mostrarLoading = function(mensagem = '⏳ Processando dados... Aguarde...') {
+            const overlay = document.getElementById('globalLoadingOverlay');
+            const textElem = document.getElementById('globalLoadingText');
+            if (overlay && textElem) {
+                textElem.innerHTML = mensagem;
+                overlay.style.display = 'flex';
+            }
+        };
+
+        window.ocultarLoading = function() {
+            const overlay = document.getElementById('globalLoadingOverlay');
+            if (overlay) overlay.style.display = 'none';
+        };
+
+        document.addEventListener('submit', (e) => {
+            if (e.target && !e.target.classList.contains('no-loading')) {
+                let msg = '⏳ Processando dados... Aguarde...';
+                if (e.target.action && e.target.action.includes('compras')) {
+                    msg = '🔍 Buscando e processando informações no Protheus... Aguarde...';
+                } else if (e.target.action && e.target.action.includes('estoque')) {
+                    msg = '📦 Gravando dados do estoque... Aguarde...';
+                }
+                window.mostrarLoading(msg);
+            }
+        });
+    </script>
 </body>
 </html>

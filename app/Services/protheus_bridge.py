@@ -86,7 +86,20 @@ def get_pedido_items(c2_pedido, filial=None):
     rows = cursor.fetchall()
     conn.close()
 
-    return rows
+    formatted_rows = []
+    for r in rows:
+        desc = r.get('B5_CEME') or r.get('B1_DESC') or ''
+        formatted_rows.append({
+            'filial': r.get('C2_FILIAL') or '',
+            'pedido': r.get('C2_PEDIDO') or '',
+            'op': r.get('D4_OP') or '',
+            'codigo_produto': r.get('C2_PRODUTO') or '',
+            'descricao': desc.strip(),
+            'cliente_obs': (r.get('C2_OBS') or '').strip(),
+            'quantidade': float(r.get('QUANTIDADE') or 1)
+        })
+
+    return formatted_rows
 
 def get_fornecedor_compra(pedido, produto=None):
     conn = get_connection()
@@ -108,7 +121,18 @@ def get_fornecedor_compra(pedido, produto=None):
     cursor.execute(sql, (pedido, pedido, produto or pedido))
     row = cursor.fetchone()
     conn.close()
-    return row
+
+    if row:
+        forn_nome = (row.get('A2_NOME') or row.get('A2_NREDUZ') or '').strip()
+        forn_cod = (row.get('C7_FORNECE') or '').strip()
+        forn_full = f"{forn_cod} ({forn_nome})" if forn_nome else forn_cod
+
+        return {
+            'pedido_compra': row.get('C7_NUM') or '',
+            'codigo_fornecedor': forn_full,
+            'condicao_pagamento': row.get('CONDICAO_PAGAMENTO_DESC') or row.get('C7_COND') or ''
+        }
+    return None
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:

@@ -154,6 +154,9 @@
 </div>
 <div id="modalOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); z-index: 9999;" onclick="fecharModalConfirmacao()"></div>
 
+<!-- Formulário Oculto de Filtros por Colunas -->
+<form action="{{ route('estoque.index') }}" method="GET" id="formFilterEstoque"></form>
+
 <!-- Tabela de Itens de Estoque Salvos no MySQL -->
 <div class="card">
     <form action="{{ route('estoque.update-batch') }}" method="POST" id="formBatchEstoque">
@@ -188,6 +191,39 @@
                         <th style="color: #38bdf8;">Observação Estoque ✏️</th>
                         <th>Alterar Status PCP ✏️</th>
                         <th style="text-align: center; color: #a5b4fc;">Ações</th>
+                    </tr>
+                    <tr class="filter-row">
+                        <th>
+                            <input type="text" name="f_pedido" value="{{ request('f_pedido') }}" class="filter-input" placeholder="Ped..." form="formFilterEstoque" onchange="document.getElementById('formFilterEstoque').submit()">
+                        </th>
+                        <th>
+                            <input type="text" name="f_produto" value="{{ request('f_produto') }}" class="filter-input" placeholder="Prod..." form="formFilterEstoque" onchange="document.getElementById('formFilterEstoque').submit()">
+                        </th>
+                        <th>
+                            <input type="text" name="f_descricao" value="{{ request('f_descricao') }}" class="filter-input" placeholder="Desc..." form="formFilterEstoque" onchange="document.getElementById('formFilterEstoque').submit()">
+                        </th>
+                        <th>
+                            <input type="text" name="f_op" value="{{ request('f_op') }}" class="filter-input" placeholder="OP..." form="formFilterEstoque" onchange="document.getElementById('formFilterEstoque').submit()">
+                        </th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th>
+                            <select name="f_status" class="filter-input" form="formFilterEstoque" onchange="document.getElementById('formFilterEstoque').submit()">
+                                <option value="">-- Todos --</option>
+                                <option value="FALTA" {{ request('f_status') == 'FALTA' ? 'selected' : '' }}>FALTA</option>
+                                <option value="SEPARADO" {{ request('f_status') == 'SEPARADO' ? 'selected' : '' }}>SEPARADO</option>
+                                <option value="RETIRADO" {{ request('f_status') == 'RETIRADO' ? 'selected' : '' }}>RETIRADO</option>
+                                <option value="FABRICA" {{ request('f_status') == 'FABRICA' ? 'selected' : '' }}>FABRICA</option>
+                                <option value="FABRICAR INTERNO KANBAN" {{ request('f_status') == 'FABRICAR INTERNO KANBAN' ? 'selected' : '' }}>KANBAN</option>
+                            </select>
+                        </th>
+                        <th>
+                            <input type="text" name="f_cliente" value="{{ request('f_cliente') }}" class="filter-input" placeholder="Cliente..." form="formFilterEstoque" onchange="document.getElementById('formFilterEstoque').submit()">
+                        </th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody>

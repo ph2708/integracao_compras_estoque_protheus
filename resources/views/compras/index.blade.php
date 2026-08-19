@@ -34,6 +34,16 @@
     </form>
 </div>
 
+<!-- Formulário Oculto de Filtros por Colunas em Compras -->
+<form action="{{ route('compras.index') }}" method="GET" id="formFilterCompras">
+    @if($searchPv)
+        <input type="hidden" name="pedido_venda" value="{{ $searchPv }}">
+    @endif
+    @if($searchFilial)
+        <input type="hidden" name="filial" value="{{ $searchFilial }}">
+    @endif
+</form>
+
 <!-- Tabela de Itens de Compras (Com Edição Linear e Botão Salvar Tudo) -->
 <div class="card">
     <form action="{{ route('compras.update-batch') }}" method="POST" id="formBatchCompras">
@@ -79,6 +89,52 @@
                         <th>Status Pagamento ✏️</th>
                         <th style="color: #6ee7b7; text-align: right; min-width: 130px;">Valor Total (Calc)</th>
                         <th style="text-align: center; color: #a5b4fc;">Ações</th>
+                    </tr>
+                    <tr class="filter-row">
+                        <th></th>
+                        <th>
+                            <input type="text" name="f_cliente" value="{{ request('f_cliente') }}" class="filter-input" placeholder="Cliente..." form="formFilterCompras" onchange="document.getElementById('formFilterCompras').submit()">
+                        </th>
+                        <th>
+                            <input type="text" name="f_produto" value="{{ request('f_produto') }}" class="filter-input" placeholder="Produto..." form="formFilterCompras" onchange="document.getElementById('formFilterCompras').submit()">
+                        </th>
+                        <th>
+                            <input type="text" name="f_descricao" value="{{ request('f_descricao') }}" class="filter-input" placeholder="Descrição..." form="formFilterCompras" onchange="document.getElementById('formFilterCompras').submit()">
+                        </th>
+                        <th></th>
+                        <th>
+                            <select name="f_status_pcp" class="filter-input" form="formFilterCompras" onchange="document.getElementById('formFilterCompras').submit()">
+                                <option value="">-- Todos --</option>
+                                <option value="FALTA" {{ request('f_status_pcp') == 'FALTA' ? 'selected' : '' }}>FALTA</option>
+                                <option value="SEPARADO" {{ request('f_status_pcp') == 'SEPARADO' ? 'selected' : '' }}>SEPARADO</option>
+                                <option value="RETIRADO" {{ request('f_status_pcp') == 'RETIRADO' ? 'selected' : '' }}>RETIRADO</option>
+                                <option value="FABRICA" {{ request('f_status_pcp') == 'FABRICA' ? 'selected' : '' }}>FABRICA</option>
+                                <option value="FABRICAR INTERNO KANBAN" {{ request('f_status_pcp') == 'FABRICAR INTERNO KANBAN' ? 'selected' : '' }}>KANBAN</option>
+                            </select>
+                        </th>
+                        <th>
+                            <input type="text" name="f_pedido_compra" value="{{ request('f_pedido_compra') }}" class="filter-input" placeholder="Ped. Compra..." form="formFilterCompras" onchange="document.getElementById('formFilterCompras').submit()">
+                        </th>
+                        <th>
+                            <input type="text" name="f_fornecedor" value="{{ request('f_fornecedor') }}" class="filter-input" placeholder="Fornecedor..." form="formFilterCompras" onchange="document.getElementById('formFilterCompras').submit()">
+                        </th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th>
+                            <select name="f_status_pagamento" class="filter-input" form="formFilterCompras" onchange="document.getElementById('formFilterCompras').submit()">
+                                <option value="">-- Todos --</option>
+                                <option value="PENDENTE" {{ request('f_status_pagamento') == 'PENDENTE' ? 'selected' : '' }}>PENDENTE</option>
+                                <option value="PAGAMENTO ANTECIPADO" {{ request('f_status_pagamento') == 'PAGAMENTO ANTECIPADO' ? 'selected' : '' }}>ANTECIPADO</option>
+                                <option value="FATURADO" {{ request('f_status_pagamento') == 'FATURADO' ? 'selected' : '' }}>FATURADO</option>
+                                <option value="PAGO" {{ request('f_status_pagamento') == 'PAGO' ? 'selected' : '' }}>PAGO</option>
+                            </select>
+                        </th>
+                        <th></th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody>

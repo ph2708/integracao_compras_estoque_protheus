@@ -1,17 +1,39 @@
 services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pcp_compras_app
+    restart: always
+    ports:
+      - '8008:8008'
+    environment:
+      APP_NAME: 'PCP & Compras'
+      APP_ENV: production
+      APP_DEBUG: 'false'
+      APP_URL: 'http://157.151.3.150:8008'
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: pcp_compras
+      DB_USERNAME: pcp_user
+      DB_PASSWORD: pcp_secret
+    depends_on:
+      - mysql
+    networks:
+      - pcp_network
+
   mysql:
     image: 'mysql:8.0'
     container_name: pcp_compras_mysql
     restart: always
-    tty: true
     ports:
-      - '${FORWARD_DB_PORT:-33066}:3306'
+      - '33066:3306'
     environment:
-      MYSQL_DATABASE: '${DB_DATABASE:-pcp_compras}'
-      MYSQL_USER: '${DB_USERNAME:-pcp_user}'
-      MYSQL_PASSWORD: '${DB_PASSWORD:-pcp_secret}'
-      MYSQL_ROOT_PASSWORD: '${DB_PASSWORD:-pcp_secret}'
-      MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
+      MYSQL_DATABASE: pcp_compras
+      MYSQL_USER: pcp_user
+      MYSQL_PASSWORD: pcp_secret
+      MYSQL_ROOT_PASSWORD: pcp_secret
     volumes:
       - 'pcp_mysql_data:/var/lib/mysql'
     networks:

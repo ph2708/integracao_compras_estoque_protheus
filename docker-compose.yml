@@ -7,6 +7,8 @@ services:
     restart: always
     ports:
       - '8008:8008'
+    volumes:
+      - '.:/var/www/html'
     environment:
       APP_NAME: 'PCP & Compras'
       APP_ENV: production

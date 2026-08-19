@@ -120,6 +120,28 @@ class ProtheusService
     }
 
     /**
+     * Busca em LOTE (1 única query SQL) os últimos preços e fornecedores de uma lista de produtos
+     */
+    public function getUltimosPrecosBatch(array $codigosProdutos): array
+    {
+        if (empty($codigosProdutos)) return [];
+
+        try {
+            $jsonInput = json_encode(array_values(array_unique(array_filter($codigosProdutos))));
+            $command = "python3 " . escapeshellarg($this->scriptPath) . " get_precos_batch " . escapeshellarg($jsonInput);
+            $output = shell_exec($command);
+            
+            $json = json_decode($output, true);
+            if (isset($json['success']) && !empty($json['data'])) {
+                return $json['data'];
+            }
+            return [];
+        } catch (Exception $e) {
+            return [];
+        }
+    }
+
+    /**
      * Consult Supplier and Purchase Order info from Protheus (SC7010, SA2010, SE4010)
      */
     public function getFornecedorEPedidoCompra(string $c7Num, ?string $produto = null): ?object

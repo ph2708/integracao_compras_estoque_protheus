@@ -112,8 +112,7 @@ def get_pedido_items(c2_pedido, filial=None):
 
 def get_ultimo_preco_produto(codigo_produto):
     """
-    Consulta o último preço unitário (C7_PRECO) e fornecedor (C7_FORNECE) da SC7010
-    pela data de emissão mais recente do pedido de compras para o produto
+    Consulta o último preço unitário (C7_PRECO) e fornecedor (C7_FORNECE) da SC7010 de 1 produto
     """
     conn = get_connection()
     cursor = conn.cursor(as_dict=True)
@@ -147,6 +146,53 @@ def get_ultimo_preco_produto(codigo_produto):
             'data_emissao': row.get('C7_EMISSAO') or ''
         }
     return None
+
+def get_ultimos_precos_batch(produtos_list):
+    """
+    CONSULTA EM LOTE (1 ÚNICA QUERY SQL) do último preço/fornecedor emitido na SC7010 para todos os produtos da página
+    """
+    if not produtos_list:
+        return {}
+
+    conn = get_connection()
+    cursor = conn.cursor(as_dict=True)
+
+    placeholders = ', '.join(['%s'] * len(produtos_list))
+    sql = f"""
+    SELECT 
+        RTRIM(C.C7_PRODUTO) AS C7_PRODUTO,
+        RTRIM(C.C7_NUM) AS C7_NUM,
+        RTRIM(C.C7_FORNECE) AS C7_FORNECE,
+        RTRIM(C.C7_LOJA) AS C7_LOJA,
+        C.C7_PRECO AS C7_PRECO,
+        RTRIM(C.C7_EMISSAO) AS C7_EMISSAO,
+        RTRIM(A.A2_NOME) AS A2_NOME,
+        RTRIM(A.A2_NREDUZ) AS A2_NREDUZ
+    FROM SC7010 C
+    LEFT JOIN SA2010 A ON RTRIM(C.C7_FORNECE) = RTRIM(A.A2_COD) AND RTRIM(C.C7_LOJA) = RTRIM(A.A2_LOJA) AND A.D_E_L_E_T_ = ' '
+    WHERE C.D_E_L_E_T_ = ' ' AND C.C7_PRECO > 0 AND RTRIM(C.C7_PRODUTO) IN ({placeholders})
+    ORDER BY C.C7_EMISSAO DESC, C.R_E_C_N_O_ DESC
+    """
+    cursor.execute(sql, tuple(produtos_list))
+    rows = cursor.fetchall()
+    conn.close()
+
+    result_map = {}
+    for row in rows:
+        prod = row.get('C7_PRODUTO')
+        if prod and prod not in result_map:
+            forn_nome = (row.get('A2_NOME') or row.get('A2_NREDUZ') or '').strip()
+            forn_cod = (row.get('C7_FORNECE') or '').strip()
+            forn_full = f"{forn_cod} ({forn_nome})" if forn_nome else forn_cod
+
+            result_map[prod] = {
+                'pedido_compra': row.get('C7_NUM') or '',
+                'codigo_fornecedor': forn_full,
+                'valor_unitario': float(row.get('C7_PRECO') or 0),
+                'data_emissao': row.get('C7_EMISSAO') or ''
+            }
+
+    return result_map
 
 def get_fornecedor_compra(pedido, produto=None):
     conn = get_connection()
@@ -206,6 +252,10 @@ if __name__ == '__main__':
         elif cmd == 'get_ultimo_preco' and len(sys.argv) > 2:
             produto = sys.argv[2]
             res = get_ultimo_preco_produto(produto)
+            print(json.dumps({"success": True, "data": res}))
+        elif cmd == 'get_precos_batch' and len(sys.argv) > 2:
+            produtos_list = json.loads(sys.argv[2])
+            res = get_ultimos_precos_batch(produtos_list)
             print(json.dumps({"success": True, "data": res}))
         elif cmd == 'get_fornecedor' and len(sys.argv) > 2:
             pedido = sys.argv[2]

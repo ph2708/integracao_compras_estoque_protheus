@@ -254,6 +254,67 @@
             gap: 0.5rem;
         }
 
+        /* Estilização Customizada Dark Mode da Paginação */
+        .pagination, ul.pagination {
+            display: flex !important;
+            gap: 0.25rem !important;
+            align-items: center !important;
+            list-style: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+
+        .pagination .page-item, ul.pagination li {
+            display: inline-block !important;
+        }
+
+        .pagination .page-link, ul.pagination a, ul.pagination span {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            padding: 0.3rem 0.65rem !important;
+            font-size: 0.775rem !important;
+            font-weight: 600 !important;
+            color: #cbd5e1 !important;
+            background-color: #0f172a !important;
+            border: 1px solid var(--border-color) !important;
+            border-radius: 0.375rem !important;
+            text-decoration: none !important;
+            transition: all 0.2s !important;
+        }
+
+        .pagination .page-link:hover, ul.pagination a:hover {
+            background-color: var(--accent) !important;
+            color: #ffffff !important;
+            border-color: var(--accent) !important;
+        }
+
+        .pagination .page-item.active .page-link, ul.pagination li.active span, ul.pagination li.active a {
+            background-color: var(--accent) !important;
+            color: #ffffff !important;
+            border-color: var(--accent) !important;
+            font-weight: 700 !important;
+        }
+
+        .pagination .page-item.disabled .page-link, ul.pagination li.disabled span {
+            color: #475569 !important;
+            background-color: #0f172a !important;
+            border-color: var(--border-color) !important;
+            cursor: not-allowed !important;
+        }
+
+        /* Controlar tamanho máximo de ícones SVG e ocultar duplicidades */
+        svg, svg.w-5, svg.h-5 {
+            width: 14px !important;
+            height: 14px !important;
+            max-width: 14px !important;
+            max-height: 14px !important;
+        }
+
+        nav p.text-sm {
+            display: none !important;
+        }
+
         .alert-toast {
             position: fixed;
             bottom: 1.5rem;

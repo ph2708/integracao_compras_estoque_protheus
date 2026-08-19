@@ -45,6 +45,11 @@ class ProtheusService
         }
     }
 
+    public function getFiliais(): array
+    {
+        return $this->listarFiliais();
+    }
+
     /**
      * Get list of unique orders (C2_PEDIDO) from Protheus table SC2010
      */
@@ -63,6 +68,11 @@ class ProtheusService
         } catch (Exception $e) {
             return [];
         }
+    }
+
+    public function getTodosPedidosVenda(?string $filial = null): array
+    {
+        return $this->listarPedidosProtheus($filial);
     }
 
     /**
@@ -85,6 +95,11 @@ class ProtheusService
         }
     }
 
+    public function getItensPorPedido(string $c2Pedido, ?string $filial = null): array
+    {
+        return $this->getPedidoItems($c2Pedido, $filial);
+    }
+
     /**
      * Consult Supplier and Purchase Order info from Protheus (SC7010, SA2010, SE4010)
      */
@@ -103,5 +118,10 @@ class ProtheusService
         } catch (Exception $e) {
             return null;
         }
+    }
+
+    public function getDadosPedidoCompra(string $c7Num, ?string $produto = null): ?object
+    {
+        return $this->getFornecedorEPedidoCompra($c7Num, $produto);
     }
 }

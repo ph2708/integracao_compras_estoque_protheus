@@ -25,79 +25,129 @@ class ComprasController extends Controller
         $searchPv = $request->get('pedido_venda');
         $searchFilial = $request->get('filial');
 
-        $protheusItems = [];
-        if ($searchPv) {
-            $protheusItems = $this->protheusService->getItensPorPedido($searchPv, $searchFilial ?: null);
-        } else {
-            $protheusItems = $this->protheusService->getTodosPedidosVenda();
-        }
-
-        $estoqueItems = EstoqueItem::all()->keyBy(function ($item) {
-            return $item->codigo_produto . '_' . ($item->pedido ?? '') . '_' . ($item->op ?? '');
-        });
-
+        $combinedItems = collect();
         $compraItems = CompraItem::all()->keyBy('estoque_item_id');
 
-        $combinedItems = collect();
+        if ($searchPv) {
+            // Busca itens específicos do Pedido no Protheus
+            $protheusItems = $this->protheusService->getItensPorPedido($searchPv, $searchFilial ?: null);
+            $estoqueItems = EstoqueItem::all()->keyBy(function ($item) {
+                return $item->codigo_produto . '_' . ($item->pedido ?? '') . '_' . ($item->op ?? '');
+            });
 
-        foreach ($protheusItems as $pItem) {
-            $key = $pItem['codigo_produto'] . '_' . ($pItem['pedido'] ?? '') . '_' . ($pItem['op'] ?? '');
+            foreach ($protheusItems as $pItem) {
+                if (!is_array($pItem)) continue;
 
-            $estoqueMatch = $estoqueItems->get($key);
+                $key = ($pItem['codigo_produto'] ?? '') . '_' . ($pItem['pedido'] ?? '') . '_' . ($pItem['op'] ?? '');
+                $estoqueMatch = $estoqueItems->get($key);
 
-            if (!$estoqueMatch) {
-                $estoqueMatch = $estoqueItems->firstWhere('codigo_produto', $pItem['codigo_produto']);
+                if (!$estoqueMatch) {
+                    $estoqueMatch = $estoqueItems->firstWhere('codigo_produto', $pItem['codigo_produto'] ?? '');
+                }
+
+                $compraMatch = $estoqueMatch ? $compraItems->get($estoqueMatch->id) : null;
+
+                $valQtdOp = floatval($pItem['quantidade'] ?? ($estoqueMatch ? $estoqueMatch->quantidade : 1));
+                $valQtdEstoque = $estoqueMatch ? floatval($estoqueMatch->quantidade_estoque) : 0;
+                $valQtdComprar = max(0, $valQtdOp - $valQtdEstoque);
+
+                $valUnitario = $compraMatch ? floatval($compraMatch->valor_unitario) : 0;
+                $valIpi = $compraMatch ? floatval($compraMatch->ipi) : 0;
+                $valFrete = $compraMatch ? floatval($compraMatch->frete) : 0;
+                $valTotal = ($valUnitario * $valQtdComprar) + ($valUnitario * $valQtdComprar * ($valIpi / 100)) + $valFrete;
+
+                $statusPcp = $estoqueMatch ? $estoqueMatch->status : 'FALTA';
+                $badgePcp = match($statusPcp) {
+                    'FALTA' => 'badge-falta',
+                    'SEPARADO' => 'badge-separado',
+                    'RETIRADO' => 'badge-retirado',
+                    'FABRICA' => 'badge-fabrica',
+                    'FABRICAR INTERNO KANBAN' => 'badge-kanban',
+                    default => 'badge-falta'
+                };
+
+                $combinedItems->push([
+                    'id_key' => $key,
+                    'pedido_venda' => $pItem['pedido'] ?? ($estoqueMatch ? $estoqueMatch->pedido : '-'),
+                    'cliente_obs' => $pItem['cliente_obs'] ?? ($estoqueMatch ? $estoqueMatch->cliente_obs : '-'),
+                    'codigo_produto' => $pItem['codigo_produto'] ?? '-',
+                    'descricao' => $pItem['descricao'] ?? ($estoqueMatch ? $estoqueMatch->descricao : '-'),
+                    'op' => $pItem['op'] ?? ($estoqueMatch ? $estoqueMatch->op : '-'),
+                    'quantidade' => $valQtdOp,
+                    'quantidade_estoque' => $valQtdEstoque,
+                    'quantidade_comprar' => $valQtdComprar,
+                    'status_pcp' => $statusPcp,
+                    'status_pcp_badge' => $badgePcp,
+                    'estoque_item_id' => $estoqueMatch ? $estoqueMatch->id : null,
+                    'compra_id' => $compraMatch ? $compraMatch->id : null,
+                    'pedido_compra' => $compraMatch ? $compraMatch->pedido_compra : '',
+                    'codigo_fornecedor' => $compraMatch ? $compraMatch->codigo_fornecedor : '',
+                    'valor_unitario' => $valUnitario,
+                    'ipi' => $valIpi,
+                    'data_pc' => $compraMatch ? $compraMatch->data_pc : '',
+                    'data_pagamento' => $compraMatch ? $compraMatch->data_pagamento : '',
+                    'frete' => $valFrete,
+                    'solicitacao_compra' => $compraMatch ? $compraMatch->solicitacao_compra : '',
+                    'condicao_pagamento' => $compraMatch ? $compraMatch->condicao_pagamento : '',
+                    'valor_total' => $valTotal,
+                    'status_pagamento' => $compraMatch ? $compraMatch->status_pagamento : 'PENDENTE',
+                    'no_estoque' => $estoqueMatch ? true : false,
+                ]);
             }
+        } else {
+            // Exibe todos os itens cadastrados no Estoque Local (MySQL)
+            $estoqueItems = EstoqueItem::orderBy('updated_at', 'desc')->get();
 
-            $compraMatch = $estoqueMatch ? $compraItems->get($estoqueMatch->id) : null;
+            foreach ($estoqueItems as $estoqueItem) {
+                $compraMatch = $compraItems->get($estoqueItem->id);
 
-            $valQtdOp = floatval($pItem['quantidade'] ?? ($estoqueMatch ? $estoqueMatch->quantidade : 1));
-            $valQtdEstoque = $estoqueMatch ? floatval($estoqueMatch->quantidade_estoque) : 0;
-            $valQtdComprar = max(0, $valQtdOp - $valQtdEstoque);
+                $valQtdOp = floatval($estoqueItem->quantidade);
+                $valQtdEstoque = floatval($estoqueItem->quantidade_estoque);
+                $valQtdComprar = max(0, $valQtdOp - $valQtdEstoque);
 
-            $valUnitario = $compraMatch ? floatval($compraMatch->valor_unitario) : 0;
-            $valIpi = $compraMatch ? floatval($compraMatch->ipi) : 0;
-            $valFrete = $compraMatch ? floatval($compraMatch->frete) : 0;
+                $valUnitario = $compraMatch ? floatval($compraMatch->valor_unitario) : 0;
+                $valIpi = $compraMatch ? floatval($compraMatch->ipi) : 0;
+                $valFrete = $compraMatch ? floatval($compraMatch->frete) : 0;
+                $valTotal = ($valUnitario * $valQtdComprar) + ($valUnitario * $valQtdComprar * ($valIpi / 100)) + $valFrete;
 
-            $valTotal = ($valUnitario * $valQtdComprar) + ($valUnitario * $valQtdComprar * ($valIpi / 100)) + $valFrete;
+                $statusPcp = $estoqueItem->status ?? 'FALTA';
+                $badgePcp = match($statusPcp) {
+                    'FALTA' => 'badge-falta',
+                    'SEPARADO' => 'badge-separado',
+                    'RETIRADO' => 'badge-retirado',
+                    'FABRICA' => 'badge-fabrica',
+                    'FABRICAR INTERNO KANBAN' => 'badge-kanban',
+                    default => 'badge-falta'
+                };
 
-            $statusPcp = $estoqueMatch ? $estoqueMatch->status : 'FALTA';
-            $badgePcp = match($statusPcp) {
-                'FALTA' => 'badge-falta',
-                'SEPARADO' => 'badge-separado',
-                'RETIRADO' => 'badge-retirado',
-                'FABRICA' => 'badge-fabrica',
-                'FABRICAR INTERNO KANBAN' => 'badge-kanban',
-                default => 'badge-falta'
-            };
-
-            $combinedItems->push([
-                'id_key' => $key,
-                'pedido_venda' => $pItem['pedido'] ?? ($estoqueMatch ? $estoqueMatch->pedido : '-'),
-                'cliente_obs' => $pItem['cliente_obs'] ?? ($estoqueMatch ? $estoqueMatch->cliente_obs : '-'),
-                'codigo_produto' => $pItem['codigo_produto'],
-                'descricao' => $pItem['descricao'] ?? ($estoqueMatch ? $estoqueMatch->descricao : '-'),
-                'op' => $pItem['op'] ?? ($estoqueMatch ? $estoqueMatch->op : '-'),
-                'quantidade' => $valQtdOp,
-                'quantidade_estoque' => $valQtdEstoque,
-                'quantidade_comprar' => $valQtdComprar,
-                'status_pcp' => $statusPcp,
-                'status_pcp_badge' => $badgePcp,
-                'estoque_item_id' => $estoqueMatch ? $estoqueMatch->id : null,
-                'compra_id' => $compraMatch ? $compraMatch->id : null,
-                'pedido_compra' => $compraMatch ? $compraMatch->pedido_compra : '',
-                'codigo_fornecedor' => $compraMatch ? $compraMatch->codigo_fornecedor : '',
-                'valor_unitario' => $valUnitario,
-                'ipi' => $valIpi,
-                'data_pc' => $compraMatch ? $compraMatch->data_pc : '',
-                'data_pagamento' => $compraMatch ? $compraMatch->data_pagamento : '',
-                'frete' => $valFrete,
-                'solicitacao_compra' => $compraMatch ? $compraMatch->solicitacao_compra : '',
-                'condicao_pagamento' => $compraMatch ? $compraMatch->condicao_pagamento : '',
-                'valor_total' => $valTotal,
-                'status_pagamento' => $compraMatch ? $compraMatch->status_pagamento : 'PENDENTE',
-                'no_estoque' => $estoqueMatch ? true : false,
-            ]);
+                $combinedItems->push([
+                    'id_key' => $estoqueItem->id,
+                    'pedido_venda' => $estoqueItem->pedido ?? '-',
+                    'cliente_obs' => $estoqueItem->cliente_obs ?? '-',
+                    'codigo_produto' => $estoqueItem->codigo_produto,
+                    'descricao' => $estoqueItem->descricao ?? '-',
+                    'op' => $estoqueItem->op ?? '-',
+                    'quantidade' => $valQtdOp,
+                    'quantidade_estoque' => $valQtdEstoque,
+                    'quantidade_comprar' => $valQtdComprar,
+                    'status_pcp' => $statusPcp,
+                    'status_pcp_badge' => $badgePcp,
+                    'estoque_item_id' => $estoqueItem->id,
+                    'compra_id' => $compraMatch ? $compraMatch->id : null,
+                    'pedido_compra' => $compraMatch ? $compraMatch->pedido_compra : '',
+                    'codigo_fornecedor' => $compraMatch ? $compraMatch->codigo_fornecedor : '',
+                    'valor_unitario' => $valUnitario,
+                    'ipi' => $valIpi,
+                    'data_pc' => $compraMatch ? $compraMatch->data_pc : '',
+                    'data_pagamento' => $compraMatch ? $compraMatch->data_pagamento : '',
+                    'frete' => $valFrete,
+                    'solicitacao_compra' => $compraMatch ? $compraMatch->solicitacao_compra : '',
+                    'condicao_pagamento' => $compraMatch ? $compraMatch->condicao_pagamento : '',
+                    'valor_total' => $valTotal,
+                    'status_pagamento' => $compraMatch ? $compraMatch->status_pagamento : 'PENDENTE',
+                    'no_estoque' => true,
+                ]);
+            }
         }
 
         // Filtros no Painel de Compras

@@ -50,6 +50,8 @@
 
     <form action="{{ route('estoque.store-batch') }}" method="POST" id="formImportBatch" style="display: none;">
         @csrf
+        <input type="hidden" name="items_json" id="input_items_json">
+
         <div class="table-responsive" style="max-height: 400px; overflow-y: auto; margin-bottom: 1rem; border: 1px solid var(--border-color); border-radius: 0.5rem;">
             <table>
                 <thead style="position: sticky; top: 0; z-index: 10;">
@@ -338,6 +340,7 @@
 
 <script>
 let itemIdParaSalvar = null;
+window.protheusQueryResultItems = [];
 
 function recalcularQtdComprarTela(itemId) {
     const qtdOp = parseFloat(document.getElementById(`qtd_op_${itemId}`).innerText) || 0;
@@ -345,6 +348,31 @@ function recalcularQtdComprarTela(itemId) {
     const qtdComprar = Math.max(0, qtdOp - qtdEst);
     document.getElementById(`display_qtd_comprar_${itemId}`).innerText = qtdComprar;
 }
+
+// Submissão Otimizada por Payload JSON para evitar estouro de max_input_vars
+document.getElementById('formImportBatch').addEventListener('submit', function(e) {
+    const selected = [];
+    const checkboxes = document.querySelectorAll('.checkItem');
+    checkboxes.forEach((cb) => {
+        if (cb.checked) {
+            const idx = parseInt(cb.getAttribute('data-index'));
+            if (window.protheusQueryResultItems && window.protheusQueryResultItems[idx]) {
+                const item = window.protheusQueryResultItems[idx];
+                selected.push({
+                    codigo_produto: item.codigo_produto,
+                    descricao: item.descricao,
+                    op: item.op,
+                    pedido: item.pedido,
+                    cliente_obs: item.cliente_obs,
+                    quantidade: item.quantidade,
+                    quantidade_estoque: 0,
+                    status: 'FALTA'
+                });
+            }
+        }
+    });
+    document.getElementById('input_items_json').value = JSON.stringify(selected);
+});
 
 // 1. Abrir Modal de Confirmação antes de Salvar Linha Única
 function solicitarConfirmacaoSave(itemId, codigoProduto) {
@@ -408,6 +436,7 @@ async function buscarItensProtheus() {
     labelStatus.style.color = 'var(--accent)';
     formBatch.style.display = 'none';
     tbody.innerHTML = '';
+    window.protheusQueryResultItems = [];
 
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
@@ -424,6 +453,7 @@ async function buscarItensProtheus() {
         const result = await response.json();
 
         if (result.success && result.items.length > 0) {
+            window.protheusQueryResultItems = result.items;
             labelStatus.innerHTML = `✅ <strong>${result.count} item(ns) encontrado(s)</strong> para o Pedido <strong>${pedido}</strong> na Filial <strong>${filial || 'Todas'}</strong>. Selecione os itens desejados e clique em importar:`;
             labelStatus.style.color = '#6ee7b7';
 
@@ -433,14 +463,6 @@ async function buscarItensProtheus() {
                 <tr>
                     <td style="text-align: center;">
                         <input type="checkbox" class="checkItem" checked onchange="updateSelectedCount()" data-index="${index}">
-                        <input type="hidden" name="items[${index}][codigo_produto]" value="${item.codigo_produto}">
-                        <input type="hidden" name="items[${index}][descricao]" value="${item.descricao}">
-                        <input type="hidden" name="items[${index}][op]" value="${item.op}">
-                        <input type="hidden" name="items[${index}][pedido]" value="${item.pedido}">
-                        <input type="hidden" name="items[${index}][cliente_obs]" value="${item.cliente_obs}">
-                        <input type="hidden" name="items[${index}][quantidade]" value="${item.quantidade}">
-                        <input type="hidden" name="items[${index}][quantidade_estoque]" value="0">
-                        <input type="hidden" name="items[${index}][status]" value="FALTA">
                     </td>
                     <td><span class="badge badge-faturado">${item.filial}</span></td>
                     <td><strong>${item.pedido}</strong></td>
@@ -471,9 +493,6 @@ function toggleAllCheckboxes(master) {
     const checkboxes = document.querySelectorAll('.checkItem');
     checkboxes.forEach(cb => {
         cb.checked = master.checked;
-        const index = cb.getAttribute('data-index');
-        const hiddenInputs = cb.closest('td').querySelectorAll('input[type="hidden"]');
-        hiddenInputs.forEach(inp => inp.disabled = !master.checked);
     });
     updateSelectedCount();
 }
@@ -482,13 +501,7 @@ function updateSelectedCount() {
     const checkboxes = document.querySelectorAll('.checkItem');
     let count = 0;
     checkboxes.forEach(cb => {
-        const hiddenInputs = cb.closest('td').querySelectorAll('input[type="hidden"]');
-        if (cb.checked) {
-            count++;
-            hiddenInputs.forEach(inp => inp.disabled = false);
-        } else {
-            hiddenInputs.forEach(inp => inp.disabled = true);
-        }
+        if (cb.checked) count++;
     });
     document.getElementById('label_selecionados_count').innerText = `${count} item(ns) selecionado(s)`;
     document.getElementById('btnImportSelected').disabled = (count === 0);

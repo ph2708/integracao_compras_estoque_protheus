@@ -24,6 +24,12 @@ RUN pip3 install --break-system-packages pymssql pymysql
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j$(nproc) pdo_mysql mbstring zip exif pcntl bcmath gd intl pdo_dblib
 
+# Configurações personalizadas do PHP (Aumentar limite de variáveis max_input_vars)
+RUN echo "max_input_vars = 10000" > /usr/local/etc/php/conf.d/custom-limits.ini \
+    && echo "post_max_size = 64M" >> /usr/local/etc/php/conf.d/custom-limits.ini \
+    && echo "upload_max_filesize = 64M" >> /usr/local/etc/php/conf.d/custom-limits.ini \
+    && echo "memory_limit = 512M" >> /usr/local/etc/php/conf.d/custom-limits.ini
+
 # Instalar Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 

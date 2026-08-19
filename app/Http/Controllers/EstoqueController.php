@@ -77,19 +77,26 @@ class EstoqueController extends Controller
     }
 
     /**
-     * Importação em lote dos itens selecionados do Protheus
+     * Importação em lote dos itens selecionados do Protheus (Suporta JSON e Form Array)
      */
     public function storeBatch(Request $request)
     {
-        $request->validate([
-            'items' => 'required|array',
-            'items.*.codigo_produto' => 'required|string',
-            'items.*.quantidade' => 'required|numeric',
-        ]);
+        $itemsData = [];
+        if ($request->filled('items_json')) {
+            $itemsData = json_decode($request->items_json, true) ?? [];
+        } else {
+            $itemsData = $request->items ?? [];
+        }
+
+        if (empty($itemsData)) {
+            return redirect()->back()->with('error', 'Nenhum item válido foi enviado para importação.');
+        }
 
         $importedCount = 0;
 
-        foreach ($request->items as $itemData) {
+        foreach ($itemsData as $itemData) {
+            if (empty($itemData['codigo_produto'])) continue;
+
             $qtdOp = floatval($itemData['quantidade'] ?? 1);
             $qtdEstoque = isset($itemData['quantidade_estoque']) ? floatval($itemData['quantidade_estoque']) : 0;
 

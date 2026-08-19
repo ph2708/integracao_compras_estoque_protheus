@@ -93,7 +93,7 @@ class EstoqueController extends Controller
             return redirect()->back()->with('error', 'Nenhum item válido foi enviado para importação.');
         }
 
-        // ⚡ Busca em lote do histórico da SC7010 UMA ÚNICA VEZ NO MOMENTO DA IMPORTAÇÃO
+        // ⚡ Busca em lote das prévias de valor unitário e fornecedor da SC7010 no momento da importação
         $codigosProdutos = array_filter(array_column($itemsData, 'codigo_produto'));
         $precosBatch = $this->protheusService->getUltimosPrecosBatch($codigosProdutos);
 
@@ -121,7 +121,7 @@ class EstoqueController extends Controller
                 ]
             );
 
-            // Pré-popula os dados financeiros de compras no MySQL para leitura instantânea no painel
+            // Pré-popula os dados financeiros de compras mantendo o Pedido de Compra EM BRANCO por padrão
             $prevCompra = $precosBatch[$itemData['codigo_produto']] ?? null;
             $valQtdComprar = max(0, $qtdOp - $qtdEstoque);
             $valUnitario = floatval($prevCompra['valor_unitario'] ?? 0);
@@ -129,7 +129,7 @@ class EstoqueController extends Controller
             CompraItem::firstOrCreate(
                 ['estoque_item_id' => $estoqueItem->id],
                 [
-                    'pedido_compra' => $prevCompra['pedido_compra'] ?? null,
+                    'pedido_compra' => null, // Mantem em branco conforme solicitado
                     'codigo_fornecedor' => $prevCompra['codigo_fornecedor'] ?? null,
                     'valor_unitario' => $valUnitario,
                     'ipi' => 0,
@@ -176,7 +176,7 @@ class EstoqueController extends Controller
 
         CompraItem::create([
             'estoque_item_id' => $estoqueItem->id,
-            'pedido_compra' => $prevCompra->pedido_compra ?? null,
+            'pedido_compra' => null, // Mantem em branco por padrao
             'codigo_fornecedor' => $prevCompra->codigo_fornecedor ?? null,
             'valor_unitario' => $valUnitario,
             'ipi' => 0,

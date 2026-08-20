@@ -44,6 +44,37 @@
     @endif
 </form>
 
+<!-- Subtotal e Métricas Dinâmicas do Filtro Atual em Compras -->
+<div style="display: flex; gap: 1rem; margin-bottom: 1.25rem; flex-wrap: wrap;">
+    <div class="card" style="flex: 1.5; min-width: 260px; padding: 1rem; border-left: 4px solid #10b981; background: rgba(16, 185, 129, 0.05); display: flex; align-items: center; justify-content: space-between;">
+        <div>
+            <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">💰 Subtotal dos Pedidos (Filtro Atual)</div>
+            <div style="font-size: 1.6rem; font-weight: 800; color: #10b981; margin-top: 0.2rem;">
+                R$ {{ number_format($subtotalValorFiltro ?? 0, 2, ',', '.') }}
+            </div>
+        </div>
+        <div style="font-size: 2rem; opacity: 0.8;">💵</div>
+    </div>
+    <div class="card" style="flex: 1; min-width: 180px; padding: 1rem; border-left: 4px solid #38bdf8; background: rgba(56, 189, 248, 0.05); display: flex; align-items: center; justify-content: space-between;">
+        <div>
+            <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">📦 Total de Itens Filtrados</div>
+            <div style="font-size: 1.6rem; font-weight: 800; color: #38bdf8; margin-top: 0.2rem;">
+                {{ number_format($totalItensFiltro ?? 0, 0, ',', '.') }} <span style="font-size: 0.9rem; font-weight: 500;">itens</span>
+            </div>
+        </div>
+        <div style="font-size: 2rem; opacity: 0.8;">📊</div>
+    </div>
+    <div class="card" style="flex: 1; min-width: 180px; padding: 1rem; border-left: 4px solid #f59e0b; background: rgba(245, 158, 11, 0.05); display: flex; align-items: center; justify-content: space-between;">
+        <div>
+            <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">🛒 Soma Qtd. a Comprar</div>
+            <div style="font-size: 1.6rem; font-weight: 800; color: #f59e0b; margin-top: 0.2rem;">
+                {{ number_format($subtotalQtdComprar ?? 0, 0, ',', '.') }} <span style="font-size: 0.9rem; font-weight: 500;">un</span>
+            </div>
+        </div>
+        <div style="font-size: 2rem; opacity: 0.8;">📦</div>
+    </div>
+</div>
+
 <!-- Tabela de Itens de Compras (Com Edição Linear e Botão Salvar Tudo) -->
 <div class="card">
     <form action="{{ route('compras.update-batch') }}" method="POST" id="formBatchCompras" onsubmit="window.mostrarLoading('💾 Salvando todas as alterações em Compras... Aguarde...')">
@@ -67,7 +98,7 @@
                     <span id="iconSquarePaiCompras">🔲</span> Produto Pai Concatenado
                 </button>
 
-                @if($searchPv || request()->hasAny(['f_produto', 'f_descricao', 'f_desc_longa', 'f_prod_pai', 'f_op', 'f_cliente', 'f_status_pcp', 'f_pedido_compra', 'f_fornecedor', 'f_status_pagamento']))
+                @if($searchPv || request()->hasAny(['f_pv', 'f_produto', 'f_descricao', 'f_desc_longa', 'f_prod_pai', 'f_op', 'f_cliente', 'f_status_pcp', 'f_pedido_compra', 'f_fornecedor', 'f_status_pagamento']))
                     <a href="{{ route('compras.index') }}" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="window.mostrarLoading('⏳ Limpando filtros...')">
                         ✕ Limpar Todos os Filtros
                     </a>
@@ -106,7 +137,9 @@
                         <th>
                             <input type="text" name="f_status_pcp" value="{{ request('f_status_pcp') }}" class="filter-input" placeholder="Multi: FALTA, RETIRADO..." form="formFilterCompras" onchange="document.getElementById('formFilterCompras').submit()">
                         </th>
-                        <th></th>
+                        <th>
+                            <input type="text" name="f_pv" value="{{ request('f_pv') }}" class="filter-input" placeholder="Multi: 005860..." form="formFilterCompras" onchange="document.getElementById('formFilterCompras').submit()">
+                        </th>
                         <th>
                             <input type="text" name="f_cliente" value="{{ request('f_cliente') }}" class="filter-input" placeholder="Multi: A, B..." form="formFilterCompras" onchange="document.getElementById('formFilterCompras').submit()">
                         </th>

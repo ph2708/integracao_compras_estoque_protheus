@@ -47,6 +47,8 @@ class EstoqueController extends Controller
         $this->applyMultiFilter($query, 'codigo_produto', $request->f_produto);
         $this->applyMultiFilter($query, 'descricao', $request->f_descricao);
         $this->applyMultiFilter($query, 'descricao_longa', $request->f_desc_longa);
+        $this->applyMultiFilter($query, 'pedido', $request->f_pedido);
+        $this->applyMultiFilter($query, 'pedido', $request->f_pv);
         $this->applyMultiFilter($query, 'produto_pai', $request->f_prod_pai);
         $this->applyMultiFilter($query, 'op', $request->f_op);
         $this->applyMultiFilter($query, 'status', $request->f_status);

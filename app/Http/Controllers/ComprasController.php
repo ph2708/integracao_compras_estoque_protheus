@@ -176,7 +176,9 @@ class ComprasController extends Controller
             }
         }
 
-        // Filtros Multi-Itens no Painel de Compras
+        if ($request->filled('f_pv')) {
+            $combinedItems = $combinedItems->filter(fn($i) => $this->matchMultiFilter($i['pedido_venda'], $request->f_pv));
+        }
         if ($request->filled('f_produto')) {
             $combinedItems = $combinedItems->filter(fn($i) => $this->matchMultiFilter($i['codigo_produto'], $request->f_produto));
         }
@@ -208,6 +210,11 @@ class ComprasController extends Controller
             $combinedItems = $combinedItems->filter(fn($i) => $this->matchMultiFilter($i['status_pagamento'], $request->f_status_pagamento, true));
         }
 
+        // Subtotais e Métricas Dinâmicas do Filtro Atual
+        $totalItensFiltro = $combinedItems->count();
+        $subtotalValorFiltro = $combinedItems->sum('valor_total');
+        $subtotalQtdComprar = $combinedItems->sum('quantidade_comprar');
+
         // Paginação Manual da Coleção
         $perPage = 15;
         $page = LengthAwarePaginator::resolveCurrentPage() ?: 1;
@@ -221,7 +228,7 @@ class ComprasController extends Controller
 
         $filiaisProtheus = $this->protheusService->getFiliais();
 
-        return view('compras.index', compact('paginatedItems', 'filiaisProtheus', 'searchPv', 'searchFilial'));
+        return view('compras.index', compact('paginatedItems', 'filiaisProtheus', 'searchPv', 'searchFilial', 'totalItensFiltro', 'subtotalValorFiltro', 'subtotalQtdComprar'));
     }
 
     /**

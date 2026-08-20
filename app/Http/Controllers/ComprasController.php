@@ -212,9 +212,9 @@ class ComprasController extends Controller
             $combinedItems = $combinedItems->filter(fn($i) => $this->matchMultiFilter($i['status_pagamento'], $request->f_status_pagamento, true));
         }
 
-        // Subtotais e Métricas Dinâmicas do Filtro Atual
+        // Subtotais e Métricas Dinâmicas do Filtro Atual (Opção B: Qtd OP * Valor Unitário)
         $totalItensFiltro = $combinedItems->count();
-        $subtotalValorFiltro = $combinedItems->sum('valor_total');
+        $subtotalValorFiltro = $combinedItems->sum(fn($i) => floatval($i['quantidade']) * floatval($i['valor_unitario']));
         $subtotalQtdComprar = $combinedItems->sum('quantidade_comprar');
 
         // Paginação Manual da Coleção

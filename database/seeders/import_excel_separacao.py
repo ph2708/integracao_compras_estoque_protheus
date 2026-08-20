@@ -152,7 +152,7 @@ def fetch_protheus_enrichment_data(codigos_produtos, ops, pvs):
                         'descricao_longa': c_longa
                     }
 
-        # 2. Consulta Produto Pai Concatenado e Cliente C2_OBS na SC2010 + SB1010
+        # 2. Consulta Produto Pai Concatenado e Cliente C2_OBS na SC2010 + SB1010 (Priorizando Nomes Reais de Clientes sobre '0000 - ESTOQUE')
         where_clauses = []
         if op_nums:
             ops_formatted = "', '".join(op_nums[:200])
@@ -171,6 +171,7 @@ def fetch_protheus_enrichment_data(codigos_produtos, ops, pvs):
             FROM SC2010 S WITH (NOLOCK)
             LEFT JOIN SB1010 B WITH (NOLOCK) ON RTRIM(S.C2_PRODUTO) = RTRIM(B.B1_COD) AND B.D_E_L_E_T_ = ' '
             WHERE S.D_E_L_E_T_ = ' ' AND ({' OR '.join(where_clauses)})
+            ORDER BY CASE WHEN RTRIM(S.C2_OBS) LIKE '%ESTOQUE%' THEN 1 ELSE 0 END ASC
             """
             cursor.execute(sql_orders)
             for r in cursor.fetchall():
@@ -180,8 +181,12 @@ def fetch_protheus_enrichment_data(codigos_produtos, ops, pvs):
                 pai = (r.get('PRODUTO_PAI') or '').strip()
 
                 val_data = {'produto_pai': pai, 'cliente_obs': obs}
-                if num: order_map['OP_' + num] = val_data
-                if ped: order_map['PV_' + ped] = val_data
+                if num:
+                    if 'OP_' + num not in order_map or ('ESTOQUE' in order_map['OP_' + num].get('cliente_obs', '') and 'ESTOQUE' not in obs):
+                        order_map['OP_' + num] = val_data
+                if ped:
+                    if 'PV_' + ped not in order_map or ('ESTOQUE' in order_map['PV_' + ped].get('cliente_obs', '') and 'ESTOQUE' not in obs):
+                        order_map['PV_' + ped] = val_data
 
         # 3. Consulta Último Preço (C7_PRECO) e Fornecedor (C7_FORNECE) na SC7010
         if cods_unicos:

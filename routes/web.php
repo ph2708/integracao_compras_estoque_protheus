@@ -41,6 +41,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Fechamento de Ordem de Produção (OP)
     Route::get('/fechamento-op', [OpFechamentoController::class, 'index'])->name('fechamento-op.index');
+    Route::post('/fechamento-op/fechar-lote', [OpFechamentoController::class, 'fecharOpsLote'])->name('fechamento-op.fechar-lote');
     Route::post('/fechamento-op/{op}/fechar', [OpFechamentoController::class, 'fecharOp'])->name('fechamento-op.fechar');
 
     // Gestão de Base de Dados e Usuários (Apenas Administradores)

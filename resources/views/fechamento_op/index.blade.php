@@ -74,12 +74,33 @@
     </form>
 </div>
 
+<!-- Form para Encerramento em Lote -->
+<form action="{{ route('fechamento-op.fechar-lote') }}" method="POST" id="formBatchCloseOps">
+    @csrf
+</form>
+
 <!-- Tabela de OPs agrupadas -->
 <div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem; flex-wrap: wrap; gap: 0.75rem;">
+        <h3 style="font-size: 1rem; color: #a5b4fc;">📋 Lista de Ordens de Produção</h3>
+        @if(auth()->user()->canCloseOp())
+            <button type="submit" 
+                    form="formBatchCloseOps" 
+                    class="btn btn-primary" 
+                    style="padding: 0.45rem 0.95rem; font-size: 0.8rem; background-color: #059669; border-color: #059669;" 
+                    onclick="return confirm('Deseja encerrar simultaneamente todas as OPs selecionadas?')">
+                🔒 Encerrar OPs Selecionadas em Lote
+            </button>
+        @endif
+    </div>
+
     <div class="table-responsive">
         <table>
             <thead>
                 <tr>
+                    <th style="width: 40px; text-align: center;">
+                        <input type="checkbox" id="chkSelectAllOps" onchange="toggleSelectAllOps(this.checked)" style="cursor: pointer;">
+                    </th>
                     <th style="min-width: 140px;">Número da OP</th>
                     <th>Pedido de Venda</th>
                     <th>Nome do Cliente</th>
@@ -90,8 +111,17 @@
                 </tr>
             </thead>
             <tbody>
-                @forelse($opsList as $itemOp)
+                @forelse($paginatedOps as $itemOp)
                 <tr>
+                    <td style="text-align: center;">
+                        <input type="checkbox" 
+                               name="op_numbers[]" 
+                               value="{{ $itemOp['op'] }}" 
+                               form="formBatchCloseOps" 
+                               class="chk-op-select" 
+                               {{ !$itemOp['is_elegivel'] ? 'disabled' : '' }} 
+                               style="cursor: pointer;">
+                    </td>
                     <td>
                         <strong style="color: #c084fc; font-size: 0.9rem;">OP #{{ $itemOp['op'] }}</strong>
                     </td>
@@ -161,7 +191,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">
+                    <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">
                         Nenhuma Ordem de Produção encontrada nesta categoria.
                     </td>
                 </tr>
@@ -169,5 +199,23 @@
             </tbody>
         </table>
     </div>
+
+    <!-- Paginação -->
+    <div class="pagination-container">
+        <div>
+            Exibindo <strong>{{ $paginatedOps->firstItem() ?? 0 }}</strong> a <strong>{{ $paginatedOps->lastItem() ?? 0 }}</strong> de <strong>{{ $paginatedOps->total() }}</strong> Ordens de Produção
+        </div>
+        <div>
+            {{ $paginatedOps->links() }}
+        </div>
+    </div>
 </div>
+
+<script>
+function toggleSelectAllOps(checked) {
+    document.querySelectorAll('.chk-op-select:not(:disabled)').forEach(chk => {
+        chk.checked = checked;
+    });
+}
+</script>
 @endsection

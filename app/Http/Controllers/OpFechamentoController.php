@@ -4,12 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\EstoqueItem;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 
 class OpFechamentoController extends Controller
 {
     /**
-     * Lista as Ordens de Produção agrupadas para fechamento
+     * Lista as Ordens de Produção agrupadas para fechamento com suporte a Paginação e Filtros
      */
     public function index(Request $request)
     {
@@ -112,11 +113,22 @@ class OpFechamentoController extends Controller
             ]);
         }
 
-        return view('fechamento_op.index', compact('opsList', 'searchOp', 'searchPedido', 'searchCliente', 'searchDescricao', 'tab'));
+        // Paginação da Coleção de OPs (15 por página)
+        $perPage = 15;
+        $page = $request->get('page', 1);
+        $paginatedOps = new LengthAwarePaginator(
+            $opsList->forPage($page, $perPage)->values(),
+            $opsList->count(),
+            $perPage,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
+        return view('fechamento_op.index', compact('paginatedOps', 'searchOp', 'searchPedido', 'searchCliente', 'searchDescricao', 'tab'));
     }
 
     /**
-     * Processa o encerramento/fechamento de uma OP inteira
+     * Processa o encerramento/fechamento de uma OP individual
      */
     public function fecharOp(Request $request, $opNumber)
     {
@@ -144,5 +156,54 @@ class OpFechamentoController extends Controller
         ]);
 
         return redirect()->back()->with('success', "🔒 Ordem de Produção #{$opNumber} encerrada com sucesso! Todos os {$itensOp->count()} itens foram arquivados das visões diárias.");
+    }
+
+    /**
+     * Encerramento em Lote de Múltiplas OPs Selecionadas
+     */
+    public function fecharOpsLote(Request $request)
+    {
+        $user = auth()->user();
+        if (!$user || !$user->canCloseOp()) {
+            return redirect()->back()->with('error', '⛔ Você não possui permissão para encerrar Ordens de Produção!');
+        }
+
+        $opNumbers = $request->input('op_numbers', []);
+
+        if (empty($opNumbers)) {
+            return redirect()->back()->with('error', 'Nenhuma Ordem de Produção foi selecionada para fechamento.');
+        }
+
+        $closedCount = 0;
+        $skippedCount = 0;
+
+        foreach ($opNumbers as $opNumber) {
+            $itensOp = EstoqueItem::where('op', $opNumber)->get();
+            if ($itensOp->isEmpty()) continue;
+
+            $qtdFalta = $itensOp->where('status', 'FALTA')->count();
+            if ($qtdFalta > 0) {
+                $skippedCount++;
+                continue;
+            }
+
+            EstoqueItem::where('op', $opNumber)->update([
+                'status' => 'FECHADO',
+                'fechada_em' => now(),
+                'fechada_por' => $user->id,
+            ]);
+
+            $closedCount++;
+        }
+
+        if ($closedCount > 0) {
+            $msg = "🔒 Total de {$closedCount} Ordem(ns) de Produção encerrada(s) com sucesso!";
+            if ($skippedCount > 0) {
+                $msg .= " ({$skippedCount} OP(s) ignorada(s) por possuírem itens em FALTA).";
+            }
+            return redirect()->back()->with('success', $msg);
+        }
+
+        return redirect()->back()->with('error', 'Nenhuma das OPs selecionadas pôde ser encerrada (possuem pendências de compra).');
     }
 }

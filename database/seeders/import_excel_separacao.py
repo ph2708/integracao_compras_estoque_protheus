@@ -4,7 +4,8 @@ import os
 import datetime
 
 # Script para importar os 279 itens da planilha Separação.xlsx para o MySQL
-EXCEL_PATH = '/Users/phelipesc/Documents/projetos/projeto_pcp_compras/Separação.xlsx'
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+EXCEL_PATH = os.path.join(BASE_DIR, 'Separação.xlsx')
 
 DB_HOST = os.getenv('DB_HOST', '127.0.0.1')
 DB_PORT = int(os.getenv('DB_PORT', 3306))
@@ -28,6 +29,10 @@ def parse_date(val):
         return None
 
 def import_excel():
+    if not os.path.exists(EXCEL_PATH):
+        print(f"Aviso: Planilha não encontrada no caminho {EXCEL_PATH}")
+        return
+
     print(f"Lendo arquivo Excel: {EXCEL_PATH}...")
     wb = openpyxl.load_workbook(EXCEL_PATH, data_only=True)
     sheet = wb.active
@@ -101,7 +106,6 @@ def import_excel():
         except:
             qtd_comprado = 0.0
 
-        # Qtd OP total = Qtd em Estoque + Qtd a Comprar/Comprado
         quantidade_op = max(1.0, qtd_estoque + qtd_comprado)
 
         try:

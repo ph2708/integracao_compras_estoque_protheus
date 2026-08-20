@@ -22,9 +22,6 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        $scriptPath = base_path('database/seeders/import_excel_separacao.py');
-        if (file_exists($scriptPath)) {
-            exec("python3 " . escapeshellarg($scriptPath));
-        }
+        $this->call(ExcelDataSeeder::class);
     }
 }

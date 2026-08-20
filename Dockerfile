@@ -1,6 +1,6 @@
 FROM php:8.4-fpm-alpine
 
-# Instalar dependências de sistema, Python3 e bibliotecas MSSQL
+# Instalar dependências de sistema, Python3 e bibliotecas MSSQL/Excel
 RUN apk add --no-cache \
     nginx \
     supervisor \
@@ -18,7 +18,7 @@ RUN apk add --no-cache \
     python3-dev \
     g++
 
-RUN pip3 install --break-system-packages pymssql pymysql
+RUN pip3 install --break-system-packages openpyxl pymssql pymysql
 
 # Instalar extensões PHP
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \

@@ -120,47 +120,46 @@ def import_excel(target_path=None, mode='truncate'):
         row_str = [str(cell).strip().upper() for cell in row if cell is not None]
         if is_header:
             row_text = ' '.join(row_str)
-            if any(k in row_text for k in ['ORDEM PRODUCAO', 'ORDEM PRODUÇÃO', 'CODIGO PRODUTO', 'CÓDIGO PRODUTO', 'PV']):
+            if any(k in row_text for k in ['ORDEM PRODUCAO', 'ORDEM PRODUÇÃO', 'ORD PRODUCAO', 'ORD PRODUÇÃO', 'CODIGO PRODUTO', 'CÓDIGO PRODUTO', 'PV', 'CÓDIGO', 'CODIGO']):
                 is_header = False
                 for idx, cell in enumerate(row):
                     if cell is not None:
                         col_name = str(cell).strip().upper()
                         col_map[col_name] = idx
-                print(f"Cabeçalho mapeado com {len(col_map)} colunas: {list(col_map.keys())}")
+                print(f"Cabeçalho mapeado com {len(col_map)} colunas.")
             continue
 
-        # Mapeamento dinâmico de colunas ou por índice fallback
-        idx_op = col_map.get('ORDEM PRODUCAO', col_map.get('ORDEM PRODUÇÃO', 0))
-        idx_pv = col_map.get('PV', 1)
-        idx_cod = col_map.get('CODIGO PRODUTO', col_map.get('CÓDIGO PRODUTO', 2))
-        idx_desc = col_map.get('DESCRIÇÃO COMPONENTE', col_map.get('DESCRICAO COMPONENTE', col_map.get('DESCRIÇÃO', 3)))
-        idx_desc_longa = col_map.get('DESCRIÇÃO LONGA (B5_CEME)', col_map.get('DESCRIÇÃO LONGA', col_map.get('DESCRICAO LONGA', None)))
-        idx_pai = col_map.get('PRODUTO PAI CONCATENADO', col_map.get('PRODUTO PAI', None))
-        idx_status = col_map.get('STATUS PCP', 5)
-        idx_qtd_est = col_map.get('QTD EM ESTOQUE', 6)
-        idx_obs_est = col_map.get('OBSERVAÇÃO ESTOQUE', col_map.get('OBSERVACAO ESTOQUE', 7))
-        idx_sc = col_map.get('SOLICITAÇÃO DE COMPRA', col_map.get('SOLICITACAO DE COMPRA', 8))
-        idx_comprado = col_map.get('COMPRADO', 9)
-        idx_val_unit = col_map.get('VALOR UNITARIO COMPRA', col_map.get('VALOR UNITÁRIO COMPRA', 10))
-        idx_pagto = col_map.get('TIPO PAGAMENTO/FATURADO', 11)
-        idx_forn = col_map.get('FORNECEDOR SELECIONADO', 12)
-        idx_pc = col_map.get('PEDIDO COMPRA (PROTHEUS)', col_map.get('PEDIDO COMPRA', 13))
-        idx_ipi = col_map.get('IPI COMPRA', 14)
-        idx_d_pc = col_map.get('DATA EMISSÃO PC', col_map.get('DATA EMISSAO PC', 15))
-        idx_d_pg = col_map.get('DATA PREVISÃO PGTO', col_map.get('DATA PREVISAO PGTO', 16))
+        def get_col_val(col_names, default=None):
+            for name in col_names:
+                name_upper = name.upper()
+                if name_upper in col_map:
+                    idx = col_map[name_upper]
+                    if idx < len(row) and row[idx] is not None:
+                        return row[idx]
+            return default
 
-        op = str(row[idx_op]).strip() if len(row) > idx_op and row[idx_op] is not None else None
-        pedido = str(row[idx_pv]).strip() if len(row) > idx_pv and row[idx_pv] is not None else None
-        codigo_produto = str(row[idx_cod]).strip() if len(row) > idx_cod and row[idx_cod] is not None else None
+        raw_op = get_col_val(['ORDEM PRODUCAO', 'ORDEM PRODUÇÃO', 'ORD PRODUCAO', 'ORD PRODUÇÃO'])
+        raw_pv = get_col_val(['PV', 'PEDIDO DE VENDA', 'PEDIDO'])
+        raw_cod = get_col_val(['CODIGO PRODUTO', 'CÓDIGO PRODUTO', 'CÓDIGO', 'CODIGO'])
 
-        if not codigo_produto or codigo_produto == 'None' or codigo_produto == '':
+        op = str(raw_op).strip() if raw_op is not None and str(raw_op).strip() != 'None' else None
+        pedido = str(raw_pv).strip() if raw_pv is not None and str(raw_pv).strip() != 'None' else None
+        codigo_produto = str(raw_cod).strip() if raw_cod is not None and str(raw_cod).strip() != 'None' else None
+
+        if not codigo_produto or codigo_produto == '':
             continue
 
-        descricao = str(row[idx_desc]).strip() if len(row) > idx_desc and row[idx_desc] is not None else ''
-        descricao_longa = str(row[idx_desc_longa]).strip() if idx_desc_longa is not None and len(row) > idx_desc_longa and row[idx_desc_longa] is not None and str(row[idx_desc_longa]).strip() != 'None' else descricao
-        produto_pai = str(row[idx_pai]).strip() if idx_pai is not None and len(row) > idx_pai and row[idx_pai] is not None and str(row[idx_pai]).strip() != 'None' else None
+        raw_desc = get_col_val(['DESCRIÇÃO COMPONENTE', 'DESCRICAO COMPONENTE', 'DESCRIÇÃO MATERIAL', 'DESCRICAO MATERIAL', 'DESCRIÇÃO', 'DESCRICAO'])
+        descricao = str(raw_desc).strip() if raw_desc is not None and str(raw_desc).strip() != 'None' else ''
 
-        status_pcp = str(row[idx_status]).strip().upper() if len(row) > idx_status and row[idx_status] is not None else 'FALTA'
+        raw_desc_longa = get_col_val(['DESCRIÇÃO LONGA (B5_CEME)', 'DESCRIÇÃO LONGA', 'DESCRICAO LONGA', 'DESC. LONGA'])
+        descricao_longa = str(raw_desc_longa).strip() if raw_desc_longa is not None and str(raw_desc_longa).strip() != 'None' else descricao
+
+        raw_pai = get_col_val(['PRODUTO PAI CONCATENADO', 'PRODUTO PAI'])
+        produto_pai = str(raw_pai).strip() if raw_pai is not None and str(raw_pai).strip() != 'None' else None
+
+        raw_status = get_col_val(['STATUS PCP', 'STATUS PCP/ALMOX', 'STATUS ALMOX', 'STATUS PCP ATUAL'])
+        status_pcp = str(raw_status).strip().upper() if raw_status is not None else 'FALTA'
         if status_pcp not in ['FALTA', 'SEPARADO', 'RETIRADO', 'FABRICA', 'FABRICAR INTERNO KANBAN']:
             if 'KANBAN' in status_pcp:
                 status_pcp = 'FABRICAR INTERNO KANBAN'
@@ -169,23 +168,32 @@ def import_excel(target_path=None, mode='truncate'):
             else:
                 status_pcp = 'FALTA'
 
-        qtd_estoque = parse_float(row[idx_qtd_est]) if len(row) > idx_qtd_est else 0.0
-        obs_estoque = str(row[idx_obs_est]).strip() if len(row) > idx_obs_est and row[idx_obs_est] is not None and str(row[idx_obs_est]).strip() != 'None' else None
-        solicitacao_compra = str(row[idx_sc]).strip() if len(row) > idx_sc and row[idx_sc] is not None and str(row[idx_sc]).strip() != 'None' else None
-        qtd_comprado = parse_float(row[idx_comprado]) if len(row) > idx_comprado else 0.0
+        qtd_estoque = parse_float(get_col_val(['QTD EM ESTOQUE', 'SALDO ATUAL', 'SALDO', 'QTD. EMPENHO']))
+        raw_obs_est = get_col_val(['OBSERVAÇÃO ESTOQUE', 'OBSERVACAO ESTOQUE', 'LOG', 'OBSERVAÇÃO', 'OBSERVACAO'])
+        obs_estoque = str(raw_obs_est).strip() if raw_obs_est is not None and str(raw_obs_est).strip() != 'None' else None
 
+        raw_sc = get_col_val(['SOLICITAÇÃO DE COMPRA', 'SOLICITACAO DE COMPRA', 'SC'])
+        solicitacao_compra = str(raw_sc).strip() if raw_sc is not None and str(raw_sc).strip() != 'None' else None
+
+        qtd_comprado = parse_float(get_col_val(['COMPRADO', 'QTD COMPRADO', 'QTD']))
         quantidade_op = max(1.0, qtd_estoque + qtd_comprado)
-        valor_unitario = parse_float(row[idx_val_unit]) if len(row) > idx_val_unit else 0.0
+        valor_unitario = parse_float(get_col_val(['VALOR UNITARIO COMPRA', 'VALOR UNITÁRIO COMPRA', 'VALOR UNITÁRIO', 'VALOR UNITARIO']))
 
-        status_pagamento_raw = str(row[idx_pagto]).strip().upper() if len(row) > idx_pagto and row[idx_pagto] is not None else 'PENDENTE'
+        raw_pagto = get_col_val(['TIPO PAGAMENTO/FATURADO', 'TIPO PAGAMENTO', 'SITUACAO'])
+        status_pagamento_raw = str(raw_pagto).strip().upper() if raw_pagto is not None else 'PENDENTE'
         status_pagamento = status_pagamento_raw if status_pagamento_raw in ['PENDENTE', 'PAGAMENTO ANTECIPADO', 'FATURADO', 'PAGO'] else 'PENDENTE'
 
-        fornecedor = str(row[idx_forn]).strip() if len(row) > idx_forn and row[idx_forn] is not None and str(row[idx_forn]).strip() != 'None' else None
-        pedido_compra = str(row[idx_pc]).strip() if len(row) > idx_pc and row[idx_pc] is not None and str(row[idx_pc]).strip() != 'None' else None
-        ipi = parse_float(row[idx_ipi]) if len(row) > idx_ipi else 0.0
+        raw_forn = get_col_val(['FORNECEDOR SELECIONADO', 'FORNECEDOR'])
+        fornecedor = str(raw_forn).strip() if raw_forn is not None and str(raw_forn).strip() != 'None' else None
 
-        data_pc = parse_date(row[idx_d_pc]) if len(row) > idx_d_pc else None
-        data_pagamento = parse_date(row[idx_d_pg]) if len(row) > idx_d_pg else None
+        raw_pc = get_col_val(['PEDIDO COMPRA (PROTHEUS)', 'PEDIDO COMPRA'])
+        pedido_compra = str(raw_pc).strip() if raw_pc is not None and str(raw_pc).strip() != 'None' else None
+
+        raw_ipi = get_col_val(['IPI COMPRA', 'IPI COMPRA (%)', 'IPI'])
+        ipi = parse_float(raw_ipi)
+
+        data_pc = parse_date(get_col_val(['DATA EMISSÃO PC', 'DATA EMISSAO PC', 'DATA PC', 'DT EMPENHO']))
+        data_pagamento = parse_date(get_col_val(['DATA PREVISÃO PGTO', 'DATA PREVISAO PGTO', 'DT PAG.', 'DATA PGTO']))
 
         val_total = (valor_unitario * qtd_comprado) + (valor_unitario * qtd_comprado * (ipi / 100))
 

@@ -3,13 +3,45 @@
 @section('content')
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
     <div>
-        <h1 style="font-size: 1.5rem; font-weight: 700;">📥 Importador de Base de Dados (Excel / CSV)</h1>
-        <p style="color: var(--text-muted); font-size: 0.8rem;">Área exclusiva do Administrador para carga em lote de demandas e histórico financeiro.</p>
+        <h1 style="font-size: 1.5rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem;">
+            ⚙️ Gestão de Base de Dados (Importador, Exportador & Limpador)
+        </h1>
+        <p style="color: var(--text-muted); font-size: 0.8rem;">Ferramentas administrativas para manutenção, carga em lote, exportação e zeramento da base local MySQL.</p>
     </div>
-    <div style="display: flex; gap: 0.5rem;">
+    
+    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+        <!-- Botão Baixar Modelo -->
         <a href="{{ route('importar.modelo') }}" class="btn btn-primary" style="background-color: #059669; font-weight: 600;">
-            📥 Baixar Planilha Modelo (.CSV / Excel)
+            📥 Baixar Planilha Modelo (.CSV)
         </a>
+
+        <!-- Botão Exportar Base Completa -->
+        <a href="{{ route('importar.export') }}" class="btn btn-primary" style="background-color: #0284c7; font-weight: 600;">
+            📤 Exportar Base Atual (.CSV)
+        </a>
+
+        <!-- Botão Limpar Base -->
+        <form action="{{ route('importar.clear') }}" method="POST" onsubmit="return confirm('⚠️ ATENÇÃO: Tem certeza que deseja apagar TODOS os registros do Estoque PCP e Compras? Esta ação é irreversível!')" style="margin: 0;">
+            @csrf
+            <button type="submit" class="btn btn-primary" style="background-color: #dc2626; font-weight: 600;">
+                🗑️ Limpar Toda a Base
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- KPIs de Status da Base Atual -->
+<div class="kpi-grid" style="margin-bottom: 1.25rem;">
+    <div class="kpi-card" style="border-left-color: #6366f1;">
+        <div class="kpi-title">Itens Registrados no Estoque PCP</div>
+        <div class="kpi-value" style="color: #a5b4fc;">{{ number_format($totalEstoque, 0, ',', '.') }}</div>
+        <div class="kpi-subtitle">Registros cadastrados na tabela <code>estoque_items</code></div>
+    </div>
+
+    <div class="kpi-card" style="border-left-color: #10b981;">
+        <div class="kpi-title">Itens Registrados em Compras</div>
+        <div class="kpi-value" style="color: #6ee7b7;">{{ number_format($totalCompras, 0, ',', '.') }}</div>
+        <div class="kpi-subtitle">Registros vinculados na tabela <code>compras_items</code></div>
     </div>
 </div>
 
@@ -17,14 +49,14 @@
     <!-- Form Card: Upload de Planilha -->
     <div class="card" style="border-color: rgba(99, 102, 241, 0.5);">
         <h3 style="font-size: 1.1rem; color: #a5b4fc; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
-            📁 Selecionar Arquivo para Importação
+            📥 Carga / Importação de Planilha
         </h3>
 
         <form action="{{ route('importar.process') }}" method="POST" enctype="multipart/form-data" onsubmit="window.mostrarLoading('📥 Importando planilha e alimentando o banco de dados... Aguarde...')">
             @csrf
             
             <div class="form-group" style="margin-bottom: 1.25rem;">
-                <label class="form-label" style="font-weight: 600;">Arquivo da Planilha (.xlsx, .xls ou .csv) *</label>
+                <label class="form-label" style="font-weight: 600;">Selecione o Arquivo (.xlsx, .xls ou .csv) *</label>
                 <input type="file" name="arquivo" class="form-control" accept=".xlsx,.xls,.csv" required style="padding: 0.5rem;">
                 <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.35rem;">
                     Tamanho máximo: 20MB. Formatos aceitos: Excel (.xlsx, .xls) ou Texto Separado por Ponto e Vírgula (.csv).
@@ -55,23 +87,23 @@
 
     <!-- Instructions Card: Passos para Importação -->
     <div class="card" style="border-color: rgba(56, 189, 248, 0.4);">
-        <h3 style="font-size: 1.1rem; color: #38bdf8; margin-bottom: 1rem;">ℹ️ Instruções Importantes</h3>
+        <h3 style="font-size: 1.1rem; color: #38bdf8; margin-bottom: 1rem;">ℹ️ Instruções e Recursos</h3>
         
         <ol style="padding-left: 1.25rem; font-size: 0.85rem; line-height: 1.6; color: #cbd5e1;">
             <li style="margin-bottom: 0.5rem;">
-                <strong>Baixe a planilha modelo</strong> clicando no botão verde no topo para ter a estrutura correta de colunas.
+                <strong>📤 Exportar Base Atual</strong>: Permite baixar um arquivo CSV com 100% dos dados cadastrados atualmente, podendo ser editado e reimportado a qualquer momento.
             </li>
             <li style="margin-bottom: 0.5rem;">
-                Certifique-se de que a coluna <code>CODIGO PRODUTO</code> esteja preenchida em todas as linhas.
+                <strong>🗑️ Limpar Toda a Base</strong>: Apaga todos os registros das tabelas locais para realizar testes ou reiniciar os lançamentos.
             </li>
             <li style="margin-bottom: 0.5rem;">
-                O campo <code>STATUS PCP</code> aceita as opções: <span style="color: #fca5a5;">FALTA</span>, <span style="color: #fcd34d;">SEPARADO</span>, <span style="color: #6ee7b7;">RETIRADO</span>, <span style="color: #93c5fd;">FABRICA</span> ou <span style="color: #c084fc;">KANBAN</span>.
+                <strong>📥 Baixar Modelo</strong>: Fornece um arquivo exemplo zerado com todos os cabeçalhos das 16 colunas aceitas pelo sistema.
             </li>
             <li style="margin-bottom: 0.5rem;">
-                Os valores numéricos (Valores em R$, Quantidades e IPI) devem utilizar ponto <code>.</code> como separador decimal.
+                O campo <code>STATUS PCP</code> aceita: <span style="color: #fca5a5;">FALTA</span>, <span style="color: #fcd34d;">SEPARADO</span>, <span style="color: #6ee7b7;">RETIRADO</span>, <span style="color: #93c5fd;">FABRICA</span> ou <span style="color: #c084fc;">KANBAN</span>.
             </li>
             <li style="margin-bottom: 0.5rem;">
-                As datas podem ser informadas nos formatos <code>AAAA-MM-DD</code> ou <code>DD/MM/AAAA</code>.
+                Os valores numéricos (Valores em R$, Quantidades e IPI) usam ponto <code>.</code> como separador decimal.
             </li>
         </ol>
     </div>
@@ -79,7 +111,7 @@
 
 <!-- Guia Detalhado de Colunas Requeridas -->
 <div class="card">
-    <h3 style="font-size: 1rem; color: #a5b4fc; margin-bottom: 0.85rem;">📋 Guia de Estrutura de Colunas da Planilha</h3>
+    <h3 style="font-size: 1rem; color: #a5b4fc; margin-bottom: 0.85rem;">📋 Guia de Estrutura de Colunas da Planilha (16 Colunas Aceitas)</h3>
     <div class="table-responsive">
         <table>
             <thead>

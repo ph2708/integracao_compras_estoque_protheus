@@ -38,11 +38,13 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/compras/update-batch', [ComprasController::class, 'updateBatch'])->name('compras.update-batch');
     Route::put('/compras/{id}', [ComprasController::class, 'update'])->name('compras.update');
 
-    // Gestão de Usuários e Importador de Base (Apenas Administradores)
+    // Gestão de Base de Dados e Usuários (Apenas Administradores)
     Route::middleware([\App\Http\Middleware\AdminMiddleware::class])->group(function () {
         Route::resource('users', UserController::class)->except(['create', 'edit', 'show']);
         Route::get('/importar', [ImportController::class, 'index'])->name('importar.index');
         Route::post('/importar', [ImportController::class, 'import'])->name('importar.process');
         Route::get('/importar/modelo', [ImportController::class, 'downloadModelo'])->name('importar.modelo');
+        Route::get('/importar/exportar', [ImportController::class, 'export'])->name('importar.export');
+        Route::post('/importar/limpar', [ImportController::class, 'clearBase'])->name('importar.clear');
     });
 });

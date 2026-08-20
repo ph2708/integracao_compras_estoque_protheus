@@ -25,8 +25,14 @@ def parse_date(val):
         if '/' in val_str:
             parts = val_str.split('/')
             if len(parts) == 3:
-                return f"{parts[2]}-{parts[1]:0>2}-{parts[0]:0>2}"
-        return val_str
+                d, m, y = int(parts[0]), int(parts[1]), int(parts[2])
+                return f"{y:04d}-{m:02d}-{d:02d}"
+        if '-' in val_str:
+            parts = val_str.split('-')
+            if len(parts) == 3 and len(parts[0]) == 4:
+                int(parts[0]); int(parts[1]); int(parts[2])
+                return val_str
+        return None
     except:
         return None
 
@@ -192,8 +198,8 @@ def import_excel(target_path=None, mode='truncate'):
         raw_ipi = get_col_val(['IPI COMPRA', 'IPI COMPRA (%)', 'IPI'])
         ipi = parse_float(raw_ipi)
 
-        data_pc = parse_date(get_col_val(['DATA EMISSÃO PC', 'DATA EMISSAO PC', 'DATA PC', 'DT EMPENHO']))
-        data_pagamento = parse_date(get_col_val(['DATA PREVISÃO PGTO', 'DATA PREVISAO PGTO', 'DT PAG.', 'DATA PGTO']))
+        data_pc = parse_date(get_col_val(['DATA EMISSÃO PC', 'DATA EMISSAO PC', 'DATA PC']))
+        data_pagamento = parse_date(get_col_val(['DATA PREVISÃO PGTO', 'DATA PREVISAO PGTO', 'DATA PGTO', 'DT PAG.']))
 
         val_total = (valor_unitario * qtd_comprado) + (valor_unitario * qtd_comprado * (ipi / 100))
 

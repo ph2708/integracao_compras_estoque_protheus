@@ -123,7 +123,11 @@
                                style="cursor: pointer;">
                     </td>
                     <td>
-                        <strong style="color: #c084fc; font-size: 0.9rem;">OP #{{ $itemOp['op'] }}</strong>
+                        <strong style="color: #c084fc; font-size: 0.9rem; cursor: pointer; text-decoration: underline;" 
+                                onclick='abrirModalConferenciaOp({{ json_encode($itemOp) }})' 
+                                title="Clique para abrir a janela de conferência dos componentes desta OP">
+                            🔍 OP #{{ $itemOp['op'] }}
+                        </strong>
                     </td>
                     <td><strong>{{ $itemOp['pedido'] }}</strong></td>
                     <td style="font-size: 0.775rem;">{{ $itemOp['cliente_obs'] }}</td>
@@ -211,11 +215,97 @@
     </div>
 </div>
 
+<!-- Modal: Janela de Conferência de Itens da OP -->
+<div class="card" id="modalConferenciaOp" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10000; width: 95%; max-width: 950px; max-height: 90vh; overflow-y: auto; border-color: rgba(168, 85, 247, 0.8); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.9);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+        <h3 style="font-size: 1.1rem; color: #c084fc;" id="modalConferenciaTitle">🔍 Conferência de Itens da Ordem de Produção</h3>
+        <button type="button" class="btn btn-secondary" style="padding: 0.2rem 0.5rem;" onclick="fecharModalConferenciaOp()">✕</button>
+    </div>
+
+    <!-- Info Banner da OP -->
+    <div style="display: flex; gap: 1.25rem; flex-wrap: wrap; margin-bottom: 1rem; background: rgba(255,255,255,0.03); padding: 0.75rem 1rem; border-radius: 0.5rem; border: 1px solid var(--border-color);">
+        <div><span style="color: var(--text-muted); font-size: 0.75rem;">Número da OP:</span> <strong id="modalConfOpNum" style="color: #c084fc;">-</strong></div>
+        <div><span style="color: var(--text-muted); font-size: 0.75rem;">Pedido de Venda:</span> <strong id="modalConfPedido" style="color: #60a5fa;">-</strong></div>
+        <div><span style="color: var(--text-muted); font-size: 0.75rem;">Nome do Cliente:</span> <strong id="modalConfCliente" style="color: #fcd34d;">-</strong></div>
+        <div><span style="color: var(--text-muted); font-size: 0.75rem;">Total de Componentes:</span> <span id="modalConfTotalItens" class="badge badge-faturado">0</span></div>
+    </div>
+
+    <!-- Tabela de Componentes da OP -->
+    <div class="table-responsive" style="max-height: 420px; overflow-y: auto;">
+        <table>
+            <thead>
+                <tr>
+                    <th>Status PCP</th>
+                    <th>Código Produto</th>
+                    <th>Descrição</th>
+                    <th>Produto Pai Concatenado</th>
+                    <th style="text-align: center;">Qtd OP</th>
+                    <th style="text-align: center;">Qtd Estoque</th>
+                    <th style="text-align: center;">Qtd Comprar</th>
+                    <th>Observação do PCP</th>
+                </tr>
+            </thead>
+            <tbody id="tbodyConferenciaOp">
+                <!-- Preenchido dinamicamente via JS -->
+            </tbody>
+        </table>
+    </div>
+
+    <div style="display: flex; justify-content: flex-end; margin-top: 1.25rem;">
+        <button type="button" class="btn btn-secondary" onclick="fecharModalConferenciaOp()">Fechar Janela de Conferência</button>
+    </div>
+</div>
+<div id="modalOverlayConferenciaOp" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); z-index: 9999;" onclick="fecharModalConferenciaOp()"></div>
+
 <script>
 function toggleSelectAllOps(checked) {
     document.querySelectorAll('.chk-op-select:not(:disabled)').forEach(chk => {
         chk.checked = checked;
     });
+}
+
+function abrirModalConferenciaOp(dataOp) {
+    document.getElementById('modalConferenciaTitle').innerText = `🔍 Janela de Conferência de Componentes - OP #${dataOp.op}`;
+    document.getElementById('modalConfOpNum').innerText = `#${dataOp.op}`;
+    document.getElementById('modalConfPedido').innerText = dataOp.pedido;
+    document.getElementById('modalConfCliente').innerText = dataOp.cliente_obs;
+    document.getElementById('modalConfTotalItens').innerText = `${dataOp.total_itens} item(ns)`;
+
+    const tbody = document.getElementById('tbodyConferenciaOp');
+    tbody.innerHTML = '';
+
+    dataOp.itens.forEach(item => {
+        const tr = document.createElement('tr');
+
+        const badgeClass = item.status === 'FALTA' ? 'badge-falta' :
+                           item.status === 'SEPARADO' ? 'badge-separado' :
+                           item.status === 'RETIRADO' ? 'badge-retirado' :
+                           item.status === 'FABRICA' ? 'badge-fabrica' : 'badge-kanban';
+
+        const qtdOp = parseFloat(item.quantidade || 0);
+        const qtdEst = parseFloat(item.quantidade_estoque || 0);
+        const qtdComprar = Math.max(0, qtdOp - qtdEst);
+
+        tr.innerHTML = `
+            <td><span class="badge ${badgeClass}">${item.status}</span></td>
+            <td><strong>${item.codigo_produto}</strong></td>
+            <td style="font-size: 0.775rem;">${item.descricao || '-'}</td>
+            <td style="font-size: 0.775rem;"><span class="badge-produto-pai">${item.produto_pai || '-'}</span></td>
+            <td style="text-align: center;"><strong>${qtdOp}</strong></td>
+            <td style="text-align: center; color: #fcd34d;">${qtdEst}</td>
+            <td style="text-align: center; font-weight: bold; color: ${qtdComprar > 0 ? '#ef4444' : '#10b981'};">${qtdComprar}</td>
+            <td style="font-size: 0.75rem; color: var(--text-muted);">${item.observacao_estoque || '-'}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+
+    document.getElementById('modalConferenciaOp').style.display = 'block';
+    document.getElementById('modalOverlayConferenciaOp').style.display = 'block';
+}
+
+function fecharModalConferenciaOp() {
+    document.getElementById('modalConferenciaOp').style.display = 'none';
+    document.getElementById('modalOverlayConferenciaOp').style.display = 'none';
 }
 </script>
 @endsection

@@ -42,10 +42,11 @@
         header {
             background-color: var(--card-bg);
             border-bottom: 1px solid var(--border-color);
-            padding: 0.85rem 1.5rem;
+            padding: 0.85rem 1.75rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            width: 100%;
         }
 
         .brand {
@@ -89,10 +90,10 @@
 
         main {
             flex: 1;
-            padding: 1.5rem;
-            max-width: 1600px;
+            padding: 1.25rem 1.75rem;
+            max-width: 100%;
             width: 100%;
-            margin: 0 auto;
+            margin: 0;
         }
 
         .card {
@@ -102,6 +103,7 @@
             padding: 1.25rem;
             margin-bottom: 1.25rem;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            width: 100%;
         }
 
         /* Responsive Grid de KPIs */
@@ -248,7 +250,7 @@
         }
 
         .btn-secondary {
-            background-color: var(--border-color);
+            background-color: #334155;
             color: var(--text-main);
         }
 
@@ -256,88 +258,75 @@
             background-color: #475569;
         }
 
+        /* Badges de Status PCP */
         .badge {
             display: inline-block;
-            padding: 0.15rem 0.45rem;
+            padding: 0.25rem 0.5rem;
             border-radius: 0.25rem;
             font-size: 0.7rem;
             font-weight: 600;
-            text-transform: uppercase;
+            text-align: center;
+            white-space: nowrap;
         }
 
-        .badge-falta { background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.4); }
-        .badge-separado { background: rgba(245, 158, 11, 0.2); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.4); }
-        .badge-retirado { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.4); }
-        .badge-fabrica { background: rgba(59, 130, 246, 0.2); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.4); }
-        .badge-kanban { background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.4); }
+        .badge-falta { background-color: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.4); }
+        .badge-separado { background-color: rgba(16, 185, 129, 0.2); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.4); }
+        .badge-retirado { background-color: rgba(59, 130, 246, 0.2); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.4); }
+        .badge-fabrica { background-color: rgba(245, 158, 11, 0.2); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.4); }
+        .badge-kanban { background-color: rgba(168, 85, 247, 0.2); color: #d8b4fe; border: 1px solid rgba(168, 85, 247, 0.4); }
 
-        .badge-pendente { background: rgba(245, 158, 11, 0.2); color: #fcd34d; }
-        .badge-faturado { background: rgba(59, 130, 246, 0.2); color: #93c5fd; }
-        .badge-pago { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; }
-
-        .alert {
-            padding: 0.75rem 1rem;
-            border-radius: 0.375rem;
-            margin-bottom: 1.25rem;
-            font-size: 0.85rem;
-        }
-        .alert-success { background-color: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); color: #6ee7b7; }
-        .alert-danger { background-color: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; }
-
-        /* Custom Dark Mode Pagination Styles */
+        /* Paginação Dark Mode */
         .pagination-container {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-top: 1rem;
-            padding-top: 1rem;
-            border-top: 1px solid var(--border-color);
-            flex-wrap: wrap;
-            gap: 0.5rem;
+            padding: 1rem 0 0 0;
             font-size: 0.8rem;
             color: var(--text-muted);
         }
 
-        .pagination-container ul.pagination {
+        .pagination {
             display: flex;
-            list-style: none;
             gap: 0.25rem;
-            margin: 0;
-            padding: 0;
+            list-style: none;
         }
 
-        .pagination-container .page-item .page-link {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0.35rem 0.7rem;
-            border-radius: 0.375rem;
-            background-color: #0f172a;
-            border: 1px solid var(--border-color);
+        .pagination li a, .pagination li span {
+            padding: 0.3rem 0.6rem;
+            border-radius: 0.25rem;
+            background-color: #1e293b;
             color: var(--text-main);
             text-decoration: none;
-            font-size: 0.8rem;
-            transition: all 0.2s;
+            border: 1px solid var(--border-color);
+            font-size: 0.75rem;
         }
 
-        .pagination-container .page-item.active .page-link {
+        .pagination li.active span {
             background-color: var(--accent);
             border-color: var(--accent);
-            color: #ffffff;
-            font-weight: 700;
         }
 
-        .pagination-container .page-item.disabled .page-link {
-            opacity: 0.4;
-            cursor: not-allowed;
+        /* Overlay e Spinner de Loading */
+        #globalLoadingOverlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(4px);
+            z-index: 99999;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
         }
 
-        /* Loading Spinner */
-        .loading-spinner {
+        .spinner {
             width: 50px;
             height: 50px;
             border: 5px solid rgba(99, 102, 241, 0.2);
-            border-top-color: #6366f1;
+            border-top: 5px solid var(--accent);
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
         }
@@ -349,18 +338,22 @@
     </style>
 </head>
 <body>
-    <!-- Global Loading Overlay Spinner -->
-    <div id="globalLoadingOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(4px); z-index: 99999; flex-direction: column; align-items: center; justify-content: center; gap: 1.25rem; color: #f8fafc;">
-        <div class="loading-spinner"></div>
-        <div id="globalLoadingText" style="font-size: 1.15rem; font-weight: 600; color: #a5b4fc; text-align: center; max-width: 400px; padding: 0 1rem; line-height: 1.5;">
-            ⏳ Buscando dados no Protheus... Aguarde...
-        </div>
+
+    <!-- Overlay Global de Carregamento -->
+    <div id="globalLoadingOverlay">
+        <div class="spinner"></div>
+        <p id="globalLoadingText" style="margin-top: 1.25rem; font-size: 0.95rem; font-weight: 500; color: #a5b4fc;">
+            Consultando Protheus... Por favor aguarde...
+        </p>
     </div>
 
+    <!-- Header / Navbar Principal -->
     <header>
-        <a href="{{ route('dashboard') }}" class="brand">
+        <a href="{{ route('compras.index') }}" class="brand">
             ⚡ TOTVS Protheus <span>PCP & Compras</span>
         </a>
+
+        @auth
         <nav>
             <a href="{{ route('dashboard') }}" class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
                 📊 Dashboard
@@ -371,40 +364,48 @@
             <a href="{{ route('compras.index') }}" class="nav-link {{ request()->routeIs('compras.*') ? 'active' : '' }}">
                 🛒 Compras
             </a>
-            @if(auth()->check() && auth()->user()->isAdmin())
-                <a href="{{ route('importar.index') }}" class="nav-link {{ request()->routeIs('importar.*') ? 'active' : '' }}">
-                    📥 Importar Base
-                </a>
-                <a href="{{ route('users.index') }}" class="nav-link {{ request()->routeIs('users.*') ? 'active' : '' }}">
-                    👥 Usuários
-                </a>
+
+            @if(auth()->user()->is_admin)
+            <a href="{{ route('importar.index') }}" class="nav-link {{ request()->routeIs('importar.*') ? 'active' : '' }}">
+                📥 Importar Base
+            </a>
+            <a href="{{ route('users.index') }}" class="nav-link {{ request()->routeIs('users.*') ? 'active' : '' }}">
+                👥 Usuários
+            </a>
             @endif
         </nav>
-        <div style="display: flex; align-items: center; gap: 0.75rem;">
-            @auth
-                <div style="text-align: right; font-size: 0.75rem;">
-                    <div style="font-weight: 600; color: var(--text-main);">{{ auth()->user()->name }}</div>
-                    <span class="badge badge-fabrica" style="font-size: 0.6rem; padding: 0.1rem 0.3rem;">{{ auth()->user()->role }}</span>
-                </div>
-                <form action="{{ route('logout') }}" method="POST" style="margin: 0;">
-                    @csrf
-                    <button type="submit" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; background-color: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3);">
-                        🚪 Sair
-                    </button>
-                </form>
-            @endauth
+
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <div style="text-align: right; font-size: 0.75rem;">
+                <div style="font-weight: 600; color: var(--text-main);">{{ auth()->user()->name }}</div>
+                @if(auth()->user()->is_admin)
+                    <span style="font-size: 0.65rem; background: rgba(99, 102, 241, 0.2); color: #a5b4fc; padding: 0.1rem 0.35rem; border-radius: 0.2rem; border: 1px solid rgba(99, 102, 241, 0.4);">ADMIN</span>
+                @else
+                    <span style="font-size: 0.65rem; color: var(--text-muted);">USUÁRIO</span>
+                @endif
+            </div>
+
+            <form action="{{ route('logout') }}" method="POST" style="margin: 0;" onsubmit="window.mostrarLoading('🚪 Encerrando sessão...')">
+                @csrf
+                <button type="submit" class="btn btn-secondary" style="padding: 0.3rem 0.65rem; font-size: 0.75rem; background-color: #991b1b; color: #fecaca; border: 1px solid #7f1d1d;">
+                    🚪 Sair
+                </button>
+            </form>
         </div>
+        @endauth
     </header>
 
+    <!-- Conteúdo Principal Flutuante / Full-Width -->
     <main>
+        <!-- Mensagens de Alerta Flash -->
         @if(session('success'))
-            <div class="alert alert-success">
+            <div class="card" style="border-color: #059669; background-color: rgba(5, 150, 105, 0.15); color: #6ee7b7; padding: 0.75rem 1rem; margin-bottom: 1rem;">
                 {{ session('success') }}
             </div>
         @endif
 
         @if(session('error'))
-            <div class="alert alert-danger">
+            <div class="card" style="border-color: #dc2626; background-color: rgba(220, 38, 38, 0.15); color: #fca5a5; padding: 0.75rem 1rem; margin-bottom: 1rem;">
                 {{ session('error') }}
             </div>
         @endif
@@ -415,11 +416,11 @@
     <script>
         window.mostrarLoading = function(mensagem) {
             const overlay = document.getElementById('globalLoadingOverlay');
-            const textEl = document.getElementById('globalLoadingText');
-            if (mensagem && textEl) {
-                textEl.innerHTML = mensagem;
-            }
+            const textLabel = document.getElementById('globalLoadingText');
             if (overlay) {
+                if (mensagem) {
+                    textLabel.innerText = mensagem;
+                }
                 overlay.style.display = 'flex';
             }
         };
@@ -430,17 +431,6 @@
                 overlay.style.display = 'none';
             }
         };
-
-        document.addEventListener('DOMContentLoaded', function() {
-            const forms = document.querySelectorAll('form');
-            forms.forEach(form => {
-                form.addEventListener('submit', function() {
-                    if (this.checkValidity()) {
-                        window.mostrarLoading();
-                    }
-                });
-            });
-        });
     </script>
 </body>
 </html>

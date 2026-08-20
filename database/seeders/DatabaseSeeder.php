@@ -21,5 +21,10 @@ class DatabaseSeeder extends Seeder
                 'role' => 'ADMIN',
             ]
         );
+
+        $scriptPath = base_path('database/seeders/import_excel_separacao.py');
+        if (file_exists($scriptPath)) {
+            exec("python3 " . escapeshellarg($scriptPath));
+        }
     }
 }

@@ -83,6 +83,7 @@ def import_excel(target_path=None, mode='truncate'):
         idx_pv = col_map.get('PV', 2)
         idx_cod = col_map.get('CODIGO PRODUTO', 3)
         idx_desc = col_map.get('DESCRIÇÃO COMPONENTE', 4)
+        idx_desc_longa = col_map.get('DESCRIÇÃO LONGA (B5_CEME)', col_map.get('DESCRIÇÃO LONGA', None))
         idx_pai = col_map.get('PRODUTO PAI CONCATENADO', col_map.get('PRODUTO PAI', None))
         idx_status = col_map.get('STATUS PCP', 5)
         idx_qtd_est = col_map.get('QTD EM ESTOQUE', 6)
@@ -105,6 +106,7 @@ def import_excel(target_path=None, mode='truncate'):
             continue
 
         descricao = str(row[idx_desc]).strip() if len(row) > idx_desc and row[idx_desc] is not None else ''
+        descricao_longa = str(row[idx_desc_longa]).strip() if idx_desc_longa is not None and len(row) > idx_desc_longa and row[idx_desc_longa] is not None and str(row[idx_desc_longa]).strip() != 'None' else descricao
         produto_pai = str(row[idx_pai]).strip() if idx_pai is not None and len(row) > idx_pai and row[idx_pai] is not None and str(row[idx_pai]).strip() != 'None' else None
 
         status_pcp = str(row[idx_status]).strip().upper() if len(row) > idx_status and row[idx_status] is not None else 'FALTA'
@@ -152,10 +154,10 @@ def import_excel(target_path=None, mode='truncate'):
 
         # Inserir no Estoque
         sql_est = """
-        INSERT INTO estoque_items (codigo_produto, descricao, produto_pai, op, pedido, cliente_obs, quantidade, quantidade_estoque, status, observacao_estoque, created_at, updated_at)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        INSERT INTO estoque_items (codigo_produto, descricao, descricao_longa, produto_pai, op, pedido, cliente_obs, quantidade, quantidade_estoque, status, observacao_estoque, created_at, updated_at)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
-        cursor.execute(sql_est, (codigo_produto, descricao, produto_pai, op, pedido, None, quantidade_op, qtd_estoque, status_pcp, obs_estoque, now_str, now_str))
+        cursor.execute(sql_est, (codigo_produto, descricao, descricao_longa, produto_pai, op, pedido, None, quantidade_op, qtd_estoque, status_pcp, obs_estoque, now_str, now_str))
         estoque_id = cursor.lastrowid
 
         # Inserir em Compras

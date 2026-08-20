@@ -159,20 +159,51 @@
         th {
             background-color: #0f172a;
             color: #a5b4fc;
-            padding: 0.6rem 0.75rem;
+            padding: 0.75rem 0.85rem;
             font-weight: 600;
             border-bottom: 2px solid var(--border-color);
             white-space: nowrap;
         }
 
         td {
-            padding: 0.5rem 0.75rem;
+            padding: 0.7rem 0.85rem;
             border-bottom: 1px solid var(--border-color);
             vertical-align: middle;
         }
 
         tr:hover td {
-            background-color: rgba(255, 255, 255, 0.02);
+            background-color: rgba(255, 255, 255, 0.03);
+        }
+
+        /* Badges de Colunas Especiais (Produto Pai e Descrição Longa) */
+        .badge-produto-pai {
+            display: inline-block;
+            padding: 0.4rem 0.75rem;
+            font-size: 0.78rem;
+            font-weight: 500;
+            line-height: 1.45;
+            color: #d8b4fe;
+            background: rgba(168, 85, 247, 0.15);
+            border: 1px solid rgba(168, 85, 247, 0.35);
+            border-radius: 0.375rem;
+            word-break: break-word;
+            white-space: normal;
+            max-width: 320px;
+        }
+
+        .badge-desc-longa {
+            display: inline-block;
+            padding: 0.4rem 0.75rem;
+            font-size: 0.78rem;
+            font-weight: 400;
+            line-height: 1.45;
+            color: #7dd3fc;
+            background: rgba(56, 189, 248, 0.12);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            border-radius: 0.375rem;
+            word-break: break-word;
+            white-space: normal;
+            max-width: 350px;
         }
 
         /* Linha de Filtros de Colunas */

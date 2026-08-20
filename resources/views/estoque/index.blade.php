@@ -176,15 +176,60 @@
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem; flex-wrap: wrap; gap: 0.5rem;">
             <h3 style="font-size: 1rem;">📋 Itens Cadastrados no Estoque Local (MySQL)</h3>
             <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
-                <!-- Quadradinho Toggle para Exibir/Ocultar Coluna Descrição Longa -->
-                <button type="button" class="btn btn-secondary" onclick="toggleColunaDescricaoLonga()" style="padding: 0.35rem 0.65rem; font-size: 0.75rem; border-color: rgba(56, 189, 248, 0.5); font-weight: 500;">
-                    <span id="iconSquareDescLonga">🔲</span> Descrição Longa (SB5010)
-                </button>
-
-                <!-- Quadradinho Toggle para Exibir/Ocultar Coluna Produto Pai -->
-                <button type="button" class="btn btn-secondary" onclick="toggleColunaProdutoPai()" style="padding: 0.35rem 0.65rem; font-size: 0.75rem; border-color: rgba(168, 85, 247, 0.5); font-weight: 500;">
-                    <span id="iconSquarePai">🔲</span> Produto Pai Concatenado
-                </button>
+                <!-- Seletor de Colunas Visíveis Estilo Excel -->
+                <div class="dropdown" style="position: relative; display: inline-block;">
+                    <button type="button" class="btn btn-secondary" onclick="toggleMenuColunasEstoque()" style="padding: 0.35rem 0.65rem; font-size: 0.75rem; border-color: rgba(99, 102, 241, 0.5); font-weight: 500;">
+                        ⚙️ Colunas Visíveis (Excel) ▾
+                    </button>
+                    <div id="dropdownMenuColunasEstoque" style="display: none; position: absolute; right: 0; top: 110%; z-index: 1000; background-color: #0f172a; border: 1px solid #334155; border-radius: 0.5rem; padding: 0.85rem; width: 310px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.7); font-size: 0.78rem;">
+                        <div style="font-weight: 700; margin-bottom: 0.6rem; color: #a5b4fc; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 0.4rem;">
+                            <span>👁️ Exibir/Ocultar Colunas</span>
+                            <span style="font-size: 0.7rem; color: #94a3b8; font-weight: normal;">(Salvo Auto)</span>
+                        </div>
+                        <div style="max-height: 290px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.45rem;">
+                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                <input type="checkbox" id="chk_col-status-pcp-atual" onchange="toggleColunaEstoque('col-status-pcp-atual', this.checked)"> Status PCP Atual
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                <input type="checkbox" id="chk_col-pv" onchange="toggleColunaEstoque('col-pv', this.checked)"> Pedido (C2_PEDIDO / PV)
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                <input type="checkbox" id="chk_col-codigo-produto" onchange="toggleColunaEstoque('col-codigo-produto', this.checked)"> Código Produto
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                <input type="checkbox" id="chk_col-descricao" onchange="toggleColunaEstoque('col-descricao', this.checked)"> Descrição Curta
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: #38bdf8;">
+                                <input type="checkbox" id="chk_col-desc-longa" onchange="toggleColunaEstoque('col-desc-longa', this.checked)"> Descrição Longa (SB5010)
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: #c084fc;">
+                                <input type="checkbox" id="chk_col-produto-pai" onchange="toggleColunaEstoque('col-produto-pai', this.checked)"> Produto Pai Concatenado
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                <input type="checkbox" id="chk_col-op" onchange="toggleColunaEstoque('col-op', this.checked)"> Ordem de Produção (OP)
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                <input type="checkbox" id="chk_col-qtd-op" onchange="toggleColunaEstoque('col-qtd-op', this.checked)"> Qtd OP
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                <input type="checkbox" id="chk_col-qtd-comprar" onchange="toggleColunaEstoque('col-qtd-comprar', this.checked)"> Qtd a Comprar
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                <input type="checkbox" id="chk_col-cliente" onchange="toggleColunaEstoque('col-cliente', this.checked)"> Nome do Cliente (C2_OBS)
+                            </label>
+                            <hr style="border-color: #334155; margin: 0.3rem 0;">
+                            <label style="display: flex; align-items: center; gap: 0.5rem; opacity: 0.6; cursor: not-allowed; color: #fcd34d;">
+                                <input type="checkbox" checked disabled> 🔒 Qtd Estoque ✏️ (Sempre Visível)
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.5rem; opacity: 0.6; cursor: not-allowed; color: #38bdf8;">
+                                <input type="checkbox" checked disabled> 🔒 Observação Estoque ✏️ (Sempre Visível)
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.5rem; opacity: 0.6; cursor: not-allowed;">
+                                <input type="checkbox" checked disabled> 🔒 Alterar Status PCP ✏️ (Sempre Visível)
+                            </label>
+                        </div>
+                    </div>
+                </div>
 
                 @if(request()->hasAny(['f_pedido', 'f_produto', 'f_descricao', 'f_desc_longa', 'f_prod_pai', 'f_op', 'f_status', 'f_cliente']))
                     <a href="{{ route('estoque.index') }}" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="window.mostrarLoading('⏳ Limpando filtros...')">
@@ -201,32 +246,32 @@
             <table>
                 <thead>
                     <tr>
-                        <th style="min-width: 130px;">Status PCP Atual</th>
-                        <th>Pedido (C2_PEDIDO)</th>
-                        <th>Código Produto</th>
-                        <th>Descrição</th>
+                        <th class="col-status-pcp-atual" style="min-width: 130px;">Status PCP Atual</th>
+                        <th class="col-pv">Pedido (C2_PEDIDO)</th>
+                        <th class="col-codigo-produto">Código Produto</th>
+                        <th class="col-descricao">Descrição</th>
                         <th class="col-desc-longa" style="display: none; color: #38bdf8;">Descrição Longa (B5_CEME - SB5010)</th>
                         <th class="col-produto-pai" style="display: none; color: #c084fc;">Código / Produto Pai Concatenado</th>
-                        <th>OP</th>
-                        <th style="text-align: center;">Qtd OP</th>
-                        <th style="color: #fcd34d; text-align: center;">Qtd Estoque ✏️</th>
-                        <th style="color: #6ee7b7; text-align: center;">Qtd a Comprar</th>
-                        <th>Nome do Cliente (C2_OBS)</th>
-                        <th style="color: #38bdf8;">Observação Estoque ✏️</th>
-                        <th>Alterar Status PCP ✏️</th>
-                        <th style="text-align: center; color: #a5b4fc;">Ações</th>
+                        <th class="col-op">OP</th>
+                        <th class="col-qtd-op" style="text-align: center;">Qtd OP</th>
+                        <th class="col-qtd-estoque" style="color: #fcd34d; text-align: center;">Qtd Estoque ✏️</th>
+                        <th class="col-qtd-comprar" style="color: #6ee7b7; text-align: center;">Qtd a Comprar</th>
+                        <th class="col-cliente">Nome do Cliente (C2_OBS)</th>
+                        <th class="col-obs-estoque" style="color: #38bdf8;">Observação Estoque ✏️</th>
+                        <th class="col-status-pcp-edit">Alterar Status PCP ✏️</th>
+                        <th class="col-acoes" style="text-align: center; color: #a5b4fc;">Ações</th>
                     </tr>
                     <tr class="filter-row">
-                        <th>
+                        <th class="col-status-pcp-atual">
                             <input type="text" name="f_status" value="{{ request('f_status') }}" class="filter-input" placeholder="Multi: FALTA, RETIRADO..." form="formFilterEstoque" onchange="document.getElementById('formFilterEstoque').submit()">
                         </th>
-                        <th>
+                        <th class="col-pv">
                             <input type="text" name="f_pedido" value="{{ request('f_pedido') }}" class="filter-input" placeholder="Multi: 0066, 0067..." form="formFilterEstoque" onchange="document.getElementById('formFilterEstoque').submit()">
                         </th>
-                        <th>
+                        <th class="col-codigo-produto">
                             <input type="text" name="f_produto" value="{{ request('f_produto') }}" class="filter-input" placeholder="Multi: 6164, 1050..." form="formFilterEstoque" onchange="document.getElementById('formFilterEstoque').submit()">
                         </th>
-                        <th>
+                        <th class="col-descricao">
                             <input type="text" name="f_descricao" value="{{ request('f_descricao') }}" class="filter-input" placeholder="Multi: CABO, CHAVE..." form="formFilterEstoque" onchange="document.getElementById('formFilterEstoque').submit()">
                         </th>
                         <th class="col-desc-longa" style="display: none;">
@@ -235,24 +280,24 @@
                         <th class="col-produto-pai" style="display: none;">
                             <input type="text" name="f_prod_pai" value="{{ request('f_prod_pai') }}" class="filter-input" placeholder="Multi: QUADRO, 9510..." form="formFilterEstoque" onchange="document.getElementById('formFilterEstoque').submit()">
                         </th>
-                        <th>
+                        <th class="col-op">
                             <input type="text" name="f_op" value="{{ request('f_op') }}" class="filter-input" placeholder="Multi: 0187, 0188..." form="formFilterEstoque" onchange="document.getElementById('formFilterEstoque').submit()">
                         </th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th>
+                        <th class="col-qtd-op"></th>
+                        <th class="col-qtd-estoque"></th>
+                        <th class="col-qtd-comprar"></th>
+                        <th class="col-cliente">
                             <input type="text" name="f_cliente" value="{{ request('f_cliente') }}" class="filter-input" placeholder="Multi: CLIENTE A, B..." form="formFilterEstoque" onchange="document.getElementById('formFilterEstoque').submit()">
                         </th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
+                        <th class="col-obs-estoque"></th>
+                        <th class="col-status-pcp-edit"></th>
+                        <th class="col-acoes"></th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($items as $item)
                     <tr id="row_estoque_{{ $item->id }}">
-                        <td>
+                        <td class="col-status-pcp-atual">
                             @php
                                 $badgeClass = match($item->status) {
                                     'FALTA' => 'badge-falta',
@@ -265,20 +310,20 @@
                             @endphp
                             <span class="badge {{ $badgeClass }}" id="badge_status_{{ $item->id }}">{{ $item->status }}</span>
                         </td>
-                        <td><strong>{{ $item->pedido ?? '-' }}</strong></td>
-                        <td><strong>{{ $item->codigo_produto }}</strong></td>
-                        <td style="font-size: 0.775rem;">{{ $item->descricao ?? '-' }}</td>
-                        <td class="col-desc-longa" style="display: none; font-size: 0.75rem; color: #38bdf8;">
-                            <span style="background: rgba(56, 189, 248, 0.12); padding: 0.15rem 0.35rem; border-radius: 0.25rem; border: 1px solid rgba(56, 189, 248, 0.3);">{{ $item->descricao_longa ?? ($item->descricao ?? '-') }}</span>
+                        <td class="col-pv"><strong>{{ $item->pedido ?? '-' }}</strong></td>
+                        <td class="col-codigo-produto"><strong>{{ $item->codigo_produto }}</strong></td>
+                        <td class="col-descricao" style="font-size: 0.775rem;">{{ $item->descricao ?? '-' }}</td>
+                        <td class="col-desc-longa" style="display: none;">
+                            <span class="badge-desc-longa">{{ $item->descricao_longa ?? ($item->descricao ?? '-') }}</span>
                         </td>
-                        <td class="col-produto-pai" style="display: none; font-size: 0.75rem; color: #c084fc;">
-                            <code style="background: rgba(168, 85, 247, 0.15); padding: 0.15rem 0.35rem; border-radius: 0.25rem; border: 1px solid rgba(168, 85, 247, 0.3);">{{ $item->produto_pai ?? '-' }}</code>
+                        <td class="col-produto-pai" style="display: none;">
+                            <span class="badge-produto-pai">{{ $item->produto_pai ?? '-' }}</span>
                         </td>
-                        <td><code style="color: var(--accent); font-size: 0.75rem;">{{ $item->op ?? '-' }}</code></td>
-                        <td style="text-align: center;">
+                        <td class="col-op"><code style="color: var(--accent); font-size: 0.75rem;">{{ $item->op ?? '-' }}</code></td>
+                        <td class="col-qtd-op" style="text-align: center;">
                             <strong id="qtd_op_{{ $item->id }}" style="color: #38bdf8; font-size: 0.85rem;">{{ floatval($item->quantidade) }}</strong>
                         </td>
-                        <td style="text-align: center;">
+                        <td class="col-qtd-estoque" style="text-align: center;">
                             @php
                                 $valQtdEstoque = floatval($item->quantidade_estoque);
                             @endphp
@@ -291,7 +336,7 @@
                                    style="width: 100px; text-align: center; margin: 0 auto; padding: 0.2rem 0.4rem; font-weight: 600; color: #fcd34d;"
                                    onchange="recalcularLinhaEstoque({{ $item->id }})">
                         </td>
-                        <td style="text-align: center;">
+                        <td class="col-qtd-comprar" style="text-align: center;">
                             @php
                                 $valQtdComprar = floatval($item->quantidade_comprar);
                             @endphp
@@ -300,8 +345,8 @@
                                 {{ $valQtdComprar }}
                             </span>
                         </td>
-                        <td style="font-size: 0.775rem;">{{ $item->cliente_obs ?? '-' }}</td>
-                        <td>
+                        <td class="col-cliente" style="font-size: 0.775rem;">{{ $item->cliente_obs ?? '-' }}</td>
+                        <td class="col-obs-estoque">
                             <input type="text" 
                                    name="items[{{ $item->id }}][observacao_estoque]" 
                                    value="{{ $item->observacao_estoque }}" 
@@ -309,7 +354,7 @@
                                    placeholder="Observação..."
                                    style="min-width: 140px; padding: 0.2rem 0.4rem; font-size: 0.75rem;">
                         </td>
-                        <td>
+                        <td class="col-status-pcp-edit">
                             <select name="items[{{ $item->id }}][status]" 
                                     id="select_status_{{ $item->id }}"
                                     class="form-select" 
@@ -322,7 +367,7 @@
                                 <option value="FABRICAR INTERNO KANBAN" {{ $item->status == 'FABRICAR INTERNO KANBAN' ? 'selected' : '' }}>KANBAN</option>
                             </select>
                         </td>
-                        <td style="text-align: center;">
+                        <td class="col-acoes" style="text-align: center;">
                             <button type="button" 
                                     class="btn btn-primary" 
                                     style="padding: 0.2rem 0.5rem; font-size: 0.7rem;"
@@ -590,5 +635,53 @@ document.getElementById('btnConfirmarSaveAction').addEventListener('click', func
     document.body.appendChild(form);
     form.submit();
 });
+
+// Gestor de Visibilidade de Colunas (Excel) para Estoque
+const ESTOQUE_COLUNAS_PADRAO = {
+    'col-status-pcp-atual': true,
+    'col-pv': true,
+    'col-codigo-produto': true,
+    'col-descricao': true,
+    'col-desc-longa': false,
+    'col-produto-pai': false,
+    'col-op': true,
+    'col-qtd-op': true,
+    'col-qtd-comprar': true,
+    'col-cliente': true
+};
+
+function toggleMenuColunasEstoque() {
+    const el = document.getElementById('dropdownMenuColunasEstoque');
+    if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+document.addEventListener('click', function(e) {
+    const menu = document.getElementById('dropdownMenuColunasEstoque');
+    if (menu && !menu.contains(e.target) && !e.target.closest('.dropdown')) {
+        menu.style.display = 'none';
+    }
+});
+
+function toggleColunaEstoque(colClass, isChecked) {
+    const elements = document.querySelectorAll('.' + colClass);
+    elements.forEach(el => {
+        el.style.display = isChecked ? '' : 'none';
+    });
+    let prefs = JSON.parse(localStorage.getItem('estoque_colunas_visiveis') || '{}');
+    prefs[colClass] = isChecked;
+    localStorage.setItem('estoque_colunas_visiveis', JSON.stringify(prefs));
+}
+
+function inicializarColunasEstoque() {
+    let prefs = JSON.parse(localStorage.getItem('estoque_colunas_visiveis') || '{}');
+    Object.keys(ESTOQUE_COLUNAS_PADRAO).forEach(colClass => {
+        let isChecked = prefs.hasOwnProperty(colClass) ? prefs[colClass] : ESTOQUE_COLUNAS_PADRAO[colClass];
+        const chk = document.getElementById('chk_' + colClass);
+        if (chk) chk.checked = isChecked;
+        toggleColunaEstoque(colClass, isChecked);
+    });
+}
+
+document.addEventListener('DOMContentLoaded', inicializarColunasEstoque);
 </script>
 @endsection

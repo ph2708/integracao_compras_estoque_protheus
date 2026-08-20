@@ -103,7 +103,10 @@
                                 <input type="checkbox" id="chk_col-status-pcp" onchange="toggleColunaCompras('col-status-pcp', this.checked)"> Status PCP
                             </label>
                             <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                                <input type="checkbox" id="chk_col-pv" onchange="toggleColunaCompras('col-pv', this.checked)"> PV (Pedido de Venda)
+                                <input type="checkbox" id="chk_col-pv" onchange="toggleColunaCompras('col-pv', this.checked)"> Pedido de Venda (PV)
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: #c084fc;">
+                                <input type="checkbox" id="chk_col-op" onchange="toggleColunaCompras('col-op', this.checked)"> N° da OP
                             </label>
                             <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
                                 <input type="checkbox" id="chk_col-cliente" onchange="toggleColunaCompras('col-cliente', this.checked)"> Cliente (C2_OBS)
@@ -160,6 +163,7 @@
                     <tr>
                         <th class="col-status-pcp" style="min-width: 120px;">Status PCP</th>
                         <th class="col-pv">PV</th>
+                        <th class="col-op" style="color: #c084fc;">N° da OP</th>
                         <th class="col-cliente">Cliente (C2_OBS)</th>
                         <th class="col-codigo-produto">Código Produto</th>
                         <th class="col-descricao">Descrição</th>
@@ -230,6 +234,7 @@
                             <span class="badge {{ $item['status_pcp_badge'] }}">{{ $item['status_pcp'] }}</span>
                         </td>
                         <td class="col-pv"><strong>{{ $item['pedido_venda'] }}</strong></td>
+                        <td class="col-op"><strong style="color: #c084fc;">{{ $item['op'] ?? '-' }}</strong></td>
                         <td class="col-cliente" style="font-size: 0.775rem;">{{ $item['cliente_obs'] }}</td>
                         <td class="col-codigo-produto"><strong>{{ $item['codigo_produto'] }}</strong></td>
                         <td class="col-descricao" style="font-size: 0.775rem;">{{ $item['descricao'] }}</td>
@@ -460,6 +465,7 @@ function solicitarSalvarSingleCompra(estoqueId) {
 const COMPRAS_COLUNAS_PADRAO = {
     'col-status-pcp': true,
     'col-pv': true,
+    'col-op': true,
     'col-cliente': true,
     'col-codigo-produto': true,
     'col-descricao': true,

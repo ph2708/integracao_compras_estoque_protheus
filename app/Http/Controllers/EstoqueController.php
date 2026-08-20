@@ -51,7 +51,11 @@ class EstoqueController extends Controller
         $this->applyMultiFilter($query, 'pedido', $request->f_pv);
         $this->applyMultiFilter($query, 'produto_pai', $request->f_prod_pai);
         $this->applyMultiFilter($query, 'op', $request->f_op);
-        $this->applyMultiFilter($query, 'status', $request->f_status);
+        if ($request->filled('f_status')) {
+            $this->applyMultiFilter($query, 'status', $request->f_status);
+        } else {
+            $query->where('status', '!=', 'FECHADO');
+        }
         $this->applyMultiFilter($query, 'cliente_obs', $request->f_cliente);
 
         $items = $query->orderBy('updated_at', 'desc')->paginate(15)->withQueryString();

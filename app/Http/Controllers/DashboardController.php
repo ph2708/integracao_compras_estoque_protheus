@@ -138,6 +138,39 @@ class DashboardController extends Controller
             ->limit(7)
             ->get();
 
+        // Métricas de Fechamento de OPs
+        $currentMonth = now()->month;
+        $currentYear = now()->year;
+
+        $opsFechadasMes = EstoqueItem::where('status', 'FECHADO')
+            ->whereNotNull('op')
+            ->where('op', '!=', '')
+            ->whereMonth('fechada_em', $currentMonth)
+            ->whereYear('fechada_em', $currentYear)
+            ->distinct('op')
+            ->count('op');
+
+        // Histórico mensal de OPs fechadas nos últimos 6 meses para o Gráfico
+        $opsFechadasPorMesRaw = EstoqueItem::select(
+                DB::raw("DATE_FORMAT(fechada_em, '%Y-%m') as mes_ano"),
+                DB::raw("COUNT(DISTINCT op) as total_ops")
+            )
+            ->where('status', 'FECHADO')
+            ->whereNotNull('op')
+            ->where('op', '!=', '')
+            ->whereNotNull('fechada_em')
+            ->groupBy('mes_ano')
+            ->orderBy('mes_ano', 'asc')
+            ->limit(6)
+            ->get();
+
+        $opsFechadasPorMesLabels = [];
+        $opsFechadasPorMesValues = [];
+        foreach ($opsFechadasPorMesRaw as $row) {
+            $opsFechadasPorMesLabels[] = $row->mes_ano;
+            $opsFechadasPorMesValues[] = (int) $row->total_ops;
+        }
+
         // Lista de Pedidos para o Filtro Dropdown
         $pedidosDisponiveis = EstoqueItem::whereNotNull('pedido')
             ->where('pedido', '!=', '')
@@ -155,6 +188,9 @@ class DashboardController extends Controller
             'valorTotalPago',
             'valorTotalAntecipado',
             'valorTotalSeparado',
+            'opsFechadasMes',
+            'opsFechadasPorMesLabels',
+            'opsFechadasPorMesValues',
             'statusEstoqueCounts',
             'statusComprasValores',
             'topPedidosValores',

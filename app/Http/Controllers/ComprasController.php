@@ -199,6 +199,8 @@ class ComprasController extends Controller
         }
         if ($request->filled('f_status_pcp')) {
             $combinedItems = $combinedItems->filter(fn($i) => $this->matchMultiFilter($i['status_pcp'], $request->f_status_pcp, true));
+        } else {
+            $combinedItems = $combinedItems->filter(fn($i) => $i['status_pcp'] !== 'FECHADO');
         }
         if ($request->filled('f_pedido_compra')) {
             $combinedItems = $combinedItems->filter(fn($i) => $this->matchMultiFilter($i['pedido_compra'], $request->f_pedido_compra));

@@ -79,7 +79,7 @@
 </div>
 
 <!-- Grid de Indicadores Quantitativos -->
-<div class="kpi-grid" style="margin-bottom: 1rem;">
+<div class="kpi-grid" style="margin-bottom: 1rem; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
     <div class="kpi-card" style="border-left-color: #6366f1;">
         <div class="kpi-title">Total de Itens no Estoque</div>
         <div class="kpi-value">{{ $totalEstoque }}</div>
@@ -102,6 +102,12 @@
         <div class="kpi-title" style="color: #6ee7b7;">Itens SEPARADOS</div>
         <div class="kpi-value" style="color: #10b981;">{{ $totalSeparado }}</div>
         <div class="kpi-subtitle">Almoxarifado (Status SEPARADO)</div>
+    </div>
+
+    <div class="kpi-card" style="border-left-color: #c084fc;">
+        <div class="kpi-title" style="color: #d8b4fe;">OPs Fechadas no Mês</div>
+        <div class="kpi-value" style="color: #c084fc;">{{ $opsFechadasMes }}</div>
+        <div class="kpi-subtitle">Encerradas neste mês</div>
     </div>
 </div>
 
@@ -138,7 +144,7 @@
     </div>
 </div>
 
-<!-- Grid de Gráficos -->
+<!-- Grid de Gráficos parte 1 -->
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 1.25rem; margin-bottom: 1.25rem;">
     <!-- Gráfico 1: Status PCP / Estoque -->
     <div class="card">
@@ -157,11 +163,22 @@
     </div>
 </div>
 
-<!-- Gráfico 3: Demandas por Pedido de Venda em R$ -->
-<div class="card">
-    <h3 style="font-size: 1rem; margin-bottom: 1rem; color: #c084fc;">📋 Top Pedidos de Venda por Valor Total em Compras (R$)</h3>
-    <div style="position: relative; height: 270px;">
-        <canvas id="chartTopPedidos"></canvas>
+<!-- Grid de Gráficos parte 2 (Top Pedidos & OPs Fechadas por Mês) -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 1.25rem; margin-bottom: 1.25rem;">
+    <!-- Gráfico 3: Demandas por Pedido de Venda em R$ -->
+    <div class="card">
+        <h3 style="font-size: 1rem; margin-bottom: 1rem; color: #c084fc;">📋 Top Pedidos de Venda por Valor Total em Compras (R$)</h3>
+        <div style="position: relative; height: 270px;">
+            <canvas id="chartTopPedidos"></canvas>
+        </div>
+    </div>
+
+    <!-- Gráfico 4: OPs Fechadas por Mês -->
+    <div class="card">
+        <h3 style="font-size: 1rem; margin-bottom: 1rem; color: #34d399;">🔒 Ordens de Produção (OPs) Fechadas por Mês</h3>
+        <div style="position: relative; height: 270px;">
+            <canvas id="chartOpsFechadas"></canvas>
+        </div>
     </div>
 </div>
 
@@ -335,6 +352,46 @@ document.addEventListener('DOMContentLoaded', () => {
                     grid: { color: 'rgba(255,255,255,0.05)' } 
                 },
                 y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+            }
+        }
+    });
+
+    // Chart 4: Bar - OPs Fechadas por Mês
+    const ctx4 = document.getElementById('chartOpsFechadas').getContext('2d');
+    const opsFechadasLabels = {!! json_encode($opsFechadasPorMesLabels) !!};
+    const opsFechadasValues = {!! json_encode($opsFechadasPorMesValues) !!};
+
+    new Chart(ctx4, {
+        type: 'bar',
+        data: {
+            labels: opsFechadasLabels.length ? opsFechadasLabels : ['Sem OPs Fechadas'],
+            datasets: [{
+                label: 'OPs Fechadas',
+                data: opsFechadasValues.length ? opsFechadasValues : [0],
+                backgroundColor: 'rgba(52, 211, 153, 0.85)',
+                borderColor: '#10b981',
+                borderWidth: 1,
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                datalabels: {
+                    anchor: 'end',
+                    align: 'top',
+                    color: '#34d399',
+                    font: { weight: 'bold', size: 12 },
+                    formatter: function(value) {
+                        return value > 0 ? value + ' OP(s)' : '0';
+                    }
+                }
+            },
+            scales: {
+                x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                y: { ticks: { color: '#94a3b8', stepSize: 1 }, grid: { color: 'rgba(255,255,255,0.05)' }, beginAtZero: true }
             }
         }
     });

@@ -396,6 +396,12 @@
                 🛒 Compras
             </a>
 
+            @if(auth()->user()->canCloseOp())
+            <a href="{{ route('fechamento-op.index') }}" class="nav-link {{ request()->routeIs('fechamento-op.*') ? 'active' : '' }}" style="color: #c084fc;">
+                🔒 Fechamento de OP
+            </a>
+            @endif
+
             @if(auth()->user()->isAdmin())
             <a href="{{ route('importar.index') }}" class="nav-link {{ request()->routeIs('importar.*') ? 'active' : '' }}">
                 📥 Importar Base

@@ -20,6 +20,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'permissao_fechamento_op',
     ];
 
     /**
@@ -42,7 +43,13 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'permissao_fechamento_op' => 'boolean',
         ];
+    }
+
+    public function canCloseOp(): bool
+    {
+        return $this->role === 'ADMIN' || (bool) $this->permissao_fechamento_op;
     }
 
     public function isAdmin(): bool

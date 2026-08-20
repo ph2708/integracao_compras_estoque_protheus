@@ -28,9 +28,11 @@ class UserController extends Controller
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:6',
             'role' => 'required|in:ADMIN,COMPRAS,ESTOQUE',
+            'permissao_fechamento_op' => 'nullable|boolean',
         ]);
 
         $validated['password'] = Hash::make($validated['password']);
+        $validated['permissao_fechamento_op'] = $request->has('permissao_fechamento_op');
 
         User::create($validated);
 
@@ -47,6 +49,7 @@ class UserController extends Controller
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
             'role' => 'required|in:ADMIN,COMPRAS,ESTOQUE',
             'password' => 'nullable|string|min:6',
+            'permissao_fechamento_op' => 'nullable|boolean',
         ]);
 
         if (!empty($validated['password'])) {
@@ -54,6 +57,8 @@ class UserController extends Controller
         } else {
             unset($validated['password']);
         }
+
+        $validated['permissao_fechamento_op'] = $request->has('permissao_fechamento_op');
 
         $user->update($validated);
 

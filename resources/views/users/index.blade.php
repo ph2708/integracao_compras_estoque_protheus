@@ -42,6 +42,13 @@
         </div>
 
         <div class="form-group">
+            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: #a5b4fc; font-size: 0.8rem;">
+                <input type="checkbox" name="permissao_fechamento_op" value="1">
+                🔒 Permissão de Fechamento de OP (Encerrar Ordens de Produção)
+            </label>
+        </div>
+
+        <div class="form-group">
             <label class="form-label">Senha Inicial *</label>
             <input type="password" name="password" class="form-control" placeholder="Mínimo 6 caracteres" required>
         </div>
@@ -83,6 +90,13 @@
         </div>
 
         <div class="form-group">
+            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: #a5b4fc; font-size: 0.8rem;">
+                <input type="checkbox" name="permissao_fechamento_op" id="edit_permissao_fechamento_op" value="1">
+                🔒 Permissão de Fechamento de OP (Encerrar Ordens de Produção)
+            </label>
+        </div>
+
+        <div class="form-group">
             <label class="form-label">Nova Senha (Deixe em branco para manter a atual)</label>
             <input type="password" name="password" class="form-control" placeholder="Preencha apenas se for alterar a senha">
         </div>
@@ -104,6 +118,7 @@
                     <th>Nome</th>
                     <th>E-mail</th>
                     <th>Perfil de Acesso</th>
+                    <th>Fechamento OP</th>
                     <th>Data de Cadastro</th>
                     <th style="text-align: center;">Ações</th>
                 </tr>
@@ -123,6 +138,11 @@
                             };
                         @endphp
                         <span class="badge {{ $roleBadge }}">{{ $u->role }}</span>
+                    </td>
+                    <td>
+                        <span class="badge {{ $u->canCloseOp() ? 'badge-separado' : 'badge-falta' }}" style="font-size: 0.7rem;">
+                            {{ $u->canCloseOp() ? '🔒 Pode Fechar OP' : '🚫 Sem Permissão' }}
+                        </span>
                     </td>
                     <td style="font-size: 0.75rem; color: var(--text-muted);">
                         {{ $u->created_at ? $u->created_at->format('d/m/Y H:i') : '-' }}
@@ -166,6 +186,7 @@ function abrirModalEditUser(user) {
     document.getElementById('edit_name').value = user.name;
     document.getElementById('edit_email').value = user.email;
     document.getElementById('edit_role').value = user.role;
+    document.getElementById('edit_permissao_fechamento_op').checked = !!user.permissao_fechamento_op;
 
     document.getElementById('modalEditUser').style.display = 'block';
     document.getElementById('modalOverlayUser').style.display = 'block';

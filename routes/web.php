@@ -5,6 +5,7 @@ use App\Http\Controllers\ComprasController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EstoqueController;
 use App\Http\Controllers\ImportController;
+use App\Http\Controllers\OpFechamentoController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -37,6 +38,10 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/compras/consultar-protheus', [ComprasController::class, 'consultarProtheus'])->name('compras.consultar-protheus');
     Route::post('/compras/update-batch', [ComprasController::class, 'updateBatch'])->name('compras.update-batch');
     Route::put('/compras/{id}', [ComprasController::class, 'update'])->name('compras.update');
+
+    // Fechamento de Ordem de Produção (OP)
+    Route::get('/fechamento-op', [OpFechamentoController::class, 'index'])->name('fechamento-op.index');
+    Route::post('/fechamento-op/{op}/fechar', [OpFechamentoController::class, 'fecharOp'])->name('fechamento-op.fechar');
 
     // Gestão de Base de Dados e Usuários (Apenas Administradores)
     Route::middleware([\App\Http\Middleware\AdminMiddleware::class])->group(function () {

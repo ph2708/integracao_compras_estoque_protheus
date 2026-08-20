@@ -50,6 +50,11 @@ class User extends Authenticatable
         return $this->role === 'ADMIN';
     }
 
+    public function getIsAdminAttribute(): bool
+    {
+        return $this->role === 'ADMIN';
+    }
+
     public function isCompras(): bool
     {
         return in_array($this->role, ['ADMIN', 'COMPRAS']);

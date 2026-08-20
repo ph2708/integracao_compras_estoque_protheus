@@ -365,7 +365,7 @@
                 🛒 Compras
             </a>
 
-            @if(auth()->user()->is_admin)
+            @if(auth()->user()->isAdmin())
             <a href="{{ route('importar.index') }}" class="nav-link {{ request()->routeIs('importar.*') ? 'active' : '' }}">
                 📥 Importar Base
             </a>
@@ -378,7 +378,7 @@
         <div style="display: flex; align-items: center; gap: 1rem;">
             <div style="text-align: right; font-size: 0.75rem;">
                 <div style="font-weight: 600; color: var(--text-main);">{{ auth()->user()->name }}</div>
-                @if(auth()->user()->is_admin)
+                @if(auth()->user()->isAdmin())
                     <span style="font-size: 0.65rem; background: rgba(99, 102, 241, 0.2); color: #a5b4fc; padding: 0.1rem 0.35rem; border-radius: 0.2rem; border: 1px solid rgba(99, 102, 241, 0.4);">ADMIN</span>
                 @else
                     <span style="font-size: 0.65rem; color: var(--text-muted);">USUÁRIO</span>

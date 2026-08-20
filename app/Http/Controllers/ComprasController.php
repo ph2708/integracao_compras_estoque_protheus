@@ -18,6 +18,27 @@ class ComprasController extends Controller
     }
 
     /**
+     * Auxiliar para verificar se o valor do item corresponde ao filtro de busca multi-itens por vírgula (Ex: 018722, 018723)
+     */
+    private function matchMultiFilter($itemValue, $filterValue, $isExact = false): bool
+    {
+        if (empty($filterValue)) return true;
+        $tokens = array_filter(array_map('trim', explode(',', $filterValue)));
+        if (empty($tokens)) return true;
+
+        $valLower = strtolower($itemValue ?? '');
+        foreach ($tokens as $token) {
+            $tokLower = strtolower($token);
+            if ($isExact) {
+                if ($valLower === $tokLower) return true;
+            } else {
+                if (str_contains($valLower, $tokLower)) return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Exibe o Painel de Compras integrado ao Estoque (100% Leitura do MySQL - Carregamento Instantâneo)
      */
     public function index(Request $request)
@@ -73,6 +94,7 @@ class ComprasController extends Controller
                     'cliente_obs' => $pItem['cliente_obs'] ?? ($estoqueMatch ? $estoqueMatch->cliente_obs : '-'),
                     'codigo_produto' => $codProduto ?: '-',
                     'descricao' => $pItem['descricao'] ?? ($estoqueMatch ? $estoqueMatch->descricao : '-'),
+                    'produto_pai' => $pItem['produto_pai'] ?? ($estoqueMatch ? $estoqueMatch->produto_pai : '-'),
                     'op' => $pItem['op'] ?? ($estoqueMatch ? $estoqueMatch->op : '-'),
                     'quantidade' => $valQtdOp,
                     'quantidade_estoque' => $valQtdEstoque,
@@ -127,6 +149,7 @@ class ComprasController extends Controller
                     'cliente_obs' => $estoqueItem->cliente_obs ?? '-',
                     'codigo_produto' => $estoqueItem->codigo_produto,
                     'descricao' => $estoqueItem->descricao ?? '-',
+                    'produto_pai' => $estoqueItem->produto_pai ?? '-',
                     'op' => $estoqueItem->op ?? '-',
                     'quantidade' => $valQtdOp,
                     'quantidade_estoque' => $valQtdEstoque,
@@ -151,30 +174,33 @@ class ComprasController extends Controller
             }
         }
 
-        // Filtros no Painel de Compras
+        // Filtros Multi-Itens no Painel de Compras
         if ($request->filled('f_produto')) {
-            $combinedItems = $combinedItems->filter(fn($i) => str_contains(strtolower($i['codigo_produto']), strtolower($request->f_produto)));
+            $combinedItems = $combinedItems->filter(fn($i) => $this->matchMultiFilter($i['codigo_produto'], $request->f_produto));
         }
         if ($request->filled('f_descricao')) {
-            $combinedItems = $combinedItems->filter(fn($i) => str_contains(strtolower($i['descricao']), strtolower($request->f_descricao)));
+            $combinedItems = $combinedItems->filter(fn($i) => $this->matchMultiFilter($i['descricao'], $request->f_descricao));
+        }
+        if ($request->filled('f_prod_pai')) {
+            $combinedItems = $combinedItems->filter(fn($i) => $this->matchMultiFilter($i['produto_pai'], $request->f_prod_pai));
         }
         if ($request->filled('f_op')) {
-            $combinedItems = $combinedItems->filter(fn($i) => str_contains(strtolower($i['op']), strtolower($request->f_op)));
+            $combinedItems = $combinedItems->filter(fn($i) => $this->matchMultiFilter($i['op'], $request->f_op));
         }
         if ($request->filled('f_cliente')) {
-            $combinedItems = $combinedItems->filter(fn($i) => str_contains(strtolower($i['cliente_obs']), strtolower($request->f_cliente)));
+            $combinedItems = $combinedItems->filter(fn($i) => $this->matchMultiFilter($i['cliente_obs'], $request->f_cliente));
         }
         if ($request->filled('f_status_pcp')) {
-            $combinedItems = $combinedItems->filter(fn($i) => $i['status_pcp'] === $request->f_status_pcp);
+            $combinedItems = $combinedItems->filter(fn($i) => $this->matchMultiFilter($i['status_pcp'], $request->f_status_pcp, true));
         }
         if ($request->filled('f_pedido_compra')) {
-            $combinedItems = $combinedItems->filter(fn($i) => str_contains(strtolower($i['pedido_compra']), strtolower($request->f_pedido_compra)));
+            $combinedItems = $combinedItems->filter(fn($i) => $this->matchMultiFilter($i['pedido_compra'], $request->f_pedido_compra));
         }
         if ($request->filled('f_fornecedor')) {
-            $combinedItems = $combinedItems->filter(fn($i) => str_contains(strtolower($i['codigo_fornecedor']), strtolower($request->f_fornecedor)));
+            $combinedItems = $combinedItems->filter(fn($i) => $this->matchMultiFilter($i['codigo_fornecedor'], $request->f_fornecedor));
         }
         if ($request->filled('f_status_pagamento')) {
-            $combinedItems = $combinedItems->filter(fn($i) => $i['status_pagamento'] === $request->f_status_pagamento);
+            $combinedItems = $combinedItems->filter(fn($i) => $this->matchMultiFilter($i['status_pagamento'], $request->f_status_pagamento, true));
         }
 
         // Paginação Manual da Coleção
@@ -210,96 +236,67 @@ class ComprasController extends Controller
             'frete' => 'nullable|numeric',
             'solicitacao_compra' => 'nullable|string',
             'condicao_pagamento' => 'nullable|string',
-            'status_pagamento' => 'required|string',
+            'status_pagamento' => 'required|in:PENDENTE,PAGAMENTO ANTECIPADO,FATURADO,PAGO',
         ]);
-
-        $estoqueItem = $compraItem->estoqueItem;
-        $valQtdOp = $estoqueItem ? floatval($estoqueItem->quantidade) : 1;
-        $valQtdEstoque = $estoqueItem ? floatval($estoqueItem->quantidade_estoque) : 0;
-        $valQtdComprar = max(0, $valQtdOp - $valQtdEstoque);
 
         $valUnitario = floatval($validated['valor_unitario'] ?? 0);
         $valIpi = floatval($validated['ipi'] ?? 0);
         $valFrete = floatval($validated['frete'] ?? 0);
+        $qtdComprar = floatval($compraItem->estoqueItem ? $compraItem->estoqueItem->quantidade_comprar : 0);
 
-        $validated['valor_total'] = ($valUnitario * $valQtdComprar) + ($valUnitario * $valQtdComprar * ($valIpi / 100)) + $valFrete;
+        $valTotal = ($valUnitario * $qtdComprar) + ($valUnitario * $qtdComprar * ($valIpi / 100)) + $valFrete;
+        $validated['valor_total'] = $valTotal;
 
         $compraItem->update($validated);
 
-        return redirect()->back()->with('success', 'Dados financeiros de compras salvos com sucesso!');
+        return redirect()->route('compras.index')->with('success', 'Dados de compra atualizados com sucesso!');
     }
 
     /**
-     * Atualização em lote de todas as alterações feitas na página de compras
+     * Atualização em lote de múltiplos itens editados na tabela de Compras
      */
     public function updateBatch(Request $request)
     {
-        $request->validate([
-            'items' => 'required|array',
-        ]);
+        $itemsData = $request->input('items', []);
+
+        if (empty($itemsData)) {
+            return redirect()->back()->with('error', 'Nenhuma alteração foi enviada.');
+        }
 
         $updatedCount = 0;
 
-        foreach ($request->items as $estoqueItemId => $itemData) {
-            $estoqueItem = EstoqueItem::find($estoqueItemId);
-            if (!$estoqueItem) continue;
+        foreach ($itemsData as $estoqueId => $data) {
+            $compraItem = CompraItem::where('estoque_item_id', $estoqueId)->first();
+            
+            // Se o item de compra não existe ainda, cria um novo
+            if (!$compraItem) {
+                $compraItem = new CompraItem();
+                $compraItem->estoque_item_id = $estoqueId;
+            }
 
-            $valQtdOp = floatval($estoqueItem->quantidade);
-            $valQtdEstoque = floatval($estoqueItem->quantidade_estoque);
-            $valQtdComprar = max(0, $valQtdOp - $valQtdEstoque);
+            $updateData = [];
+            if (array_key_exists('pedido_compra', $data)) $updateData['pedido_compra'] = $data['pedido_compra'];
+            if (array_key_exists('codigo_fornecedor', $data)) $updateData['codigo_fornecedor'] = $data['codigo_fornecedor'];
+            if (array_key_exists('solicitacao_compra', $data)) $updateData['solicitacao_compra'] = $data['solicitacao_compra'];
+            if (isset($data['valor_unitario'])) $updateData['valor_unitario'] = floatval($data['valor_unitario']);
+            if (isset($data['ipi'])) $updateData['ipi'] = floatval($data['ipi']);
+            if (array_key_exists('data_pc', $data)) $updateData['data_pc'] = $data['data_pc'];
+            if (array_key_exists('data_pagamento', $data)) $updateData['data_pagamento'] = $data['data_pagamento'];
+            if (isset($data['status_pagamento'])) $updateData['status_pagamento'] = $data['status_pagamento'];
 
-            $valUnitario = isset($itemData['valor_unitario']) ? floatval($itemData['valor_unitario']) : 0;
-            $valIpi = isset($itemData['ipi']) ? floatval($itemData['ipi']) : 0;
-            $valFrete = isset($itemData['frete']) ? floatval($itemData['frete']) : 0;
-            $valTotal = ($valUnitario * $valQtdComprar) + ($valUnitario * $valQtdComprar * ($valIpi / 100)) + $valFrete;
+            $valUnitario = isset($updateData['valor_unitario']) ? $updateData['valor_unitario'] : floatval($compraItem->valor_unitario);
+            $valIpi = isset($updateData['ipi']) ? $updateData['ipi'] : floatval($compraItem->ipi);
+            $valFrete = floatval($compraItem->frete);
+            $qtdComprar = floatval($compraItem->estoqueItem ? $compraItem->estoqueItem->quantidade_comprar : 0);
 
-            CompraItem::updateOrCreate(
-                ['estoque_item_id' => $estoqueItemId],
-                [
-                    'pedido_compra' => $itemData['pedido_compra'] ?? null,
-                    'codigo_fornecedor' => $itemData['codigo_fornecedor'] ?? null,
-                    'valor_unitario' => $valUnitario,
-                    'ipi' => $valIpi,
-                    'data_pc' => !empty($itemData['data_pc']) ? $itemData['data_pc'] : null,
-                    'data_pagamento' => !empty($itemData['data_pagamento']) ? $itemData['data_pagamento'] : null,
-                    'frete' => $valFrete,
-                    'solicitacao_compra' => $itemData['solicitacao_compra'] ?? null,
-                    'condicao_pagamento' => $itemData['condicao_pagamento'] ?? null,
-                    'valor_total' => $valTotal,
-                    'status_pagamento' => $itemData['status_pagamento'] ?? 'PENDENTE',
-                ]
-            );
+            $valTotal = ($valUnitario * $qtdComprar) + ($valUnitario * $qtdComprar * ($valIpi / 100)) + $valFrete;
+            $updateData['valor_total'] = $valTotal;
+
+            $compraItem->fill($updateData);
+            $compraItem->save();
             $updatedCount++;
         }
 
-        return redirect()->back()->with('success', "✅ {$updatedCount} item(ns) de compras salvos com sucesso!");
-    }
-
-    /**
-     * Consulta dados do Pedido de Compra (SC7010) no Protheus
-     */
-    public function consultarProtheus(Request $request)
-    {
-        $request->validate([
-            'pedido_compra' => 'required|string',
-            'codigo_produto' => 'nullable|string',
-        ]);
-
-        $dadosProtheus = $this->protheusService->getDadosPedidoCompra(
-            $request->pedido_compra,
-            $request->codigo_produto
-        );
-
-        if (!$dadosProtheus) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Pedido de Compra não encontrado no Protheus.',
-            ]);
-        }
-
-        return response()->json([
-            'success' => true,
-            'data' => $dadosProtheus,
-        ]);
+        return redirect()->route('compras.index')->with('success', "✅ {$updatedCount} item(ns) de compras atualizado(s) com sucesso!");
     }
 }

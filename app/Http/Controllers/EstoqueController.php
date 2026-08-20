@@ -17,30 +17,39 @@ class EstoqueController extends Controller
     }
 
     /**
-     * Lista os itens de estoque cadastrados no MySQL com filtros e paginação
+     * Auxiliar para aplicação de filtros com suporte a múltiplos itens separados por vírgula (Ex: 018722, 018723)
+     */
+    private function applyMultiFilter(&$query, $column, $value)
+    {
+        if (empty($value)) return;
+        $tokens = array_filter(array_map('trim', explode(',', $value)));
+        if (empty($tokens)) return;
+
+        $query->where(function($q) use ($column, $tokens) {
+            foreach ($tokens as $token) {
+                if ($column === 'status') {
+                    $q->orWhere($column, '=', $token);
+                } else {
+                    $q->orWhere($column, 'like', '%' . $token . '%');
+                }
+            }
+        });
+    }
+
+    /**
+     * Lista os itens de estoque cadastrados no MySQL com suporte a múltiplos itens nos filtros e paginação
      */
     public function index(Request $request)
     {
         $query = EstoqueItem::query();
 
-        if ($request->filled('f_pedido')) {
-            $query->where('pedido', 'like', '%' . $request->f_pedido . '%');
-        }
-        if ($request->filled('f_produto')) {
-            $query->where('codigo_produto', 'like', '%' . $request->f_produto . '%');
-        }
-        if ($request->filled('f_descricao')) {
-            $query->where('descricao', 'like', '%' . $request->f_descricao . '%');
-        }
-        if ($request->filled('f_op')) {
-            $query->where('op', 'like', '%' . $request->f_op . '%');
-        }
-        if ($request->filled('f_status')) {
-            $query->where('status', $request->f_status);
-        }
-        if ($request->filled('f_cliente')) {
-            $query->where('cliente_obs', 'like', '%' . $request->f_cliente . '%');
-        }
+        $this->applyMultiFilter($query, 'pedido', $request->f_pedido);
+        $this->applyMultiFilter($query, 'codigo_produto', $request->f_produto);
+        $this->applyMultiFilter($query, 'descricao', $request->f_descricao);
+        $this->applyMultiFilter($query, 'produto_pai', $request->f_prod_pai);
+        $this->applyMultiFilter($query, 'op', $request->f_op);
+        $this->applyMultiFilter($query, 'status', $request->f_status);
+        $this->applyMultiFilter($query, 'cliente_obs', $request->f_cliente);
 
         $items = $query->orderBy('updated_at', 'desc')->paginate(15)->withQueryString();
         $filiaisProtheus = $this->protheusService->getFiliais();
@@ -113,6 +122,7 @@ class EstoqueController extends Controller
                 ],
                 [
                     'descricao' => $itemData['descricao'] ?? null,
+                    'produto_pai' => $itemData['produto_pai'] ?? null,
                     'cliente_obs' => $itemData['cliente_obs'] ?? null,
                     'quantidade' => $qtdOp,
                     'quantidade_estoque' => $qtdEstoque,
@@ -142,42 +152,41 @@ class EstoqueController extends Controller
             $importedCount++;
         }
 
-        return redirect()->route('estoque.index')
-            ->with('success', "✅ {$importedCount} item(ns) importado(s) e salvos no estoque com sucesso!");
+        return redirect()->route('estoque.index')->with('success', "✅ {$importedCount} item(ns) importado(s) com sucesso para o banco de dados MySQL!");
     }
 
     /**
-     * Cadastro manual de um único item
+     * Cadastro manual de um item no Estoque
      */
     public function store(Request $request)
     {
         $validated = $request->validate([
             'codigo_produto' => 'required|string',
-            'quantidade' => 'required|numeric',
-            'quantidade_estoque' => 'nullable|numeric',
-            'status' => 'required|string',
             'descricao' => 'nullable|string',
+            'produto_pai' => 'nullable|string',
             'op' => 'nullable|string',
             'pedido' => 'nullable|string',
             'cliente_obs' => 'nullable|string',
+            'quantidade' => 'required|numeric|min:0.01',
+            'quantidade_estoque' => 'nullable|numeric|min:0',
+            'status' => 'required|in:FALTA,SEPARADO,RETIRADO,FABRICA,FABRICAR INTERNO KANBAN',
             'observacao_estoque' => 'nullable|string',
         ]);
 
-        if (!isset($validated['quantidade_estoque'])) {
-            $validated['quantidade_estoque'] = 0;
-        }
+        $qtdOp = floatval($validated['quantidade']);
+        $qtdEstoque = floatval($validated['quantidade_estoque'] ?? 0);
 
         $estoqueItem = EstoqueItem::create($validated);
 
-        // Busca prévia para item criado manualmente
-        $prevCompra = $this->protheusService->getUltimoPrecoProduto($estoqueItem->codigo_produto);
-        $valQtdComprar = max(0, floatval($estoqueItem->quantidade) - floatval($estoqueItem->quantidade_estoque));
-        $valUnitario = floatval($prevCompra->valor_unitario ?? 0);
+        // Busca prévia de valor unitário e fornecedor na SC7010
+        $prevCompra = $this->protheusService->getUltimoPrecoFornecedor($validated['codigo_produto']);
+        $valQtdComprar = max(0, $qtdOp - $qtdEstoque);
+        $valUnitario = floatval($prevCompra['valor_unitario'] ?? 0);
 
         CompraItem::create([
             'estoque_item_id' => $estoqueItem->id,
-            'pedido_compra' => null, // Mantem em branco por padrao
-            'codigo_fornecedor' => $prevCompra->codigo_fornecedor ?? null,
+            'pedido_compra' => null,
+            'codigo_fornecedor' => $prevCompra['codigo_fornecedor'] ?? null,
             'valor_unitario' => $valUnitario,
             'ipi' => 0,
             'frete' => 0,
@@ -185,67 +194,88 @@ class EstoqueController extends Controller
             'status_pagamento' => 'PENDENTE',
         ]);
 
-        return redirect()->route('estoque.index')
-            ->with('success', 'Item adicionado ao estoque com sucesso!');
+        return redirect()->route('estoque.index')->with('success', 'Item adicionado ao Estoque com sucesso!');
     }
 
     /**
-     * Atualização individual de um item no estoque local (MySQL)
+     * Atualização individual de um item do Estoque
      */
     public function update(Request $request, $id)
     {
         $estoqueItem = EstoqueItem::findOrFail($id);
 
         $validated = $request->validate([
-            'quantidade_estoque' => 'nullable|numeric',
+            'quantidade_estoque' => 'nullable|numeric|min:0',
+            'status' => 'required|in:FALTA,SEPARADO,RETIRADO,FABRICA,FABRICAR INTERNO KANBAN',
             'observacao_estoque' => 'nullable|string',
-            'status' => 'required|string',
+            'produto_pai' => 'nullable|string',
         ]);
-
-        if (isset($validated['quantidade_estoque'])) {
-            $validated['quantidade_estoque'] = floatval($validated['quantidade_estoque']);
-        }
 
         $estoqueItem->update($validated);
 
-        return redirect()->back()->with('success', 'Item do estoque atualizado com sucesso!');
+        // Recalcula o valor total em compras se a quantidade em estoque mudou
+        if ($estoqueItem->compraItem) {
+            $valQtdComprar = max(0, floatval($estoqueItem->quantidade) - floatval($estoqueItem->quantidade_estoque));
+            $valUnitario = floatval($estoqueItem->compraItem->valor_unitario);
+            $ipi = floatval($estoqueItem->compraItem->ipi);
+            $frete = floatval($estoqueItem->compraItem->frete);
+
+            $valTotal = ($valUnitario * $valQtdComprar) + ($valUnitario * $valQtdComprar * ($ipi / 100)) + $frete;
+            $estoqueItem->compraItem->update(['valor_total' => $valTotal]);
+        }
+
+        return redirect()->route('estoque.index')->with('success', 'Item de estoque atualizado com sucesso!');
     }
 
     /**
-     * Atualização em lote de todas as alterações feitas na tabela de estoque
+     * Atualização em lote de múltiplos itens editados na tabela de Estoque
      */
     public function updateBatch(Request $request)
     {
-        $request->validate([
-            'items' => 'required|array',
-        ]);
+        $itemsData = $request->input('items', []);
+
+        if (empty($itemsData)) {
+            return redirect()->back()->with('error', 'Nenhuma alteração foi enviada.');
+        }
 
         $updatedCount = 0;
 
-        foreach ($request->items as $id => $itemData) {
+        foreach ($itemsData as $id => $data) {
             $estoqueItem = EstoqueItem::find($id);
             if (!$estoqueItem) continue;
 
-            $estoqueItem->update([
-                'quantidade_estoque' => isset($itemData['quantidade_estoque']) ? floatval($itemData['quantidade_estoque']) : $estoqueItem->quantidade_estoque,
-                'observacao_estoque' => $itemData['observacao_estoque'] ?? $estoqueItem->observacao_estoque,
-                'status' => $itemData['status'] ?? $estoqueItem->status,
-            ]);
+            $updateData = [];
+            if (isset($data['quantidade_estoque'])) {
+                $updateData['quantidade_estoque'] = floatval($data['quantidade_estoque']);
+            }
+            if (isset($data['status'])) {
+                $updateData['status'] = $data['status'];
+            }
+            if (array_key_exists('observacao_estoque', $data)) {
+                $updateData['observacao_estoque'] = $data['observacao_estoque'];
+            }
+            if (array_key_exists('produto_pai', $data)) {
+                $updateData['produto_pai'] = $data['produto_pai'];
+            }
 
-            $updatedCount++;
+            if (!empty($updateData)) {
+                $estoqueItem->update($updateData);
+
+                // Recalcula o valor total em compras
+                if ($estoqueItem->compraItem) {
+                    $valQtdComprar = max(0, floatval($estoqueItem->quantidade) - floatval($estoqueItem->quantidade_estoque));
+                    $valUnitario = floatval($estoqueItem->compraItem->valor_unitario);
+                    $ipi = floatval($estoqueItem->compraItem->ipi);
+                    $frete = floatval($estoqueItem->compraItem->frete);
+
+                    $valTotal = ($valUnitario * $valQtdComprar) + ($valUnitario * $valQtdComprar * ($ipi / 100)) + $frete;
+                    $estoqueItem->compraItem->update(['valor_total' => $valTotal]);
+                }
+
+                $updatedCount++;
+            }
         }
 
-        return redirect()->back()->with('success', "✅ {$updatedCount} item(ns) de estoque atualizados com sucesso!");
-    }
-
-    /**
-     * Excluir um item do estoque
-     */
-    public function destroy($id)
-    {
-        $item = EstoqueItem::findOrFail($id);
-        $item->delete();
-
-        return redirect()->route('estoque.index')->with('success', 'Item removido com sucesso!');
+        return redirect()->route('estoque.index')->with('success', "✅ {$updatedCount} item(ns) de estoque atualizado(s) com sucesso!");
     }
 }

@@ -64,6 +64,7 @@
                         <th>OP</th>
                         <th>Código Produto</th>
                         <th>Descrição</th>
+                        <th class="col-produto-pai" style="display: none; color: #c084fc;">Produto Pai Concatenado</th>
                         <th>Qtd OP</th>
                         <th>Nome do Cliente (C2_OBS)</th>
                     </tr>
@@ -99,32 +100,36 @@
             </div>
             <div class="form-group">
                 <label class="form-label">Descrição</label>
-                <input type="text" name="descricao" class="form-control" placeholder="Descrição do produto">
+                <input type="text" name="descricao" class="form-control" placeholder="Descrição do componente">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Produto Pai Concatenado</label>
+                <input type="text" name="produto_pai" class="form-control" placeholder="Ex: 951010010 - QUADRO QTA">
             </div>
             <div class="form-group">
                 <label class="form-label">Ordem de Produção (OP)</label>
-                <input type="text" name="op" class="form-control" placeholder="Ex: OP-2026-01">
+                <input type="text" name="op" class="form-control" placeholder="Ex: OP-01234">
             </div>
             <div class="form-group">
-                <label class="form-label">Número do Pedido</label>
-                <input type="text" name="pedido" class="form-control" placeholder="Ex: PED-5501">
-            </div>
-            <div class="form-group">
-                <label class="form-label">Quantidade OP *</label>
-                <input type="number" step="0.01" id="manual_qtd_op" name="quantidade" class="form-control" value="1" placeholder="Ex: 10">
-            </div>
-            <div class="form-group">
-                <label class="form-label">Qtd em Estoque (Inicial = 0)</label>
-                <input type="number" step="0.01" id="manual_qtd_est" name="quantidade_estoque" class="form-control" value="0" placeholder="Ex: 0">
+                <label class="form-label">Pedido de Venda (C2_PEDIDO)</label>
+                <input type="text" name="pedido" class="form-control" placeholder="Ex: 006614">
             </div>
             <div class="form-group">
                 <label class="form-label">Nome do Cliente (C2_OBS)</label>
-                <input type="text" name="cliente_obs" class="form-control" placeholder="Ex: ELETRONET S.A">
+                <input type="text" name="cliente_obs" class="form-control" placeholder="Ex: CLIENTE EXEMPLO">
             </div>
             <div class="form-group">
-                <label class="form-label">Status PCP / Almox *</label>
+                <label class="form-label">Qtd Requisitada da OP *</label>
+                <input type="number" step="0.01" name="quantidade" class="form-control" value="1" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Qtd Já Disponível em Estoque</label>
+                <input type="number" step="0.01" name="quantidade_estoque" class="form-control" value="0">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Status PCP *</label>
                 <select name="status" class="form-select" required>
-                    <option value="FALTA">FALTA *</option>
+                    <option value="FALTA">FALTA</option>
                     <option value="SEPARADO">SEPARADO</option>
                     <option value="RETIRADO">RETIRADO</option>
                     <option value="FABRICA">FABRICA</option>
@@ -165,8 +170,13 @@
         @csrf
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem; flex-wrap: wrap; gap: 0.5rem;">
             <h3 style="font-size: 1rem;">📋 Itens Cadastrados no Estoque Local (MySQL)</h3>
-            <div style="display: flex; gap: 0.5rem; align-items: center;">
-                @if(request()->hasAny(['f_pedido', 'f_produto', 'f_descricao', 'f_op', 'f_status', 'f_cliente']))
+            <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                <!-- Quadradinho Toggle para Exibir/Ocultar Coluna Produto Pai -->
+                <button type="button" class="btn btn-secondary" onclick="toggleColunaProdutoPai()" style="padding: 0.35rem 0.65rem; font-size: 0.75rem; border-color: rgba(168, 85, 247, 0.5); font-weight: 500;">
+                    <span id="iconSquarePai">🔲</span> Exibir Produto Pai Concatenado
+                </button>
+
+                @if(request()->hasAny(['f_pedido', 'f_produto', 'f_descricao', 'f_prod_pai', 'f_op', 'f_status', 'f_cliente']))
                     <a href="{{ route('estoque.index') }}" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="window.mostrarLoading('⏳ Limpando filtros...')">
                         ✕ Limpar Filtros
                     </a>
@@ -184,6 +194,7 @@
                         <th>Pedido (C2_PEDIDO)</th>
                         <th>Código Produto</th>
                         <th>Descrição</th>
+                        <th class="col-produto-pai" style="display: none; color: #c084fc;">Código / Produto Pai Concatenado</th>
                         <th>OP</th>
                         <th style="text-align: center;">Qtd OP</th>
                         <th style="color: #fcd34d; text-align: center;">Qtd Estoque ✏️</th>
@@ -196,32 +207,28 @@
                     </tr>
                     <tr class="filter-row">
                         <th>
-                            <input type="text" name="f_pedido" value="{{ request('f_pedido') }}" class="filter-input" placeholder="Ped..." form="formFilterEstoque" onchange="document.getElementById('formFilterEstoque').submit()">
+                            <input type="text" name="f_pedido" value="{{ request('f_pedido') }}" class="filter-input" placeholder="Multi: 0066, 0067..." form="formFilterEstoque" onchange="document.getElementById('formFilterEstoque').submit()">
                         </th>
                         <th>
-                            <input type="text" name="f_produto" value="{{ request('f_produto') }}" class="filter-input" placeholder="Prod..." form="formFilterEstoque" onchange="document.getElementById('formFilterEstoque').submit()">
+                            <input type="text" name="f_produto" value="{{ request('f_produto') }}" class="filter-input" placeholder="Multi: 6164, 1050..." form="formFilterEstoque" onchange="document.getElementById('formFilterEstoque').submit()">
                         </th>
                         <th>
-                            <input type="text" name="f_descricao" value="{{ request('f_descricao') }}" class="filter-input" placeholder="Desc..." form="formFilterEstoque" onchange="document.getElementById('formFilterEstoque').submit()">
+                            <input type="text" name="f_descricao" value="{{ request('f_descricao') }}" class="filter-input" placeholder="Multi: CABO, CHAVE..." form="formFilterEstoque" onchange="document.getElementById('formFilterEstoque').submit()">
+                        </th>
+                        <th class="col-produto-pai" style="display: none;">
+                            <input type="text" name="f_prod_pai" value="{{ request('f_prod_pai') }}" class="filter-input" placeholder="Multi: QUADRO, 9510..." form="formFilterEstoque" onchange="document.getElementById('formFilterEstoque').submit()">
                         </th>
                         <th>
-                            <input type="text" name="f_op" value="{{ request('f_op') }}" class="filter-input" placeholder="OP..." form="formFilterEstoque" onchange="document.getElementById('formFilterEstoque').submit()">
+                            <input type="text" name="f_op" value="{{ request('f_op') }}" class="filter-input" placeholder="Multi: 0187, 0188..." form="formFilterEstoque" onchange="document.getElementById('formFilterEstoque').submit()">
                         </th>
                         <th></th>
                         <th></th>
                         <th></th>
                         <th>
-                            <select name="f_status" class="filter-input" form="formFilterEstoque" onchange="document.getElementById('formFilterEstoque').submit()">
-                                <option value="">-- Todos --</option>
-                                <option value="FALTA" {{ request('f_status') == 'FALTA' ? 'selected' : '' }}>FALTA</option>
-                                <option value="SEPARADO" {{ request('f_status') == 'SEPARADO' ? 'selected' : '' }}>SEPARADO</option>
-                                <option value="RETIRADO" {{ request('f_status') == 'RETIRADO' ? 'selected' : '' }}>RETIRADO</option>
-                                <option value="FABRICA" {{ request('f_status') == 'FABRICA' ? 'selected' : '' }}>FABRICA</option>
-                                <option value="FABRICAR INTERNO KANBAN" {{ request('f_status') == 'FABRICAR INTERNO KANBAN' ? 'selected' : '' }}>KANBAN</option>
-                            </select>
+                            <input type="text" name="f_status" value="{{ request('f_status') }}" class="filter-input" placeholder="Multi: FALTA, RETIRADO..." form="formFilterEstoque" onchange="document.getElementById('formFilterEstoque').submit()">
                         </th>
                         <th>
-                            <input type="text" name="f_cliente" value="{{ request('f_cliente') }}" class="filter-input" placeholder="Cliente..." form="formFilterEstoque" onchange="document.getElementById('formFilterEstoque').submit()">
+                            <input type="text" name="f_cliente" value="{{ request('f_cliente') }}" class="filter-input" placeholder="Multi: CLIENTE A, B..." form="formFilterEstoque" onchange="document.getElementById('formFilterEstoque').submit()">
                         </th>
                         <th></th>
                         <th></th>
@@ -234,6 +241,9 @@
                         <td><strong>{{ $item->pedido ?? '-' }}</strong></td>
                         <td><strong>{{ $item->codigo_produto }}</strong></td>
                         <td style="font-size: 0.775rem;">{{ $item->descricao ?? '-' }}</td>
+                        <td class="col-produto-pai" style="display: none; font-size: 0.75rem; color: #c084fc;">
+                            <code style="background: rgba(168, 85, 247, 0.15); padding: 0.15rem 0.35rem; border-radius: 0.25rem; border: 1px solid rgba(168, 85, 247, 0.3);">{{ $item->produto_pai ?? '-' }}</code>
+                        </td>
                         <td><code style="color: var(--accent); font-size: 0.75rem;">{{ $item->op ?? '-' }}</code></td>
                         <td style="text-align: center;">
                             <strong id="qtd_op_{{ $item->id }}" style="color: #38bdf8; font-size: 0.85rem;">{{ floatval($item->quantidade) }}</strong>
@@ -248,17 +258,17 @@
                                    id="input_qtd_est_{{ $item->id }}"
                                    value="{{ $valQtdEstoque }}" 
                                    class="form-control" 
-                                   style="padding: 0.25rem 0.4rem; font-size: 0.75rem; width: 75px; color: #fcd34d; font-weight: 600; text-align: center;" 
-                                   placeholder="0"
-                                   oninput="recalcularQtdComprarTela({{ $item->id }})">
+                                   style="width: 100px; text-align: center; margin: 0 auto; padding: 0.2rem 0.4rem; font-weight: 600; color: #fcd34d;"
+                                   onchange="recalcularLinhaEstoque({{ $item->id }})">
                         </td>
                         <td style="text-align: center;">
                             @php
-                                $qtdComprarVal = max(0, floatval($item->quantidade) - $valQtdEstoque);
+                                $valQtdComprar = floatval($item->quantidade_comprar);
                             @endphp
-                            <div style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 0.3rem; padding: 0.2rem 0.4rem; display: inline-block;">
-                                <strong id="display_qtd_comprar_{{ $item->id }}" style="color: #6ee7b7; font-size: 0.85rem;">{{ $qtdComprarVal }}</strong>
-                            </div>
+                            <span id="label_qtd_comprar_{{ $item->id }}" 
+                                  style="font-weight: 700; font-size: 0.85rem; color: {{ $valQtdComprar > 0 ? '#ef4444' : '#10b981' }};">
+                                {{ $valQtdComprar }}
+                            </span>
                         </td>
                         <td>
                             @php
@@ -271,25 +281,23 @@
                                     default => 'badge-falta'
                                 };
                             @endphp
-                            <span id="badge_status_{{ $item->id }}" class="badge {{ $badgeClass }}">{{ $item->status }}</span>
+                            <span class="badge {{ $badgeClass }}" id="badge_status_{{ $item->id }}">{{ $item->status }}</span>
                         </td>
-                        <td style="font-size: 0.75rem; color: #cbd5e1;">
-                            {{ $item->cliente_obs ?? '-' }}
-                        </td>
+                        <td style="font-size: 0.775rem;">{{ $item->cliente_obs ?? '-' }}</td>
                         <td>
                             <input type="text" 
-                                   name="items[{{ $item->id }}][observacao_estoque]"
-                                   id="input_obs_{{ $item->id }}"
+                                   name="items[{{ $item->id }}][observacao_estoque]" 
                                    value="{{ $item->observacao_estoque }}" 
                                    class="form-control" 
-                                   style="padding: 0.25rem 0.4rem; font-size: 0.75rem;" 
-                                   placeholder="Observação estoque...">
+                                   placeholder="Observação..."
+                                   style="min-width: 140px; padding: 0.2rem 0.4rem; font-size: 0.75rem;">
                         </td>
                         <td>
-                            <select name="items[{{ $item->id }}][status]"
-                                    id="select_status_{{ $item->id }}" 
+                            <select name="items[{{ $item->id }}][status]" 
+                                    id="select_status_{{ $item->id }}"
                                     class="form-select" 
-                                    style="padding: 0.25rem 0.4rem; font-size: 0.7rem;">
+                                    style="padding: 0.2rem 0.4rem; font-size: 0.75rem; min-width: 140px;"
+                                    onchange="atualizarBadgeStatus({{ $item->id }})">
                                 <option value="FALTA" {{ $item->status == 'FALTA' ? 'selected' : '' }}>FALTA</option>
                                 <option value="SEPARADO" {{ $item->status == 'SEPARADO' ? 'selected' : '' }}>SEPARADO</option>
                                 <option value="RETIRADO" {{ $item->status == 'RETIRADO' ? 'selected' : '' }}>RETIRADO</option>
@@ -300,16 +308,16 @@
                         <td style="text-align: center;">
                             <button type="button" 
                                     class="btn btn-primary" 
-                                    style="padding: 0.3rem 0.6rem; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 0.2rem;"
-                                    onclick="solicitarConfirmacaoSave({{ $item->id }}, '{{ $item->codigo_produto }}')">
-                                💾 Salvar Item
+                                    style="padding: 0.2rem 0.5rem; font-size: 0.7rem;"
+                                    onclick="solicitarConfirmacaoSave({{ $item->id }})">
+                                💾 Salvar
                             </button>
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="12" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">
-                            Nenhum item encontrado no estoque local.
+                        <td colspan="13" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                            Nenhum item encontrado no estoque com os filtros aplicados.
                         </td>
                     </tr>
                     @endforelse
@@ -318,198 +326,238 @@
         </div>
     </form>
 
-    <!-- Controles de Paginação -->
-    <div class="pagination-container">
-        <div>
-            Exibindo <strong>{{ $items->firstItem() ?? 0 }}</strong> a <strong>{{ $items->lastItem() ?? 0 }}</strong> de <strong>{{ $items->total() }}</strong> itens cadastrados
+    <!-- Paginação Customizada Dark Mode -->
+    @if($items->hasPages())
+        <div class="pagination-container">
+            <div>
+                Exibindo <strong>{{ $items->firstItem() }}</strong> até <strong>{{ $items->lastItem() }}</strong> de <strong>{{ $items->total() }}</strong> itens cadastrados
+            </div>
+            <div>
+                {{ $items->links('pagination::bootstrap-4') }}
+            </div>
         </div>
-        <div>
-            {{ $items->links() }}
-        </div>
-    </div>
+    @endif
 </div>
 
-<!-- Formulário Oculto Auxiliar para Salvar Linha Única -->
-<form action="" method="POST" id="formSingleRowEstoque" style="display: none;">
-    @csrf
-    @method('PUT')
-    <input type="hidden" name="quantidade_estoque" id="single_qtd_est">
-    <input type="hidden" name="observacao_estoque" id="single_obs">
-    <input type="hidden" name="status" id="single_status">
-</form>
-
 <script>
-let itemIdParaSalvar = null;
-window.protheusQueryResultItems = [];
+let protheusItemsCache = [];
+let pendingSaveItemId = null;
 
-function recalcularQtdComprarTela(itemId) {
-    const qtdOp = parseFloat(document.getElementById(`qtd_op_${itemId}`).innerText) || 0;
-    const qtdEst = parseFloat(document.getElementById(`input_qtd_est_${itemId}`).value) || 0;
-    const qtdComprar = Math.max(0, qtdOp - qtdEst);
-    document.getElementById(`display_qtd_comprar_${itemId}`).innerText = qtdComprar;
+function checkProdutoPaiVisibility() {
+    const hasFilter = {{ request()->filled('f_prod_pai') ? 'true' : 'false' }};
+    const show = localStorage.getItem('showColProdutoPai') === 'true' || hasFilter;
+    
+    document.querySelectorAll('.col-produto-pai').forEach(el => {
+        el.style.display = show ? 'table-cell' : 'none';
+    });
+    
+    const icon = document.getElementById('iconSquarePai');
+    if (icon) {
+        icon.innerText = show ? '☑️' : '🔲';
+    }
 }
 
-// Submissão Otimizada por Payload JSON para evitar estouro de max_input_vars
-document.getElementById('formImportBatch').addEventListener('submit', function(e) {
-    const selected = [];
-    const checkboxes = document.querySelectorAll('.checkItem');
-    checkboxes.forEach((cb) => {
-        if (cb.checked) {
-            const idx = parseInt(cb.getAttribute('data-index'));
-            if (window.protheusQueryResultItems && window.protheusQueryResultItems[idx]) {
-                const item = window.protheusQueryResultItems[idx];
-                selected.push({
-                    codigo_produto: item.codigo_produto,
-                    descricao: item.descricao,
-                    op: item.op,
-                    pedido: item.pedido,
-                    cliente_obs: item.cliente_obs,
-                    quantidade: item.quantidade,
-                    quantidade_estoque: 0,
-                    status: 'FALTA'
-                });
-            }
-        }
-    });
-    document.getElementById('input_items_json').value = JSON.stringify(selected);
+function toggleColunaProdutoPai() {
+    const current = localStorage.getItem('showColProdutoPai') === 'true';
+    const newState = !current;
+    localStorage.setItem('showColProdutoPai', newState);
+    checkProdutoPaiVisibility();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    checkProdutoPaiVisibility();
 });
 
-// 1. Abrir Modal de Confirmação antes de Salvar Linha Única
-function solicitarConfirmacaoSave(itemId, codigoProduto) {
-    const statusVal = document.getElementById(`select_status_${itemId}`).value;
-    const qtdEstVal = document.getElementById(`input_qtd_est_${itemId}`).value || '0';
-    const obsVal = document.getElementById(`input_obs_${itemId}`).value || '-';
+function abrirModalConsultaProtheus() {
+    document.getElementById('modalConsultaProtheus').style.display = 'block';
+    document.getElementById('consulta_pedido').focus();
+}
 
-    itemIdParaSalvar = itemId;
+function buscarItensProtheus() {
+    const pedido = document.getElementById('consulta_pedido').value.trim();
+    const filial = document.getElementById('consulta_filial').value;
+    const statusLabel = document.getElementById('resultado_status_label');
+    const tbody = document.getElementById('tbody_protheus_items');
+    const formBatch = document.getElementById('formImportBatch');
 
-    const detailsHtml = `
-        Confirma a gravação dos dados para o produto <strong>${codigoProduto}</strong>?<br><br>
-        • <strong>Status PCP:</strong> <span style="color: #fcd34d;">${statusVal}</span><br>
-        • <strong>Qtd em Estoque:</strong> ${qtdEstVal}<br>
-        • <strong>Observação:</strong> ${obsVal}
-    `;
+    if (!pedido) {
+        alert('Por favor, informe o número do Pedido ou C2_OBS!');
+        return;
+    }
 
-    document.getElementById('confirmTextDetails').innerHTML = detailsHtml;
+    statusLabel.innerHTML = '⏳ Consultando itens no Protheus... Aguarde...';
+    statusLabel.style.color = '#a5b4fc';
+    tbody.innerHTML = '';
+    formBatch.style.display = 'none';
+
+    fetch('{{ route("estoque.consultar-pedido") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({ pedido: pedido, filial: filial })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (!data.success) {
+            statusLabel.innerHTML = '❌ ' + data.message;
+            statusLabel.style.color = '#fca5a5';
+            return;
+        }
+
+        protheusItemsCache = data.items;
+        statusLabel.innerHTML = `✅ ${data.count} item(ns) encontrado(s) para o pedido "${pedido}" no Protheus. Selecione os itens abaixo para importar:`;
+        statusLabel.style.color = '#6ee7b7';
+
+        tbody.innerHTML = '';
+        data.items.forEach((item, index) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="text-align: center;">
+                    <input type="checkbox" class="item-checkbox" data-index="${index}" checked onchange="atualizarContadorSelecionados()">
+                </td>
+                <td>${item.filial || '-'}</td>
+                <td><strong>${item.pedido || '-'}</strong></td>
+                <td><code style="color: var(--accent);">${item.op || '-'}</code></td>
+                <td><strong>${item.codigo_produto}</strong></td>
+                <td style="font-size: 0.75rem;">${item.descricao || '-'}</td>
+                <td class="col-produto-pai" style="display: none; font-size: 0.75rem; color: #c084fc;"><code>${item.produto_pai || '-'}</code></td>
+                <td style="text-align: center;"><strong>${item.quantidade}</strong></td>
+                <td style="font-size: 0.75rem;">${item.cliente_obs || '-'}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        formBatch.style.display = 'block';
+        atualizarContadorSelecionados();
+        checkProdutoPaiVisibility();
+    })
+    .catch(err => {
+        console.error(err);
+        statusLabel.innerHTML = '❌ Erro ao se comunicar com o servidor. Tente novamente.';
+        statusLabel.style.color = '#fca5a5';
+    });
+}
+
+function toggleAllCheckboxes(source) {
+    const checkboxes = document.querySelectorAll('.item-checkbox');
+    checkboxes.forEach(cb => cb.checked = source.checked);
+    atualizarContadorSelecionados();
+}
+
+function atualizarContadorSelecionados() {
+    const checkboxes = document.querySelectorAll('.item-checkbox:checked');
+    const countLabel = document.getElementById('label_selecionados_count');
+    const selectedItems = [];
+
+    checkboxes.forEach(cb => {
+        const idx = cb.getAttribute('data-index');
+        if (protheusItemsCache[idx]) {
+            selectedItems.push(protheusItemsCache[idx]);
+        }
+    });
+
+    countLabel.innerText = `${selectedItems.length} item(ns) selecionado(s)`;
+    document.getElementById('input_items_json').value = JSON.stringify(selectedItems);
+}
+
+function recalcularLinhaEstoque(id) {
+    const qtdOpEl = document.getElementById('qtd_op_' + id);
+    const inputEstEl = document.getElementById('input_qtd_est_' + id);
+    const labelComprarEl = document.getElementById('label_qtd_comprar_' + id);
+
+    if (!qtdOpEl || !inputEstEl || !labelComprarEl) return;
+
+    const qtdOp = parseFloat(qtdOpEl.innerText) || 0;
+    const qtdEst = parseFloat(inputEstEl.value) || 0;
+    const qtdComprar = Math.max(0, qtdOp - qtdEst);
+
+    labelComprarEl.innerText = qtdComprar;
+    if (qtdComprar > 0) {
+        labelComprarEl.style.color = '#ef4444';
+    } else {
+        labelComprarEl.style.color = '#10b981';
+    }
+}
+
+function atualizarBadgeStatus(id) {
+    const select = document.getElementById('select_status_' + id);
+    const badge = document.getElementById('badge_status_' + id);
+    if (!select || !badge) return;
+
+    const val = select.value;
+    badge.innerText = val;
+    badge.className = 'badge ' + (
+        val === 'FALTA' ? 'badge-falta' :
+        val === 'SEPARADO' ? 'badge-separado' :
+        val === 'RETIRADO' ? 'badge-retirado' :
+        val === 'FABRICA' ? 'badge-fabrica' : 'badge-kanban'
+    );
+}
+
+function solicitarConfirmacaoSave(id) {
+    pendingSaveItemId = id;
+    const select = document.getElementById('select_status_' + id);
+    const inputEst = document.getElementById('input_qtd_est_' + id);
+    const statusVal = select ? select.value : '';
+    const qtdEstVal = inputEst ? inputEst.value : '0';
+
+    const textDetails = document.getElementById('confirmTextDetails');
+    textDetails.innerHTML = `Deseja salvar as alterações deste item?<br>• <strong>Qtd Estoque:</strong> ${qtdEstVal}<br>• <strong>Novo Status:</strong> ${statusVal}`;
+
     document.getElementById('modalConfirmacaoSave').style.display = 'block';
     document.getElementById('modalOverlay').style.display = 'block';
 }
 
 function fecharModalConfirmacao() {
+    pendingSaveItemId = null;
     document.getElementById('modalConfirmacaoSave').style.display = 'none';
     document.getElementById('modalOverlay').style.display = 'none';
-    itemIdParaSalvar = null;
 }
 
-// 2. Submeter formulário de linha única
-document.getElementById('btnConfirmarSaveAction').addEventListener('click', () => {
-    if (!itemIdParaSalvar) return;
+document.getElementById('btnConfirmarSaveAction').addEventListener('click', function() {
+    if (!pendingSaveItemId) return;
+    window.mostrarLoading('💾 Salvando item de estoque... Aguarde...');
 
-    const id = itemIdParaSalvar;
-    const form = document.getElementById('formSingleRowEstoque');
-    form.action = `/estoque/${id}`;
+    const row = document.getElementById('row_estoque_' + pendingSaveItemId);
+    const inputEst = document.getElementById('input_qtd_est_' + pendingSaveItemId);
+    const selectStatus = document.getElementById('select_status_' + pendingSaveItemId);
 
-    document.getElementById('single_qtd_est').value = document.getElementById(`input_qtd_est_${id}`).value || '0';
-    document.getElementById('single_obs').value = document.getElementById(`input_obs_${id}`).value || '';
-    document.getElementById('single_status').value = document.getElementById(`select_status_${id}`).value;
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '{{ url("estoque") }}/' + pendingSaveItemId;
 
-    fecharModalConfirmacao();
-    window.mostrarLoading('💾 Gravando dados do item de estoque...');
+    const csrfInput = document.createElement('input');
+    csrfInput.type = 'hidden';
+    csrfInput.name = '_token';
+    csrfInput.value = '{{ csrf_token() }}';
+    form.appendChild(csrfInput);
+
+    const methodInput = document.createElement('input');
+    methodInput.type = 'hidden';
+    methodInput.name = '_method';
+    methodInput.value = 'PUT';
+    form.appendChild(methodInput);
+
+    if (inputEst) {
+        const estInput = document.createElement('input');
+        estInput.type = 'hidden';
+        estInput.name = 'quantidade_estoque';
+        estInput.value = inputEst.value;
+        form.appendChild(estInput);
+    }
+
+    if (selectStatus) {
+        const statusInput = document.createElement('input');
+        statusInput.type = 'hidden';
+        statusInput.name = 'status';
+        statusInput.value = selectStatus.value;
+        form.appendChild(statusInput);
+    }
+
+    document.body.appendChild(form);
     form.submit();
 });
-
-function abrirModalConsultaProtheus() {
-    document.getElementById('modalConsultaProtheus').style.display = 'block';
-}
-
-async function buscarItensProtheus() {
-    const pedido = document.getElementById('consulta_pedido').value.trim();
-    const filial = document.getElementById('consulta_filial').value;
-    const labelStatus = document.getElementById('resultado_status_label');
-    const formBatch = document.getElementById('formImportBatch');
-    const tbody = document.getElementById('tbody_protheus_items');
-
-    if (!pedido) {
-        alert('Por favor, informe o número do Pedido (C2_PEDIDO).');
-        return;
-    }
-
-    labelStatus.innerHTML = '⏳ Consultando itens no Protheus... Aguarde...';
-    labelStatus.style.color = 'var(--accent)';
-    formBatch.style.display = 'none';
-    tbody.innerHTML = '';
-    window.protheusQueryResultItems = [];
-
-    window.mostrarLoading('🔍 Consultando itens do Pedido de Venda no Protheus... Aguarde...');
-
-    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-
-    try {
-        const response = await fetch('{{ route("estoque.consultar-pedido") }}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': csrfToken
-            },
-            body: JSON.stringify({ pedido: pedido, filial: filial })
-        });
-
-        const result = await response.json();
-        window.ocultarLoading();
-
-        if (result.success && result.items.length > 0) {
-            window.protheusQueryResultItems = result.items;
-            labelStatus.innerHTML = `✅ <strong>${result.count} item(ns) encontrado(s)</strong> para o Pedido <strong>${pedido}</strong> na Filial <strong>${filial || 'Todas'}</strong>. Selecione os itens desejados e clique em importar:`;
-            labelStatus.style.color = '#6ee7b7';
-
-            let html = '';
-            result.items.forEach((item, index) => {
-                html += `
-                <tr>
-                    <td style="text-align: center;">
-                        <input type="checkbox" class="checkItem" checked onchange="updateSelectedCount()" data-index="${index}">
-                    </td>
-                    <td><span class="badge badge-faturado">${item.filial}</span></td>
-                    <td><strong>${item.pedido}</strong></td>
-                    <td><code style="color: var(--accent); font-size: 0.75rem;">${item.op}</code></td>
-                    <td><strong>${item.codigo_produto}</strong></td>
-                    <td style="font-size: 0.75rem;">${item.descricao}</td>
-                    <td><strong style="color: #38bdf8;">${item.quantidade}</strong></td>
-                    <td style="font-size: 0.75rem; color: #cbd5e1;">${item.cliente_obs || '-'}</td>
-                </tr>
-                `;
-            });
-
-            tbody.innerHTML = html;
-            formBatch.style.display = 'block';
-            document.getElementById('checkAll').checked = true;
-            updateSelectedCount();
-        } else {
-            labelStatus.innerHTML = `⚠️ ${result.message || 'Nenhum item encontrado no Protheus.'}`;
-            labelStatus.style.color = '#fcd34d';
-        }
-    } catch (e) {
-        window.ocultarLoading();
-        labelStatus.innerHTML = '❌ Ocorreu um erro ao consultar o Protheus. Verifique a conexão.';
-        labelStatus.style.color = '#fca5a5';
-    }
-}
-
-function toggleAllCheckboxes(master) {
-    const checkboxes = document.querySelectorAll('.checkItem');
-    checkboxes.forEach(cb => {
-        cb.checked = master.checked;
-    });
-    updateSelectedCount();
-}
-
-function updateSelectedCount() {
-    const checkboxes = document.querySelectorAll('.checkItem');
-    let count = 0;
-    checkboxes.forEach(cb => {
-        if (cb.checked) count++;
-    });
-    document.getElementById('label_selecionados_count').innerText = `${count} item(ns) selecionado(s)`;
-    document.getElementById('btnImportSelected').disabled = (count === 0);
-}
 </script>
 @endsection

@@ -56,6 +56,7 @@ def get_pedido_items(c2_pedido, filial=None):
     """
     Consulta componentes/matérias-primas requisitados da OP na SD4010 + SC2010
     EXCLUINDO produtos do tipo PI (Produto Intermediário) e PA (Produto Acabado) na SB1010 (B1_TIPO NOT IN ('PI', 'PA'))
+    Inclui o campo concatenado do Produto Pai (C2_PRODUTO + ' - ' + B_PAI.B1_DESC)
     """
     conn = get_connection()
     cursor = conn.cursor(as_dict=True)
@@ -69,11 +70,13 @@ def get_pedido_items(c2_pedido, filial=None):
         RTRIM(B5.B5_CEME) AS B5_CEME,
         RTRIM(S.C2_OBS) AS C2_OBS,
         RTRIM(B.B1_TIPO) AS B1_TIPO,
-        D.D4_QTDEORI AS QUANTIDADE
+        D.D4_QTDEORI AS QUANTIDADE,
+        RTRIM(S.C2_PRODUTO) + ' - ' + RTRIM(ISNULL(B_PAI.B1_DESC, '')) AS PRODUTO_PAI
     FROM SD4010 D
     INNER JOIN SC2010 S ON RTRIM(D.D4_OP) LIKE RTRIM(S.C2_NUM) + '%' AND S.D_E_L_E_T_ = ' '
     LEFT JOIN SB1010 B ON RTRIM(D.D4_COD) = RTRIM(B.B1_COD) AND B.D_E_L_E_T_ = ' '
     LEFT JOIN SB5010 B5 ON RTRIM(D.D4_COD) = RTRIM(B5.B5_COD) AND B5.D_E_L_E_T_ = ' '
+    LEFT JOIN SB1010 B_PAI ON RTRIM(S.C2_PRODUTO) = RTRIM(B_PAI.B1_COD) AND B_PAI.D_E_L_E_T_ = ' '
     WHERE D.D_E_L_E_T_ = ' ' 
       AND (RTRIM(S.C2_PEDIDO) = %s OR RTRIM(S.C2_OBS) LIKE %s)
       AND (B.B1_TIPO IS NULL OR RTRIM(B.B1_TIPO) NOT IN ('PI', 'PA'))
@@ -98,171 +101,85 @@ def get_pedido_items(c2_pedido, filial=None):
 
         desc = r.get('B5_CEME') or r.get('B1_DESC') or ''
         formatted_rows.append({
-            'filial': r.get('C2_FILIAL') or '',
-            'pedido': r.get('C2_PEDIDO') or '',
-            'op': r.get('D4_OP') or '',
-            'codigo_produto': r.get('C2_PRODUTO') or '',
+            'filial': (r.get('C2_FILIAL') or '').strip(),
+            'pedido': (r.get('C2_PEDIDO') or '').strip(),
+            'op': (r.get('D4_OP') or '').strip(),
+            'codigo_produto': (r.get('C2_PRODUTO') or '').strip(),
             'descricao': desc.strip(),
+            'produto_pai': (r.get('PRODUTO_PAI') or '').strip(),
             'cliente_obs': (r.get('C2_OBS') or '').strip(),
-            'b1_tipo': b1_tipo,
-            'quantidade': float(r.get('QUANTIDADE') or 1)
+            'quantidade': float(r.get('QUANTIDADE') or 1.0)
         })
 
     return formatted_rows
 
-def get_ultimo_preco_produto(codigo_produto):
+def get_ultimos_precos_batch(codigos_produtos):
     """
-    Consulta o último preço unitário (C7_PRECO) e fornecedor (C7_FORNECE) da SC7010 de 1 produto
+    Consulta o último preço (C7_PRECO) e fornecedor (C7_FORNECE) na SC7010
+    em LOTE (uma única query SQL Server usando IN (...))
     """
-    conn = get_connection()
-    cursor = conn.cursor(as_dict=True)
-    sql = """
-    SELECT TOP 1 
-        RTRIM(C.C7_NUM) AS C7_NUM,
-        RTRIM(C.C7_FORNECE) AS C7_FORNECE,
-        RTRIM(C.C7_LOJA) AS C7_LOJA,
-        C.C7_PRECO AS C7_PRECO,
-        RTRIM(C.C7_EMISSAO) AS C7_EMISSAO,
-        RTRIM(A.A2_NOME) AS A2_NOME,
-        RTRIM(A.A2_NREDUZ) AS A2_NREDUZ
-    FROM SC7010 C
-    LEFT JOIN SA2010 A ON RTRIM(C.C7_FORNECE) = RTRIM(A.A2_COD) AND RTRIM(C.C7_LOJA) = RTRIM(A.A2_LOJA) AND A.D_E_L_E_T_ = ' '
-    WHERE C.D_E_L_E_T_ = ' ' AND RTRIM(C.C7_PRODUTO) = %s AND C.C7_PRECO > 0
-    ORDER BY C.C7_EMISSAO DESC, C.R_E_C_N_O_ DESC
-    """
-    cursor.execute(sql, (codigo_produto,))
-    row = cursor.fetchone()
-    conn.close()
+    if not codigos_produtos:
+        return {}
 
-    if row:
-        forn_nome = (row.get('A2_NOME') or row.get('A2_NREDUZ') or '').strip()
-        forn_cod = (row.get('C7_FORNECE') or '').strip()
-        forn_full = f"{forn_cod} ({forn_nome})" if forn_nome else forn_cod
-
-        return {
-            'pedido_compra': row.get('C7_NUM') or '',
-            'codigo_fornecedor': forn_full,
-            'valor_unitario': float(row.get('C7_PRECO') or 0),
-            'data_emissao': row.get('C7_EMISSAO') or ''
-        }
-    return None
-
-def get_ultimos_precos_batch(produtos_list):
-    """
-    CONSULTA EM LOTE (1 ÚNICA QUERY SQL) do último preço/fornecedor emitido na SC7010 para todos os produtos da página
-    """
-    if not produtos_list:
+    codigos_unicos = list(set([c.strip() for c in codigos_produtos if c and c.strip()]))
+    if not codigos_unicos:
         return {}
 
     conn = get_connection()
     cursor = conn.cursor(as_dict=True)
 
-    placeholders = ', '.join(['%s'] * len(produtos_list))
+    placeholders = ', '.join(['%s'] * len(codigos_unicos))
     sql = f"""
-    SELECT 
-        RTRIM(C.C7_PRODUTO) AS C7_PRODUTO,
-        RTRIM(C.C7_NUM) AS C7_NUM,
-        RTRIM(C.C7_FORNECE) AS C7_FORNECE,
-        RTRIM(C.C7_LOJA) AS C7_LOJA,
-        C.C7_PRECO AS C7_PRECO,
-        RTRIM(C.C7_EMISSAO) AS C7_EMISSAO,
-        RTRIM(A.A2_NOME) AS A2_NOME,
-        RTRIM(A.A2_NREDUZ) AS A2_NREDUZ
-    FROM SC7010 C
-    LEFT JOIN SA2010 A ON RTRIM(C.C7_FORNECE) = RTRIM(A.A2_COD) AND RTRIM(C.C7_LOJA) = RTRIM(A.A2_LOJA) AND A.D_E_L_E_T_ = ' '
-    WHERE C.D_E_L_E_T_ = ' ' AND C.C7_PRECO > 0 AND RTRIM(C.C7_PRODUTO) IN ({placeholders})
-    ORDER BY C.C7_EMISSAO DESC, C.R_E_C_N_O_ DESC
+    WITH RankedSC7 AS (
+        SELECT 
+            RTRIM(C7_PRODUTO) AS C7_PRODUTO,
+            C7_PRECO,
+            RTRIM(C7_FORNECE) AS C7_FORNECE,
+            ROW_NUMBER() OVER(PARTITION BY RTRIM(C7_PRODUTO) ORDER BY C7_EMISSAO DESC, R_E_C_N_O_ DESC) as rn
+        FROM SC7010 WITH (NOLOCK)
+        WHERE D_E_L_E_T_ = ' ' 
+          AND RTRIM(C7_PRODUTO) IN ({placeholders})
+          AND C7_PRECO > 0
+    )
+    SELECT C7_PRODUTO, C7_PRECO, C7_FORNECE
+    FROM RankedSC7
+    WHERE rn = 1
     """
-    cursor.execute(sql, tuple(produtos_list))
+
+    cursor.execute(sql, codigos_unicos)
     rows = cursor.fetchall()
     conn.close()
 
-    result_map = {}
-    for row in rows:
-        prod = row.get('C7_PRODUTO')
-        if prod and prod not in result_map:
-            forn_nome = (row.get('A2_NOME') or row.get('A2_NREDUZ') or '').strip()
-            forn_cod = (row.get('C7_FORNECE') or '').strip()
-            forn_full = f"{forn_cod} ({forn_nome})" if forn_nome else forn_cod
-
-            result_map[prod] = {
-                'pedido_compra': row.get('C7_NUM') or '',
-                'codigo_fornecedor': forn_full,
-                'valor_unitario': float(row.get('C7_PRECO') or 0),
-                'data_emissao': row.get('C7_EMISSAO') or ''
-            }
-
-    return result_map
-
-def get_fornecedor_compra(pedido, produto=None):
-    conn = get_connection()
-    cursor = conn.cursor(as_dict=True)
-    sql = """
-    SELECT TOP 1 
-        RTRIM(C.C7_NUM) AS C7_NUM,
-        RTRIM(C.C7_FORNECE) AS C7_FORNECE,
-        RTRIM(C.C7_LOJA) AS C7_LOJA,
-        RTRIM(C.C7_COND) AS C7_COND,
-        C.C7_PRECO AS C7_PRECO,
-        RTRIM(A.A2_NOME) AS A2_NOME,
-        RTRIM(A.A2_NREDUZ) AS A2_NREDUZ,
-        COALESCE(RTRIM(E.E4_DESCRI), RTRIM(C.C7_COND)) AS CONDICAO_PAGAMENTO_DESC
-    FROM SC7010 C
-    LEFT JOIN SA2010 A ON RTRIM(C.C7_FORNECE) = RTRIM(A.A2_COD) AND RTRIM(C.C7_LOJA) = RTRIM(A.A2_LOJA) AND A.D_E_L_E_T_ = ' '
-    LEFT JOIN SE4010 E ON RTRIM(C.C7_COND) = RTRIM(E.E4_CODIGO) AND E.D_E_L_E_T_ = ' '
-    WHERE C.D_E_L_E_T_ = ' ' AND (RTRIM(C.C7_PRODUTO) = %s OR RTRIM(C.C7_NUM) = %s OR RTRIM(C.C7_FORNECE) = %s)
-    ORDER BY C.C7_EMISSAO DESC, C.R_E_C_N_O_ DESC
-    """
-    cursor.execute(sql, (produto or pedido, pedido, pedido))
-    row = cursor.fetchone()
-    conn.close()
-
-    if row:
-        forn_nome = (row.get('A2_NOME') or row.get('A2_NREDUZ') or '').strip()
-        forn_cod = (row.get('C7_FORNECE') or '').strip()
-        forn_full = f"{forn_cod} ({forn_nome})" if forn_nome else forn_cod
-
-        return {
-            'pedido_compra': row.get('C7_NUM') or '',
-            'codigo_fornecedor': forn_full,
-            'valor_unitario': float(row.get('C7_PRECO') or 0),
-            'condicao_pagamento': row.get('CONDICAO_PAGAMENTO_DESC') or row.get('C7_COND') or ''
+    result = {}
+    for r in rows:
+        cod = (r.get('C7_PRODUTO') or '').strip()
+        preco = float(r.get('C7_PRECO') or 0.0)
+        fornece = (r.get('C7_FORNECE') or '').strip()
+        result[cod] = {
+            'preco': preco,
+            'fornecedor': fornece
         }
-    return None
+    return result
+
+def get_ultimo_preco_fornecedor(codigo_produto):
+    res = get_ultimos_precos_batch([codigo_produto])
+    return res.get(codigo_produto.strip(), {'preco': 0.0, 'fornecedor': ''})
 
 if __name__ == '__main__':
-    if len(sys.argv) < 2:
-        print(json.dumps({"error": "Nenhum comando fornecido"}))
-        sys.exit(1)
+    command = sys.argv[1] if len(sys.argv) > 1 else ''
 
-    cmd = sys.argv[1]
-    try:
-        if cmd == 'list_filiais':
-            res = list_filiais()
-            print(json.dumps({"success": True, "data": res}))
-        elif cmd == 'list_pedidos':
-            filial = sys.argv[2] if len(sys.argv) > 2 and sys.argv[2] != 'null' else None
-            res = list_pedidos(filial)
-            print(json.dumps({"success": True, "data": res}))
-        elif cmd == 'get_pedido_items' and len(sys.argv) > 2:
-            c2_pedido = sys.argv[2]
-            filial = sys.argv[3] if len(sys.argv) > 3 and sys.argv[3] != 'null' else None
-            res = get_pedido_items(c2_pedido, filial)
-            print(json.dumps({"success": True, "data": res}))
-        elif cmd == 'get_ultimo_preco' and len(sys.argv) > 2:
-            produto = sys.argv[2]
-            res = get_ultimo_preco_produto(produto)
-            print(json.dumps({"success": True, "data": res}))
-        elif cmd == 'get_precos_batch' and len(sys.argv) > 2:
-            produtos_list = json.loads(sys.argv[2])
-            res = get_ultimos_precos_batch(produtos_list)
-            print(json.dumps({"success": True, "data": res}))
-        elif cmd == 'get_fornecedor' and len(sys.argv) > 2:
-            pedido = sys.argv[2]
-            produto = sys.argv[3] if len(sys.argv) > 3 and sys.argv[3] != 'null' else None
-            res = get_fornecedor_compra(pedido, produto)
-            print(json.dumps({"success": True, "data": res}))
-        else:
-            print(json.dumps({"error": "Comando invalido"}))
-    except Exception as e:
-        print(json.dumps({"error": str(e)}))
+    if command == 'filiais':
+        print(json.dumps(list_filiais()))
+    elif command == 'pedidos':
+        fil = sys.argv[2] if len(sys.argv) > 2 else None
+        print(json.dumps(list_pedidos(fil)))
+    elif command == 'pedido_itens':
+        ped = sys.argv[2] if len(sys.argv) > 2 else ''
+        fil = sys.argv[3] if len(sys.argv) > 3 else None
+        print(json.dumps(get_pedido_items(ped, fil)))
+    elif command == 'ultimo_preco':
+        cod = sys.argv[2] if len(sys.argv) > 2 else ''
+        print(json.dumps(get_ultimo_preco_fornecedor(cod)))
+    elif command == 'ultimos_precos_batch':
+        cods = json.loads(sys.argv[2]) if len(sys.argv) > 2 else []
+        print(json.dumps(get_ultimos_precos_batch(cods)))

@@ -56,8 +56,13 @@
                     📋 Todos os Itens em Compras
                 @endif
             </h3>
-            <div style="display: flex; gap: 0.5rem; align-items: center;">
-                @if($searchPv || request()->hasAny(['f_produto', 'f_descricao', 'f_op', 'f_cliente', 'f_status_pcp', 'f_pedido_compra', 'f_fornecedor', 'f_status_pagamento']))
+            <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                <!-- Quadradinho Toggle para Exibir/Ocultar Coluna Produto Pai -->
+                <button type="button" class="btn btn-secondary" onclick="toggleColunaProdutoPai()" style="padding: 0.35rem 0.65rem; font-size: 0.75rem; border-color: rgba(168, 85, 247, 0.5); font-weight: 500;">
+                    <span id="iconSquarePaiCompras">🔲</span> Produto Pai Concatenado
+                </button>
+
+                @if($searchPv || request()->hasAny(['f_produto', 'f_descricao', 'f_prod_pai', 'f_op', 'f_cliente', 'f_status_pcp', 'f_pedido_compra', 'f_fornecedor', 'f_status_pagamento']))
                     <a href="{{ route('compras.index') }}" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="window.mostrarLoading('⏳ Limpando filtros...')">
                         ✕ Limpar Todos os Filtros
                     </a>
@@ -76,6 +81,7 @@
                         <th>Cliente (C2_OBS)</th>
                         <th>Código Produto</th>
                         <th>Descrição</th>
+                        <th class="col-produto-pai" style="display: none; color: #c084fc;">Código / Produto Pai Concatenado</th>
                         <th style="color: #6ee7b7; text-align: center;">Qtd Comprar</th>
                         <th>Status PCP</th>
                         <th style="color: #38bdf8; min-width: 140px;">Pedido Compra ✏️</th>
@@ -93,30 +99,26 @@
                     <tr class="filter-row">
                         <th></th>
                         <th>
-                            <input type="text" name="f_cliente" value="{{ request('f_cliente') }}" class="filter-input" placeholder="Cliente..." form="formFilterCompras" onchange="document.getElementById('formFilterCompras').submit()">
+                            <input type="text" name="f_cliente" value="{{ request('f_cliente') }}" class="filter-input" placeholder="Multi: A, B..." form="formFilterCompras" onchange="document.getElementById('formFilterCompras').submit()">
                         </th>
                         <th>
-                            <input type="text" name="f_produto" value="{{ request('f_produto') }}" class="filter-input" placeholder="Produto..." form="formFilterCompras" onchange="document.getElementById('formFilterCompras').submit()">
+                            <input type="text" name="f_produto" value="{{ request('f_produto') }}" class="filter-input" placeholder="Multi: 6164, 1050..." form="formFilterCompras" onchange="document.getElementById('formFilterCompras').submit()">
                         </th>
                         <th>
-                            <input type="text" name="f_descricao" value="{{ request('f_descricao') }}" class="filter-input" placeholder="Descrição..." form="formFilterCompras" onchange="document.getElementById('formFilterCompras').submit()">
+                            <input type="text" name="f_descricao" value="{{ request('f_descricao') }}" class="filter-input" placeholder="Multi: CABO, CHAVE..." form="formFilterCompras" onchange="document.getElementById('formFilterCompras').submit()">
+                        </th>
+                        <th class="col-produto-pai" style="display: none;">
+                            <input type="text" name="f_prod_pai" value="{{ request('f_prod_pai') }}" class="filter-input" placeholder="Multi: QUADRO, 9510..." form="formFilterCompras" onchange="document.getElementById('formFilterCompras').submit()">
                         </th>
                         <th></th>
                         <th>
-                            <select name="f_status_pcp" class="filter-input" form="formFilterCompras" onchange="document.getElementById('formFilterCompras').submit()">
-                                <option value="">-- Todos --</option>
-                                <option value="FALTA" {{ request('f_status_pcp') == 'FALTA' ? 'selected' : '' }}>FALTA</option>
-                                <option value="SEPARADO" {{ request('f_status_pcp') == 'SEPARADO' ? 'selected' : '' }}>SEPARADO</option>
-                                <option value="RETIRADO" {{ request('f_status_pcp') == 'RETIRADO' ? 'selected' : '' }}>RETIRADO</option>
-                                <option value="FABRICA" {{ request('f_status_pcp') == 'FABRICA' ? 'selected' : '' }}>FABRICA</option>
-                                <option value="FABRICAR INTERNO KANBAN" {{ request('f_status_pcp') == 'FABRICAR INTERNO KANBAN' ? 'selected' : '' }}>KANBAN</option>
-                            </select>
+                            <input type="text" name="f_status_pcp" value="{{ request('f_status_pcp') }}" class="filter-input" placeholder="Multi: FALTA, RETIRADO..." form="formFilterCompras" onchange="document.getElementById('formFilterCompras').submit()">
                         </th>
                         <th>
-                            <input type="text" name="f_pedido_compra" value="{{ request('f_pedido_compra') }}" class="filter-input" placeholder="Ped. Compra..." form="formFilterCompras" onchange="document.getElementById('formFilterCompras').submit()">
+                            <input type="text" name="f_pedido_compra" value="{{ request('f_pedido_compra') }}" class="filter-input" placeholder="Multi: PC1, PC2..." form="formFilterCompras" onchange="document.getElementById('formFilterCompras').submit()">
                         </th>
                         <th>
-                            <input type="text" name="f_fornecedor" value="{{ request('f_fornecedor') }}" class="filter-input" placeholder="Fornecedor..." form="formFilterCompras" onchange="document.getElementById('formFilterCompras').submit()">
+                            <input type="text" name="f_fornecedor" value="{{ request('f_fornecedor') }}" class="filter-input" placeholder="Multi: FORN A, FORN B..." form="formFilterCompras" onchange="document.getElementById('formFilterCompras').submit()">
                         </th>
                         <th></th>
                         <th></th>
@@ -125,162 +127,139 @@
                         <th></th>
                         <th></th>
                         <th>
-                            <select name="f_status_pagamento" class="filter-input" form="formFilterCompras" onchange="document.getElementById('formFilterCompras').submit()">
-                                <option value="">-- Todos --</option>
-                                <option value="PENDENTE" {{ request('f_status_pagamento') == 'PENDENTE' ? 'selected' : '' }}>PENDENTE</option>
-                                <option value="PAGAMENTO ANTECIPADO" {{ request('f_status_pagamento') == 'PAGAMENTO ANTECIPADO' ? 'selected' : '' }}>ANTECIPADO</option>
-                                <option value="FATURADO" {{ request('f_status_pagamento') == 'FATURADO' ? 'selected' : '' }}>FATURADO</option>
-                                <option value="PAGO" {{ request('f_status_pagamento') == 'PAGO' ? 'selected' : '' }}>PAGO</option>
-                            </select>
+                            <input type="text" name="f_status_pagamento" value="{{ request('f_status_pagamento') }}" class="filter-input" placeholder="Multi: PAGO, FATURADO..." form="formFilterCompras" onchange="document.getElementById('formFilterCompras').submit()">
                         </th>
                         <th></th>
                         <th></th>
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($paginatedItems as $index => $item)
-                    <tr>
+                    @forelse($paginatedItems as $item)
+                    @php
+                        $estoqueId = $item['estoque_item_id'];
+                    @endphp
+                    <tr id="row_compra_{{ $estoqueId ?? $loop->index }}">
                         <td><strong>{{ $item['pedido_venda'] }}</strong></td>
-                        <td style="font-size: 0.75rem; color: #cbd5e1;">{{ $item['cliente_obs'] }}</td>
+                        <td style="font-size: 0.775rem;">{{ $item['cliente_obs'] }}</td>
                         <td><strong>{{ $item['codigo_produto'] }}</strong></td>
                         <td style="font-size: 0.775rem;">{{ $item['descricao'] }}</td>
+                        <td class="col-produto-pai" style="display: none; font-size: 0.75rem; color: #c084fc;">
+                            <code style="background: rgba(168, 85, 247, 0.15); padding: 0.15rem 0.35rem; border-radius: 0.25rem; border: 1px solid rgba(168, 85, 247, 0.3);">{{ $item['produto_pai'] ?? '-' }}</code>
+                        </td>
                         <td style="text-align: center;">
-                            <div style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 0.3rem; padding: 0.2rem 0.4rem; display: inline-block;">
-                                <strong id="qtd_comprar_{{ $item['estoque_item_id'] ?? $index }}" style="color: #6ee7b7; font-size: 0.85rem;">{{ floatval($item['quantidade_comprar']) }}</strong>
-                            </div>
+                            <strong id="qtd_comprar_{{ $estoqueId }}" style="color: {{ $item['quantidade_comprar'] > 0 ? '#ef4444' : '#10b981' }};">
+                                {{ $item['quantidade_comprar'] }}
+                            </strong>
                         </td>
                         <td>
                             <span class="badge {{ $item['status_pcp_badge'] }}">{{ $item['status_pcp'] }}</span>
                         </td>
 
-                        @if($item['no_estoque'] && $item['estoque_item_id'])
-                            <!-- Pedido de Compra -->
-                            <td>
-                                <div style="display: flex; gap: 0.2rem;">
-                                    <input type="text" 
-                                           name="items[{{ $item['estoque_item_id'] }}][pedido_compra]" 
-                                           id="pc_{{ $item['estoque_item_id'] }}"
-                                           value="{{ $item['pedido_compra'] }}" 
-                                           class="form-control" 
-                                           style="padding: 0.25rem 0.4rem; font-size: 0.75rem;" 
-                                           placeholder="Ped. Compra...">
-                                    <button type="button" class="btn btn-secondary" style="padding: 0.25rem 0.4rem; font-size: 0.65rem;" onclick="consultarFornecedorLinha('{{ $item['estoque_item_id'] }}', '{{ $item['codigo_produto'] }}')">🔍</button>
-                                </div>
-                            </td>
-
-                            <!-- Fornecedor -->
-                            <td>
-                                <input type="text" 
-                                       name="items[{{ $item['estoque_item_id'] }}][codigo_fornecedor]" 
-                                       id="forn_{{ $item['estoque_item_id'] }}"
-                                       value="{{ $item['codigo_fornecedor'] }}" 
-                                       class="form-control" 
-                                       style="padding: 0.25rem 0.4rem; font-size: 0.75rem;" 
-                                       placeholder="Fornecedor...">
-                            </td>
-
-                            <!-- Valor Unitario -->
-                            <td>
-                                <input type="number" step="0.01" 
-                                       name="items[{{ $item['estoque_item_id'] }}][valor_unitario]" 
-                                       id="vunit_{{ $item['estoque_item_id'] }}"
-                                       value="{{ $item['valor_unitario'] ?: '' }}" 
-                                       class="form-control" 
-                                       style="padding: 0.25rem 0.4rem; font-size: 0.75rem; color: #fcd34d; font-weight: 600;" 
-                                       placeholder="0.00" 
-                                       oninput="calcularTotalLinha('{{ $item['estoque_item_id'] }}')">
-                            </td>
-
-                            <!-- IPI % -->
-                            <td>
-                                <input type="number" step="0.01" 
-                                       name="items[{{ $item['estoque_item_id'] }}][ipi]" 
-                                       id="ipi_{{ $item['estoque_item_id'] }}"
-                                       value="{{ $item['ipi'] ?: '' }}" 
-                                       class="form-control" 
-                                       style="padding: 0.25rem 0.4rem; font-size: 0.75rem;" 
-                                       placeholder="0%" 
-                                       oninput="calcularTotalLinha('{{ $item['estoque_item_id'] }}')">
-                            </td>
-
-                            <!-- Frete -->
-                            <td>
-                                <input type="number" step="0.01" 
-                                       name="items[{{ $item['estoque_item_id'] }}][frete]" 
-                                       id="frete_{{ $item['estoque_item_id'] }}"
-                                       value="{{ $item['frete'] ?: '' }}" 
-                                       class="form-control" 
-                                       style="padding: 0.25rem 0.4rem; font-size: 0.75rem;" 
-                                       placeholder="0.00" 
-                                       oninput="calcularTotalLinha('{{ $item['estoque_item_id'] }}')">
-                            </td>
-
-                            <!-- Data PC -->
-                            <td>
-                                <input type="date" 
-                                       name="items[{{ $item['estoque_item_id'] }}][data_pc]" 
-                                       value="{{ $item['data_pc'] }}" 
-                                       class="form-control" 
-                                       style="padding: 0.25rem 0.4rem; font-size: 0.7rem;">
-                            </td>
-
-                            <!-- Data Pagamento -->
-                            <td>
-                                <input type="date" 
-                                       name="items[{{ $item['estoque_item_id'] }}][data_pagamento]" 
-                                       value="{{ $item['data_pagamento'] }}" 
-                                       class="form-control" 
-                                       style="padding: 0.25rem 0.4rem; font-size: 0.7rem;">
-                            </td>
-
-                            <!-- Solicitação Compra -->
-                            <td>
-                                <input type="text" 
-                                       name="items[{{ $item['estoque_item_id'] }}][solicitacao_compra]" 
-                                       value="{{ $item['solicitacao_compra'] }}" 
-                                       class="form-control" 
-                                       style="padding: 0.25rem 0.4rem; font-size: 0.75rem;" 
-                                       placeholder="SC...">
-                            </td>
-
-                            <!-- Status Pagamento -->
-                            <td>
-                                <select name="items[{{ $item['estoque_item_id'] }}][status_pagamento]" 
-                                        class="form-select" 
-                                        style="padding: 0.25rem 0.4rem; font-size: 0.7rem; font-weight: 600;">
-                                    <option value="PENDENTE" {{ $item['status_pagamento'] == 'PENDENTE' ? 'selected' : '' }}>PENDENTE</option>
-                                    <option value="PAGAMENTO ANTECIPADO" {{ $item['status_pagamento'] == 'PAGAMENTO ANTECIPADO' ? 'selected' : '' }}>ANTECIPADO</option>
-                                    <option value="FATURADO" {{ $item['status_pagamento'] == 'FATURADO' ? 'selected' : '' }}>FATURADO</option>
-                                    <option value="PAGO" {{ $item['status_pagamento'] == 'PAGO' ? 'selected' : '' }}>PAGO</option>
-                                </select>
-                            </td>
-
-                            <!-- Valor Total Calculado -->
-                            <td style="text-align: right;">
-                                <strong id="vtotal_{{ $item['estoque_item_id'] }}" style="color: #6ee7b7; font-size: 0.85rem;">
-                                    R$ {{ number_format(floatval($item['valor_total']), 2, ',', '.') }}
-                                </strong>
-                            </td>
-
-                            <!-- Botao Salvar Unico -->
-                            <td style="text-align: center;">
-                                <button type="button" 
-                                        class="btn btn-primary" 
-                                        style="padding: 0.3rem 0.6rem; font-size: 0.75rem;"
-                                        onclick="salvarUnicoCompras('{{ $item['estoque_item_id'] }}', '{{ $item['compra_id'] }}')">
-                                    💾 Salvar
-                                </button>
-                            </td>
+                        @if($estoqueId)
+                        <!-- Campos Editáveis para Itens que estão no Banco MySQL Local -->
+                        <td>
+                            <input type="text" 
+                                   name="items[{{ $estoqueId }}][pedido_compra]" 
+                                   value="{{ $item['pedido_compra'] }}" 
+                                   class="form-control" 
+                                   placeholder="N° PC..."
+                                   style="padding: 0.2rem 0.4rem; font-size: 0.75rem;">
+                        </td>
+                        <td>
+                            <input type="text" 
+                                   name="items[{{ $estoqueId }}][codigo_fornecedor]" 
+                                   value="{{ $item['codigo_fornecedor'] }}" 
+                                   class="form-control" 
+                                   placeholder="Cód / Nome Fornecedor..."
+                                   style="padding: 0.2rem 0.4rem; font-size: 0.75rem;">
+                        </td>
+                        <td>
+                            <input type="number" 
+                                   step="0.01" 
+                                   name="items[{{ $estoqueId }}][valor_unitario]" 
+                                   id="input_val_unit_{{ $estoqueId }}"
+                                   value="{{ $item['valor_unitario'] }}" 
+                                   class="form-control" 
+                                   placeholder="0.00"
+                                   style="padding: 0.2rem 0.4rem; font-size: 0.75rem; font-weight: 600; color: #fcd34d;"
+                                   onchange="recalcularLinhaCompra({{ $estoqueId }})">
+                        </td>
+                        <td>
+                            <input type="number" 
+                                   step="0.01" 
+                                   name="items[{{ $estoqueId }}][ipi]" 
+                                   id="input_ipi_{{ $estoqueId }}"
+                                   value="{{ $item['ipi'] }}" 
+                                   class="form-control" 
+                                   placeholder="0"
+                                   style="padding: 0.2rem 0.4rem; font-size: 0.75rem; text-align: center;"
+                                   onchange="recalcularLinhaCompra({{ $estoqueId }})">
+                        </td>
+                        <td>
+                            <input type="number" 
+                                   step="0.01" 
+                                   name="items[{{ $estoqueId }}][frete]" 
+                                   id="input_frete_{{ $estoqueId }}"
+                                   value="{{ $item['frete'] }}" 
+                                   class="form-control" 
+                                   placeholder="0.00"
+                                   style="padding: 0.2rem 0.4rem; font-size: 0.75rem; text-align: right;"
+                                   onchange="recalcularLinhaCompra({{ $estoqueId }})">
+                        </td>
+                        <td>
+                            <input type="date" 
+                                   name="items[{{ $estoqueId }}][data_pc]" 
+                                   value="{{ $item['data_pc'] ? (is_string($item['data_pc']) ? $item['data_pc'] : $item['data_pc']->format('Y-m-d')) : '' }}" 
+                                   class="form-control" 
+                                   style="padding: 0.15rem 0.3rem; font-size: 0.75rem;">
+                        </td>
+                        <td>
+                            <input type="date" 
+                                   name="items[{{ $estoqueId }}][data_pagamento]" 
+                                   value="{{ $item['data_pagamento'] ? (is_string($item['data_pagamento']) ? $item['data_pagamento'] : $item['data_pagamento']->format('Y-m-d')) : '' }}" 
+                                   class="form-control" 
+                                   style="padding: 0.15rem 0.3rem; font-size: 0.75rem;">
+                        </td>
+                        <td>
+                            <input type="text" 
+                                   name="items[{{ $estoqueId }}][solicitacao_compra]" 
+                                   value="{{ $item['solicitacao_compra'] }}" 
+                                   class="form-control" 
+                                   placeholder="N° SC..."
+                                   style="padding: 0.2rem 0.4rem; font-size: 0.75rem;">
+                        </td>
+                        <td>
+                            <select name="items[{{ $estoqueId }}][status_pagamento]" 
+                                    class="form-select" 
+                                    style="padding: 0.2rem 0.3rem; font-size: 0.75rem;">
+                                <option value="PENDENTE" {{ $item['status_pagamento'] == 'PENDENTE' ? 'selected' : '' }}>PENDENTE</option>
+                                <option value="PAGAMENTO ANTECIPADO" {{ $item['status_pagamento'] == 'PAGAMENTO ANTECIPADO' ? 'selected' : '' }}>PAG. ANTECIPADO</option>
+                                <option value="FATURADO" {{ $item['status_pagamento'] == 'FATURADO' ? 'selected' : '' }}>FATURADO</option>
+                                <option value="PAGO" {{ $item['status_pagamento'] == 'PAGO' ? 'selected' : '' }}>PAGO</option>
+                            </select>
+                        </td>
+                        <td style="text-align: right; font-weight: 700; color: #6ee7b7;" id="label_val_total_{{ $estoqueId }}">
+                            R$ {{ number_format($item['valor_total'], 2, ',', '.') }}
+                        </td>
+                        <td style="text-align: center;">
+                            <button type="button" 
+                                    class="btn btn-primary" 
+                                    style="padding: 0.2rem 0.5rem; font-size: 0.7rem;"
+                                    onclick="solicitarSalvarSingleCompra({{ $estoqueId }})">
+                                💾 Salvar
+                            </button>
+                        </td>
                         @else
-                            <td colspan="11" style="text-align: center; color: var(--text-muted); font-size: 0.75rem;">
-                                <em>Aguardando inclusão no Estoque PCP para editar valores</em>
-                            </td>
+                        <!-- Somente Leitura para itens trazidos da API Protheus que ainda não estão salvos no Estoque Local -->
+                        <td colspan="10" style="text-align: center; color: var(--text-muted); font-size: 0.75rem; background: rgba(255,255,255,0.02);">
+                            <em>Importe este item no Painel de Estoque (PCP) para habilitar edição financeira.</em>
+                        </td>
                         @endif
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="17" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">
-                            Nenhum item encontrado nos filtros aplicados.
+                        <td colspan="18" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                            Nenhum item de compras encontrado com os filtros selecionados.
                         </td>
                     </tr>
                     @endforelse
@@ -289,108 +268,89 @@
         </div>
     </form>
 
-    <!-- Controles de Paginação -->
-    <div class="pagination-container">
-        <div>
-            Exibindo <strong>{{ $paginatedItems->firstItem() ?? 0 }}</strong> a <strong>{{ $paginatedItems->lastItem() ?? 0 }}</strong> de <strong>{{ $paginatedItems->total() }}</strong> itens em compras
+    <!-- Paginação Customizada Dark Mode -->
+    @if($paginatedItems->hasPages())
+        <div class="pagination-container">
+            <div>
+                Exibindo <strong>{{ $paginatedItems->firstItem() }}</strong> até <strong>{{ $paginatedItems->lastItem() }}</strong> de <strong>{{ $paginatedItems->total() }}</strong> itens em compras
+            </div>
+            <div>
+                {{ $paginatedItems->links('pagination::bootstrap-4') }}
+            </div>
         </div>
-        <div>
-            {{ $paginatedItems->links() }}
-        </div>
-    </div>
+    @endif
 </div>
 
-<!-- Formulário Oculto Auxiliar para Salvar Linha Única de Compras -->
-<form action="" method="POST" id="formSingleRowCompras" style="display: none;">
-    @csrf
-    @method('PUT')
-    <input type="hidden" name="pedido_compra" id="single_c_pc">
-    <input type="hidden" name="codigo_fornecedor" id="single_c_forn">
-    <input type="hidden" name="valor_unitario" id="single_c_vunit">
-    <input type="hidden" name="ipi" id="single_c_ipi">
-    <input type="hidden" name="frete" id="single_c_frete">
-    <input type="hidden" name="data_pc" id="single_c_dpc">
-    <input type="hidden" name="data_pagamento" id="single_c_dpag">
-    <input type="hidden" name="solicitacao_compra" id="single_c_sc">
-    <input type="hidden" name="status_pagamento" id="single_c_status">
-</form>
-
 <script>
-function calcularTotalLinha(estoqueItemId) {
-    const qtdElement = document.getElementById(`qtd_comprar_${estoqueItemId}`);
-    if (!qtdElement) return;
-
-    const qtdComprar = parseFloat(qtdElement.innerText) || 0;
-    const vunit = parseFloat(document.getElementById(`vunit_${estoqueItemId}`)?.value) || 0;
-    const ipi = parseFloat(document.getElementById(`ipi_${estoqueItemId}`)?.value) || 0;
-    const frete = parseFloat(document.getElementById(`frete_${estoqueItemId}`)?.value) || 0;
-
-    const total = (vunit * qtdComprar) + (vunit * qtdComprar * (ipi / 100)) + frete;
-
-    const totalElement = document.getElementById(`vtotal_${estoqueItemId}`);
-    if (totalElement) {
-        totalElement.innerText = 'R$ ' + total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+function checkProdutoPaiVisibility() {
+    const hasFilter = {{ request()->filled('f_prod_pai') ? 'true' : 'false' }};
+    const show = localStorage.getItem('showColProdutoPai') === 'true' || hasFilter;
+    
+    document.querySelectorAll('.col-produto-pai').forEach(el => {
+        el.style.display = show ? 'table-cell' : 'none';
+    });
+    
+    const icon = document.getElementById('iconSquarePaiCompras');
+    if (icon) {
+        icon.innerText = show ? '☑️' : '🔲';
     }
 }
 
-function salvarUnicoCompras(estoqueItemId, compraId) {
-    const form = document.getElementById('formSingleRowCompras');
-    if (!compraId) {
-        alert('Salve as alterações através do botão "Salvar Todas as Alterações da Página" para gerar o registro.');
-        return;
-    }
-
-    form.action = `/compras/${compraId}`;
-
-    document.getElementById('single_c_pc').value = document.getElementById(`pc_${estoqueItemId}`)?.value || '';
-    document.getElementById('single_c_forn').value = document.getElementById(`forn_${estoqueItemId}`)?.value || '';
-    document.getElementById('single_c_vunit').value = document.getElementById(`vunit_${estoqueItemId}`)?.value || '0';
-    document.getElementById('single_c_ipi').value = document.getElementById(`ipi_${estoqueItemId}`)?.value || '0';
-    document.getElementById('single_c_frete').value = document.getElementById(`frete_${estoqueItemId}`)?.value || '0';
-    document.getElementById('single_c_status').value = document.querySelector(`select[name="items[${estoqueItemId}][status_pagamento]"]`)?.value || 'PENDENTE';
-
-    window.mostrarLoading('💾 Salvando item de compras...');
-    form.submit();
+function toggleColunaProdutoPai() {
+    const current = localStorage.getItem('showColProdutoPai') === 'true';
+    const newState = !current;
+    localStorage.setItem('showColProdutoPai', newState);
+    checkProdutoPaiVisibility();
 }
 
-async function consultarFornecedorLinha(estoqueItemId, codigoProduto) {
-    const pcInput = document.getElementById(`pc_${estoqueItemId}`);
-    const fornInput = document.getElementById(`forn_${estoqueItemId}`);
-    if (!pcInput || !fornInput) return;
+document.addEventListener('DOMContentLoaded', function() {
+    checkProdutoPaiVisibility();
+});
 
-    const pedidoComp = pcInput.value.trim();
-    if (!pedidoComp) {
-        alert('Por favor, digite o número do Pedido de Compra.');
-        return;
-    }
+function recalcularLinhaCompra(estoqueId) {
+    const inputValUnit = document.getElementById('input_val_unit_' + estoqueId);
+    const inputIpi = document.getElementById('input_ipi_' + estoqueId);
+    const inputFrete = document.getElementById('input_frete_' + estoqueId);
+    const labelQtdComprar = document.getElementById('qtd_comprar_' + estoqueId);
+    const labelTotal = document.getElementById('label_val_total_' + estoqueId);
 
-    window.mostrarLoading('🔍 Buscando dados do Fornecedor e Pedido de Compra no Protheus... Aguarde...');
+    if (!inputValUnit || !labelTotal || !labelQtdComprar) return;
 
-    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    const valUnitario = parseFloat(inputValUnit.value) || 0;
+    const ipi = parseFloat(inputIpi ? inputIpi.value : 0) || 0;
+    const frete = parseFloat(inputFrete ? inputFrete.value : 0) || 0;
+    const qtdComprar = parseFloat(labelQtdComprar.innerText) || 0;
 
-    try {
-        const response = await fetch('{{ route("compras.consultar-protheus") }}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': csrfToken
-            },
-            body: JSON.stringify({ pedido_compra: pedidoComp, codigo_produto: codigoProduto })
-        });
+    const valTotal = (valUnitario * qtdComprar) + (valUnitario * qtdComprar * (ipi / 100)) + frete;
+    labelTotal.innerText = 'R$ ' + valTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
 
-        const result = await response.json();
-        window.ocultarLoading();
+function solicitarSalvarSingleCompra(estoqueId) {
+    if (!confirm('Deseja salvar as alterações deste item de compras?')) return;
+    window.mostrarLoading('💾 Salvando item de compras... Aguarde...');
 
-        if (result.success && result.data.codigo_fornecedor) {
-            fornInput.value = result.data.codigo_fornecedor;
-            alert(`✅ Fornecedor [${result.data.codigo_fornecedor}] carregado com sucesso do Protheus!`);
-        } else {
-            alert('⚠️ Pedido de Compra não encontrado no Protheus.');
+    const row = document.getElementById('row_compra_' + estoqueId);
+    const inputs = row.querySelectorAll('input, select');
+
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '{{ route("compras.update-batch") }}';
+
+    const csrfInput = document.createElement('input');
+    csrfInput.type = 'hidden';
+    csrfInput.name = '_token';
+    csrfInput.value = '{{ csrf_token() }}';
+    form.appendChild(csrfInput);
+
+    inputs.forEach(input => {
+        if (input.name) {
+            const clone = input.cloneNode(true);
+            form.appendChild(clone);
         }
-    } catch (e) {
-        window.ocultarLoading();
-        alert('❌ Erro de conexão ao buscar no Protheus.');
-    }
+    });
+
+    document.body.appendChild(form);
+    form.submit();
 }
 </script>
 @endsection

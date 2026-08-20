@@ -15,6 +15,7 @@ class EstoqueItem extends Model
     protected $fillable = [
         'codigo_produto',
         'descricao',
+        'produto_pai',
         'op',
         'pedido',
         'cliente_obs',

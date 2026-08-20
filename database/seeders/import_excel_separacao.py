@@ -62,25 +62,52 @@ def import_excel(target_path=None, mode='truncate'):
     now_str = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
     is_header = True
+    col_map = {}
+
     for row in sheet.iter_rows(values_only=True):
         if not row:
             continue
 
-        row_str = [str(cell) for cell in row if cell is not None]
+        row_str = [str(cell).strip().upper() for cell in row if cell is not None]
         if is_header:
-            if 'ORDEM PRODUCAO' in row_str or 'CODIGO PRODUTO' in row_str:
+            if 'ORDEM PRODUCAO' in row_str or 'CODIGO PRODUTO' in row_str or 'PV' in row_str:
                 is_header = False
+                for idx, cell in enumerate(row):
+                    if cell:
+                        col_name = str(cell).strip().upper()
+                        col_map[col_name] = idx
             continue
 
-        op = str(row[1]).strip() if len(row) > 1 and row[1] is not None else None
-        pedido = str(row[2]).strip() if len(row) > 2 and row[2] is not None else None
-        codigo_produto = str(row[3]).strip() if len(row) > 3 and row[3] is not None else None
+        # Mapeamento dinâmico de colunas ou por índice fallback
+        idx_op = col_map.get('ORDEM PRODUCAO', 1)
+        idx_pv = col_map.get('PV', 2)
+        idx_cod = col_map.get('CODIGO PRODUTO', 3)
+        idx_desc = col_map.get('DESCRIÇÃO COMPONENTE', 4)
+        idx_pai = col_map.get('PRODUTO PAI CONCATENADO', col_map.get('PRODUTO PAI', None))
+        idx_status = col_map.get('STATUS PCP', 5)
+        idx_qtd_est = col_map.get('QTD EM ESTOQUE', 6)
+        idx_obs_est = col_map.get('OBSERVAÇÃO ESTOQUE', 7)
+        idx_sc = col_map.get('SOLICITAÇÃO DE COMPRA', 8)
+        idx_comprado = col_map.get('COMPRADO', 9)
+        idx_val_unit = col_map.get('VALOR UNITARIO COMPRA', 10)
+        idx_pagto = col_map.get('TIPO PAGAMENTO/FATURADO', 12)
+        idx_forn = col_map.get('FORNECEDOR SELECIONADO', 13)
+        idx_pc = col_map.get('PEDIDO COMPRA (PROTHEUS)', 14)
+        idx_ipi = col_map.get('IPI COMPRA', 15)
+        idx_d_pc = col_map.get('DATA EMISSÃO PC', 16)
+        idx_d_pg = col_map.get('DATA PREVISÃO PGTO', 17)
+
+        op = str(row[idx_op]).strip() if len(row) > idx_op and row[idx_op] is not None else None
+        pedido = str(row[idx_pv]).strip() if len(row) > idx_pv and row[idx_pv] is not None else None
+        codigo_produto = str(row[idx_cod]).strip() if len(row) > idx_cod and row[idx_cod] is not None else None
 
         if not codigo_produto or codigo_produto == 'None':
             continue
 
-        descricao = str(row[4]).strip() if len(row) > 4 and row[4] is not None else ''
-        status_pcp = str(row[5]).strip().upper() if len(row) > 5 and row[5] is not None else 'FALTA'
+        descricao = str(row[idx_desc]).strip() if len(row) > idx_desc and row[idx_desc] is not None else ''
+        produto_pai = str(row[idx_pai]).strip() if idx_pai is not None and len(row) > idx_pai and row[idx_pai] is not None and str(row[idx_pai]).strip() != 'None' else None
+
+        status_pcp = str(row[idx_status]).strip().upper() if len(row) > idx_status and row[idx_status] is not None else 'FALTA'
         if status_pcp not in ['FALTA', 'SEPARADO', 'RETIRADO', 'FABRICA', 'FABRICAR INTERNO KANBAN']:
             if 'KANBAN' in status_pcp:
                 status_pcp = 'FABRICAR INTERNO KANBAN'
@@ -90,45 +117,45 @@ def import_excel(target_path=None, mode='truncate'):
                 status_pcp = 'FALTA'
 
         try:
-            qtd_estoque = float(row[6]) if len(row) > 6 and row[6] is not None else 0.0
+            qtd_estoque = float(row[idx_qtd_est]) if len(row) > idx_qtd_est and row[idx_qtd_est] is not None else 0.0
         except:
             qtd_estoque = 0.0
 
-        obs_estoque = str(row[7]).strip() if len(row) > 7 and row[7] is not None and str(row[7]).strip() != 'None' else None
-        solicitacao_compra = str(row[8]).strip() if len(row) > 8 and row[8] is not None and str(row[8]).strip() != 'None' else None
+        obs_estoque = str(row[idx_obs_est]).strip() if len(row) > idx_obs_est and row[idx_obs_est] is not None and str(row[idx_obs_est]).strip() != 'None' else None
+        solicitacao_compra = str(row[idx_sc]).strip() if len(row) > idx_sc and row[idx_sc] is not None and str(row[idx_sc]).strip() != 'None' else None
 
         try:
-            qtd_comprado = float(row[9]) if len(row) > 9 and row[9] is not None else 0.0
+            qtd_comprado = float(row[idx_comprado]) if len(row) > idx_comprado and row[idx_comprado] is not None else 0.0
         except:
             qtd_comprado = 0.0
 
         quantidade_op = max(1.0, qtd_estoque + qtd_comprado)
 
         try:
-            valor_unitario = float(row[10]) if len(row) > 10 and row[10] is not None else 0.0
+            valor_unitario = float(row[idx_val_unit]) if len(row) > idx_val_unit and row[idx_val_unit] is not None else 0.0
         except:
             valor_unitario = 0.0
 
-        status_pagamento = str(row[12]).strip().upper() if len(row) > 12 and row[12] is not None else 'PENDENTE'
-        fornecedor = str(row[13]).strip() if len(row) > 13 and row[13] is not None and str(row[13]).strip() != 'None' else None
-        pedido_compra = str(row[14]).strip() if len(row) > 14 and row[14] is not None and str(row[14]).strip() != 'None' else None
+        status_pagamento = str(row[idx_pagto]).strip().upper() if len(row) > idx_pagto and row[idx_pagto] is not None else 'PENDENTE'
+        fornecedor = str(row[idx_forn]).strip() if len(row) > idx_forn and row[idx_forn] is not None and str(row[idx_forn]).strip() != 'None' else None
+        pedido_compra = str(row[idx_pc]).strip() if len(row) > idx_pc and row[idx_pc] is not None and str(row[idx_pc]).strip() != 'None' else None
 
         try:
-            ipi = float(row[15]) if len(row) > 15 and row[15] is not None else 0.0
+            ipi = float(row[idx_ipi]) if len(row) > idx_ipi and row[idx_ipi] is not None else 0.0
         except:
             ipi = 0.0
 
-        data_pc = parse_date(row[16]) if len(row) > 16 else None
-        data_pagamento = parse_date(row[17]) if len(row) > 17 else None
+        data_pc = parse_date(row[idx_d_pc]) if len(row) > idx_d_pc else None
+        data_pagamento = parse_date(row[idx_d_pg]) if len(row) > idx_d_pg else None
 
         val_total = (valor_unitario * qtd_comprado) + (valor_unitario * qtd_comprado * (ipi / 100))
 
         # Inserir no Estoque
         sql_est = """
-        INSERT INTO estoque_items (codigo_produto, descricao, op, pedido, cliente_obs, quantidade, quantidade_estoque, status, observacao_estoque, created_at, updated_at)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        INSERT INTO estoque_items (codigo_produto, descricao, produto_pai, op, pedido, cliente_obs, quantidade, quantidade_estoque, status, observacao_estoque, created_at, updated_at)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
-        cursor.execute(sql_est, (codigo_produto, descricao, op, pedido, None, quantidade_op, qtd_estoque, status_pcp, obs_estoque, now_str, now_str))
+        cursor.execute(sql_est, (codigo_produto, descricao, produto_pai, op, pedido, None, quantidade_op, qtd_estoque, status_pcp, obs_estoque, now_str, now_str))
         estoque_id = cursor.lastrowid
 
         # Inserir em Compras

@@ -14,15 +14,60 @@ class OpFechamentoController extends Controller
     public function index(Request $request)
     {
         $searchOp = $request->get('search_op');
+        $searchPedido = $request->get('search_pedido');
+        $searchCliente = $request->get('search_cliente');
+        $searchDescricao = $request->get('search_descricao');
         $tab = $request->get('tab', 'prontas'); // prontas, pendentes, encerradas, todas
 
-        // Busca todas as OPs agrupadas do Estoque
+        // Busca todas as OPs agrupadas do Estoque com filtros aplicados
         $query = EstoqueItem::select('op')
             ->whereNotNull('op')
             ->where('op', '!=', '');
 
         if ($searchOp) {
-            $query->where('op', 'like', '%' . $searchOp . '%');
+            $terms = array_filter(array_map('trim', explode(',', $searchOp)));
+            if (!empty($terms)) {
+                $query->where(function ($q) use ($terms) {
+                    foreach ($terms as $term) {
+                        $q->orWhere('op', 'like', '%' . $term . '%');
+                    }
+                });
+            }
+        }
+
+        if ($searchPedido) {
+            $terms = array_filter(array_map('trim', explode(',', $searchPedido)));
+            if (!empty($terms)) {
+                $query->where(function ($q) use ($terms) {
+                    foreach ($terms as $term) {
+                        $q->orWhere('pedido', 'like', '%' . $term . '%');
+                    }
+                });
+            }
+        }
+
+        if ($searchCliente) {
+            $terms = array_filter(array_map('trim', explode(',', $searchCliente)));
+            if (!empty($terms)) {
+                $query->where(function ($q) use ($terms) {
+                    foreach ($terms as $term) {
+                        $q->orWhere('cliente_obs', 'like', '%' . $term . '%');
+                    }
+                });
+            }
+        }
+
+        if ($searchDescricao) {
+            $terms = array_filter(array_map('trim', explode(',', $searchDescricao)));
+            if (!empty($terms)) {
+                $query->where(function ($q) use ($terms) {
+                    foreach ($terms as $term) {
+                        $q->orWhere('descricao', 'like', '%' . $term . '%')
+                          ->orWhere('descricao_longa', 'like', '%' . $term . '%')
+                          ->orWhere('produto_pai', 'like', '%' . $term . '%');
+                    }
+                });
+            }
         }
 
         $opsGrouped = $query->groupBy('op')->pluck('op');
@@ -67,7 +112,7 @@ class OpFechamentoController extends Controller
             ]);
         }
 
-        return view('fechamento_op.index', compact('opsList', 'searchOp', 'tab'));
+        return view('fechamento_op.index', compact('opsList', 'searchOp', 'searchPedido', 'searchCliente', 'searchDescricao', 'tab'));
     }
 
     /**

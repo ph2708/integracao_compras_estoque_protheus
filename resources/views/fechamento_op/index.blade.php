@@ -14,45 +14,64 @@
 
 <!-- Filtros & Abas de Navegação -->
 <div class="card" style="margin-bottom: 1.25rem; border-color: rgba(168, 85, 247, 0.4);">
-    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-        <!-- Abas -->
-        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-            <a href="{{ route('fechamento-op.index', ['tab' => 'prontas', 'search_op' => $searchOp]) }}" 
-               class="btn {{ $tab === 'prontas' ? 'btn-primary' : 'btn-secondary' }}" 
-               style="{{ $tab === 'prontas' ? 'background-color: #059669;' : '' }}">
-                🟢 Prontas para Fechar (0 FALTA)
-            </a>
-            <a href="{{ route('fechamento-op.index', ['tab' => 'pendentes', 'search_op' => $searchOp]) }}" 
-               class="btn {{ $tab === 'pendentes' ? 'btn-primary' : 'btn-secondary' }}"
-               style="{{ $tab === 'pendentes' ? 'background-color: #d97706;' : '' }}">
-                ⏳ Pendentes de Compras
-            </a>
-            <a href="{{ route('fechamento-op.index', ['tab' => 'encerradas', 'search_op' => $searchOp]) }}" 
-               class="btn {{ $tab === 'encerradas' ? 'btn-primary' : 'btn-secondary' }}"
-               style="{{ $tab === 'encerradas' ? 'background-color: #4f46e5;' : '' }}">
-                🔒 OPs Encerradas (Histórico)
-            </a>
-            <a href="{{ route('fechamento-op.index', ['tab' => 'todas', 'search_op' => $searchOp]) }}" 
-               class="btn {{ $tab === 'todas' ? 'btn-primary' : 'btn-secondary' }}">
-                📋 Todas as OPs
-            </a>
+    <!-- Abas Superior -->
+    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.85rem;">
+        <a href="{{ route('fechamento-op.index', ['tab' => 'prontas', 'search_op' => $searchOp, 'search_pedido' => $searchPedido, 'search_cliente' => $searchCliente, 'search_descricao' => $searchDescricao]) }}" 
+           class="btn {{ $tab === 'prontas' ? 'btn-primary' : 'btn-secondary' }}" 
+           style="{{ $tab === 'prontas' ? 'background-color: #059669; border-color: #059669;' : '' }}">
+            🟢 Prontas para Fechar (0 FALTA)
+        </a>
+        <a href="{{ route('fechamento-op.index', ['tab' => 'pendentes', 'search_op' => $searchOp, 'search_pedido' => $searchPedido, 'search_cliente' => $searchCliente, 'search_descricao' => $searchDescricao]) }}" 
+           class="btn {{ $tab === 'pendentes' ? 'btn-primary' : 'btn-secondary' }}"
+           style="{{ $tab === 'pendentes' ? 'background-color: #d97706; border-color: #d97706;' : '' }}">
+            ⏳ Pendentes de Compras
+        </a>
+        <a href="{{ route('fechamento-op.index', ['tab' => 'encerradas', 'search_op' => $searchOp, 'search_pedido' => $searchPedido, 'search_cliente' => $searchCliente, 'search_descricao' => $searchDescricao]) }}" 
+           class="btn {{ $tab === 'encerradas' ? 'btn-primary' : 'btn-secondary' }}"
+           style="{{ $tab === 'encerradas' ? 'background-color: #4f46e5; border-color: #4f46e5;' : '' }}">
+            🔒 OPs Encerradas (Histórico)
+        </a>
+        <a href="{{ route('fechamento-op.index', ['tab' => 'todas', 'search_op' => $searchOp, 'search_pedido' => $searchPedido, 'search_cliente' => $searchCliente, 'search_descricao' => $searchDescricao]) }}" 
+           class="btn {{ $tab === 'todas' ? 'btn-primary' : 'btn-secondary' }}">
+            📋 Todas as OPs
+        </a>
+    </div>
+
+    <!-- Barra de Filtros de Pesquisa -->
+    <form action="{{ route('fechamento-op.index') }}" method="GET" style="display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: flex-end;">
+        <input type="hidden" name="tab" value="{{ $tab }}">
+
+        <div style="flex: 1; min-width: 140px;">
+            <label class="form-label">N° da OP ✏️</label>
+            <input type="text" name="search_op" value="{{ $searchOp }}" class="form-control" placeholder="Ex: 018662...">
         </div>
 
-        <!-- Busca por Número de OP -->
-        <form action="{{ route('fechamento-op.index') }}" method="GET" style="display: flex; gap: 0.5rem; flex: 1; max-width: 320px;">
-            <input type="hidden" name="tab" value="{{ $tab }}">
-            <input type="text" 
-                   name="search_op" 
-                   value="{{ $searchOp }}" 
-                   class="form-control" 
-                   placeholder="Buscar por N° da OP..." 
-                   style="padding: 0.4rem 0.65rem;">
-            <button type="submit" class="btn btn-primary" style="padding: 0.4rem 0.75rem;">🔍</button>
-            @if($searchOp)
-                <a href="{{ route('fechamento-op.index', ['tab' => $tab]) }}" class="btn btn-secondary" style="padding: 0.4rem 0.65rem;">✕</a>
+        <div style="flex: 1; min-width: 140px;">
+            <label class="form-label">Pedido de Venda ✏️</label>
+            <input type="text" name="search_pedido" value="{{ $searchPedido }}" class="form-control" placeholder="Ex: 006614...">
+        </div>
+
+        <div style="flex: 1.5; min-width: 180px;">
+            <label class="form-label">Nome do Cliente ✏️</label>
+            <input type="text" name="search_cliente" value="{{ $searchCliente }}" class="form-control" placeholder="Ex: CONDOMINIO...">
+        </div>
+
+        <div style="flex: 2; min-width: 200px;">
+            <label class="form-label">Descrição do Produto / Pai ✏️</label>
+            <input type="text" name="search_descricao" value="{{ $searchDescricao }}" class="form-control" placeholder="Multi: CABO, CHAVE...">
+        </div>
+
+        <div style="display: flex; gap: 0.4rem; align-items: flex-end;">
+            <button type="submit" class="btn btn-primary" style="padding: 0.45rem 0.85rem;">
+                🔍 Filtrar
+            </button>
+            @if($searchOp || $searchPedido || $searchCliente || $searchDescricao)
+                <a href="{{ route('fechamento-op.index', ['tab' => $tab]) }}" class="btn btn-secondary" style="padding: 0.45rem 0.65rem;">
+                    ✕ Limpar
+                </a>
             @endif
-        </form>
-    </div>
+        </div>
+    </form>
 </div>
 
 <!-- Tabela de OPs agrupadas -->

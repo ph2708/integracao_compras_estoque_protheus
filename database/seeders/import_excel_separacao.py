@@ -51,24 +51,37 @@ def parse_float(val):
     except:
         return 0.0
 
-def load_rows_from_file(file_path):
-    ext = os.path.splitext(file_path)[1].lower()
+def read_csv_rows(file_path):
+    for encoding in ['utf-8-sig', 'utf-8', 'iso-8859-1', 'cp1252']:
+        try:
+            with open(file_path, 'r', encoding=encoding) as f:
+                sample = f.read(4096)
+                f.seek(0)
+                delimiter = ';' if ';' in sample else ','
+                reader = csv.reader(f, delimiter=delimiter)
+                rows = [row for row in reader if row]
+                if rows:
+                    print(f"Lido CSV com codificação {encoding} e delimitador '{delimiter}' ({len(rows)} linhas)")
+                    return rows
+        except Exception:
+            continue
+    return []
+
+def load_rows_from_file(file_path, original_ext=None):
+    """
+    Carrega as linhas de arquivos .csv ou .xlsx com fallback automático inteligente
+    """
+    ext = original_ext if original_ext else os.path.splitext(file_path)[1].lower()
+    if not ext.startswith('.'):
+        ext = '.' + ext if ext else ''
+
     if ext in ['.csv', '.txt']:
-        for encoding in ['utf-8-sig', 'utf-8', 'iso-8859-1', 'cp1252']:
-            try:
-                with open(file_path, 'r', encoding=encoding) as f:
-                    sample = f.read(4096)
-                    f.seek(0)
-                    delimiter = ';' if ';' in sample else ','
-                    reader = csv.reader(f, delimiter=delimiter)
-                    rows = [row for row in reader if row]
-                    if rows:
-                        print(f"Lido CSV com codificação {encoding} e delimitador '{delimiter}' ({len(rows)} linhas)")
-                        return rows
-            except Exception:
-                continue
-        return []
-    else:
+        rows = read_csv_rows(file_path)
+        if rows:
+            return rows
+
+    # Tenta abrir como Excel (.xlsx)
+    try:
         wb = openpyxl.load_workbook(file_path, read_only=True, data_only=True)
         sheet = wb.active
         rows = []
@@ -78,6 +91,12 @@ def load_rows_from_file(file_path):
         wb.close()
         print(f"Lido Excel .xlsx ({len(rows)} linhas)")
         return rows
+    except Exception as err:
+        print(f"Formato não-Excel ou arquivo temporário. Tentando fallback para leitor CSV...")
+        rows = read_csv_rows(file_path)
+        if rows:
+            return rows
+        raise err
 
 def fetch_protheus_enrichment_data(codigos_produtos, ops, pvs):
     """
@@ -199,7 +218,7 @@ def fetch_protheus_enrichment_data(codigos_produtos, ops, pvs):
 
     return product_map, order_map, purchase_map
 
-def import_excel(target_path=None, mode='truncate'):
+def import_excel(target_path=None, mode='truncate', original_ext=None):
     excel_file = target_path if target_path and os.path.exists(target_path) else DEFAULT_EXCEL_PATH
 
     if not os.path.exists(excel_file):
@@ -207,11 +226,12 @@ def import_excel(target_path=None, mode='truncate'):
         return
 
     print(f"Processando arquivo: {excel_file}...")
-    rows = load_rows_from_file(excel_file)
+    rows = load_rows_from_file(excel_file, original_ext)
     if not rows:
         print("Aviso: Nenhuma linha foi encontrada no arquivo enviado.")
         return
 
+    # Pré-mapeamento de cabeçalho para coletar OPs e PVs
     is_header = True
     col_map = {}
     cods_to_query = []
@@ -391,4 +411,5 @@ def import_excel(target_path=None, mode='truncate'):
 if __name__ == '__main__':
     target = sys.argv[1] if len(sys.argv) > 1 else None
     mode = sys.argv[2] if len(sys.argv) > 2 else 'truncate'
-    import_excel(target, mode)
+    orig_ext = sys.argv[3] if len(sys.argv) > 3 else None
+    import_excel(target, mode, orig_ext)

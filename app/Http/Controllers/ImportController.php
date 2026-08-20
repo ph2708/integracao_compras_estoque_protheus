@@ -198,6 +198,7 @@ class ImportController extends Controller
 
         $file = $request->file('arquivo');
         $fullPath = $file->getRealPath();
+        $originalExt = strtolower($file->getClientOriginalExtension());
 
         if (!$fullPath || !file_exists($fullPath)) {
             return redirect()->back()->with('error', 'O arquivo temporário de upload não pôde ser lido pelo servidor.');
@@ -206,12 +207,11 @@ class ImportController extends Controller
         // Executar o script python otimizado import_excel_separacao.py
         $scriptPath = base_path('database/seeders/import_excel_separacao.py');
         if (file_exists($scriptPath)) {
-            $cmd = "python3 " . escapeshellarg($scriptPath) . " " . escapeshellarg($fullPath) . " " . escapeshellarg($request->modo) . " 2>&1";
+            $cmd = "python3 " . escapeshellarg($scriptPath) . " " . escapeshellarg($fullPath) . " " . escapeshellarg($request->modo) . " " . escapeshellarg($originalExt) . " 2>&1";
             $output = shell_exec($cmd);
 
             // Verifica se a saída do script Python contem a confirmação de importação
             if (str_contains($output, 'Importação finalizada com sucesso!')) {
-                // Extrai a mensagem de contagem
                 preg_match('/Total de (\d+) itens importados/', $output, $matches);
                 $totalImportados = $matches[1] ?? 'vários';
                 return redirect()->back()->with('success', "✅ Planilha importada com sucesso! {$totalImportados} itens foram carregados no banco MySQL.");

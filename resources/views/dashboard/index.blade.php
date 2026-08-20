@@ -15,10 +15,10 @@
     </div>
 </div>
 
-<!-- Filtros no Dashboard (Digitação de Pedido de Venda + Listas Suspensas de Status) -->
+<!-- Filtros no Dashboard (Digitação de Pedido de Venda + Listas Suspensas de Status + Descrição Multi-Termos) -->
 <div class="card" style="border-color: rgba(99, 102, 241, 0.4); margin-bottom: 1.25rem;">
     <form action="{{ route('dashboard') }}" method="GET" style="display: flex; flex-wrap: wrap; gap: 0.85rem; align-items: flex-end;">
-        <div class="form-group" style="margin-bottom: 0; min-width: 200px; flex: 2;">
+        <div class="form-group" style="margin-bottom: 0; min-width: 180px; flex: 2;">
             <label class="form-label">Número do Pedido de Venda ✏️</label>
             <input type="text" 
                    name="pedido" 
@@ -33,7 +33,16 @@
             </datalist>
         </div>
 
-        <div class="form-group" style="margin-bottom: 0; min-width: 180px; flex: 2;">
+        <div class="form-group" style="margin-bottom: 0; min-width: 220px; flex: 2.5;">
+            <label class="form-label">Descrição do Produto (Multi: CABO, CHAVE...) ✏️</label>
+            <input type="text" 
+                   name="descricao" 
+                   value="{{ $searchDescricao }}" 
+                   class="form-control" 
+                   placeholder="Multi: CABO, CHAVE, DISJUNTOR...">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 0; min-width: 170px; flex: 1.8;">
             <label class="form-label">Status PCP / Almoxarifado</label>
             <select name="status_pcp" class="form-select" onchange="this.form.submit()">
                 <option value="">-- Todos Status PCP --</option>
@@ -45,7 +54,7 @@
             </select>
         </div>
 
-        <div class="form-group" style="margin-bottom: 0; min-width: 180px; flex: 2;">
+        <div class="form-group" style="margin-bottom: 0; min-width: 170px; flex: 1.8;">
             <label class="form-label">Status de Pagamento / Compras</label>
             <select name="status_pagamento" class="form-select" onchange="this.form.submit()">
                 <option value="">-- Todos Status Pagamento --</option>
@@ -60,7 +69,7 @@
             <button type="submit" class="btn btn-primary" style="flex: 1; justify-content: center;">
                 🔍 Filtrar
             </button>
-            @if($searchPedido || $searchStatusPcp || $searchStatusPagamento)
+            @if($searchPedido || $searchStatusPcp || $searchStatusPagamento || $searchDescricao)
                 <a href="{{ route('dashboard') }}" class="btn btn-secondary" style="padding: 0.45rem 0.65rem;">
                     ✕ Limpar
                 </a>
@@ -90,18 +99,24 @@
     </div>
 
     <div class="kpi-card" style="border-left-color: #10b981;">
-        <div class="kpi-title" style="color: #6ee7b7;">Separados / Retirados</div>
-        <div class="kpi-value" style="color: #10b981;">{{ $totalSeparadoRetirado }}</div>
-        <div class="kpi-subtitle">Concluídos no almoxarifado</div>
+        <div class="kpi-title" style="color: #6ee7b7;">Itens SEPARADOS</div>
+        <div class="kpi-value" style="color: #10b981;">{{ $totalSeparado }}</div>
+        <div class="kpi-subtitle">Almoxarifado (Status SEPARADO)</div>
     </div>
 </div>
 
 <!-- Grid de Indicadores Financeiros (R$) -->
-<div class="kpi-grid" style="margin-bottom: 1.5rem;">
+<div class="kpi-grid" style="margin-bottom: 1.5rem; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
     <div class="kpi-card" style="border-left-color: #38bdf8;">
         <div class="kpi-title" style="color: #7dd3fc;">Valor Total de Compras</div>
         <div class="kpi-value" style="font-size: 1.5rem; color: #38bdf8;">R$ {{ number_format($valorTotalGeral, 2, ',', '.') }}</div>
         <div class="kpi-subtitle">Montante total acumulado</div>
+    </div>
+
+    <div class="kpi-card" style="border-left-color: #a855f7;">
+        <div class="kpi-title" style="color: #c084fc;">Valor Total SEPARADO</div>
+        <div class="kpi-value" style="font-size: 1.5rem; color: #c084fc;">R$ {{ number_format($valorTotalSeparado, 2, ',', '.') }}</div>
+        <div class="kpi-subtitle">Montante dos itens separados</div>
     </div>
 
     <div class="kpi-card" style="border-left-color: #f59e0b;">

@@ -17,6 +17,7 @@ class DashboardController extends Controller
         $searchPedido = $request->get('pedido');
         $searchStatusPcp = $request->get('status_pcp');
         $searchStatusPagamento = $request->get('status_pagamento');
+        $searchDescricao = $request->get('descricao');
 
         // Query Base Estoque
         $estoqueQuery = EstoqueItem::query();
@@ -30,6 +31,17 @@ class DashboardController extends Controller
             $estoqueQuery->whereHas('compraItem', function ($q) use ($searchStatusPagamento) {
                 $q->where('status_pagamento', $searchStatusPagamento);
             });
+        }
+        if ($searchDescricao) {
+            $terms = array_filter(array_map('trim', explode(',', $searchDescricao)));
+            if (!empty($terms)) {
+                $estoqueQuery->where(function ($q) use ($terms) {
+                    foreach ($terms as $term) {
+                        $q->orWhere('descricao', 'like', '%' . $term . '%')
+                          ->orWhere('descricao_longa', 'like', '%' . $term . '%');
+                    }
+                });
+            }
         }
 
         // Query Base Compras
@@ -47,12 +59,25 @@ class DashboardController extends Controller
         if ($searchStatusPagamento) {
             $comprasQuery->where('status_pagamento', $searchStatusPagamento);
         }
+        if ($searchDescricao) {
+            $terms = array_filter(array_map('trim', explode(',', $searchDescricao)));
+            if (!empty($terms)) {
+                $comprasQuery->whereHas('estoqueItem', function ($q) use ($terms) {
+                    $q->where(function ($subQ) use ($terms) {
+                        foreach ($terms as $term) {
+                            $subQ->orWhere('descricao', 'like', '%' . $term . '%')
+                                 ->orWhere('descricao_longa', 'like', '%' . $term . '%');
+                        }
+                    });
+                });
+            }
+        }
 
         // Métricas quantitativas de estoque
         $totalEstoque = (clone $estoqueQuery)->count();
         $totalFalta = (clone $estoqueQuery)->where('status', 'FALTA')->count();
         $totalFabrica = (clone $estoqueQuery)->whereIn('status', ['FABRICA', 'FABRICAR INTERNO KANBAN'])->count();
-        $totalSeparadoRetirado = (clone $estoqueQuery)->whereIn('status', ['SEPARADO', 'RETIRADO'])->count();
+        $totalSeparado = (clone $estoqueQuery)->where('status', 'SEPARADO')->count();
 
         // Métricas financeiras (R$)
         $valorTotalGeral = floatval((clone $comprasQuery)->sum('valor_total') ?? 0);
@@ -60,6 +85,9 @@ class DashboardController extends Controller
         $valorTotalFaturado = floatval((clone $comprasQuery)->where('status_pagamento', 'FATURADO')->sum('valor_total') ?? 0);
         $valorTotalPago = floatval((clone $comprasQuery)->where('status_pagamento', 'PAGO')->sum('valor_total') ?? 0);
         $valorTotalAntecipado = floatval((clone $comprasQuery)->where('status_pagamento', 'PAGAMENTO ANTECIPADO')->sum('valor_total') ?? 0);
+        $valorTotalSeparado = floatval((clone $comprasQuery)->whereHas('estoqueItem', function ($q) {
+            $q->where('status', 'SEPARADO');
+        })->sum('valor_total') ?? 0);
 
         // Status PCP breakdown para Gráfico 1
         $statusEstoqueCounts = [
@@ -93,6 +121,17 @@ class DashboardController extends Controller
         if ($searchStatusPagamento) {
             $topPedidosQuery->where('compras_items.status_pagamento', $searchStatusPagamento);
         }
+        if ($searchDescricao) {
+            $terms = array_filter(array_map('trim', explode(',', $searchDescricao)));
+            if (!empty($terms)) {
+                $topPedidosQuery->where(function ($q) use ($terms) {
+                    foreach ($terms as $term) {
+                        $q->orWhere('estoque_items.descricao', 'like', '%' . $term . '%')
+                          ->orWhere('estoque_items.descricao_longa', 'like', '%' . $term . '%');
+                    }
+                });
+            }
+        }
 
         $topPedidosValores = $topPedidosQuery->groupBy('estoque_items.pedido')
             ->orderBy('total_valor', 'desc')
@@ -109,19 +148,21 @@ class DashboardController extends Controller
             'totalEstoque',
             'totalFalta',
             'totalFabrica',
-            'totalSeparadoRetirado',
+            'totalSeparado',
             'valorTotalGeral',
             'valorTotalPendente',
             'valorTotalFaturado',
             'valorTotalPago',
             'valorTotalAntecipado',
+            'valorTotalSeparado',
             'statusEstoqueCounts',
             'statusComprasValores',
             'topPedidosValores',
             'pedidosDisponiveis',
             'searchPedido',
             'searchStatusPcp',
-            'searchStatusPagamento'
+            'searchStatusPagamento',
+            'searchDescricao'
         ));
     }
 }

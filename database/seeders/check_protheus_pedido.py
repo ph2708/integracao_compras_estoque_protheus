@@ -14,7 +14,7 @@ cursor = conn.cursor(as_dict=True)
 term = sys.argv[1] if len(sys.argv) > 1 else '006882'
 
 print("=== SC2010 (Ordens de Producao) ===")
-cursor.execute(f"SELECT C2_NUM, C2_ITEM, C2_SEQUEN, C2_PEDIDO, C2_CLI, C2_LOJA, C2_OBS, C2_PRODUTO FROM SC2010 WHERE D_E_L_E_T_ = ' ' AND (C2_PEDIDO LIKE '%{term}%' OR C2_NUM LIKE '%{term}%')")
+cursor.execute(f"SELECT C2_NUM, C2_ITEM, C2_SEQUEN, C2_PEDIDO, C2_CLIENTE, C2_LOJA, C2_OBS, C2_PRODUTO FROM SC2010 WHERE D_E_L_E_T_ = ' ' AND (C2_PEDIDO LIKE '%{term}%' OR C2_NUM LIKE '%{term}%')")
 sc2010_rows = cursor.fetchall()
 for r in sc2010_rows:
     print(r)
@@ -32,8 +32,8 @@ if sc5010_rows:
     cursor.execute(f"SELECT A1_COD, A1_LOJA, A1_NOME, A1_NREDUC FROM SA1010 WHERE D_E_L_E_T_ = ' ' AND A1_COD = '{cli_cod}' AND A1_LOJA = '{cli_loj}'")
     for r in cursor.fetchall():
         print(r)
-elif sc2010_rows:
-    cli_cod = sc2010_rows[0]['C2_CLI']
+elif sc2010_rows and sc2010_rows[0].get('C2_CLIENTE'):
+    cli_cod = sc2010_rows[0]['C2_CLIENTE']
     cli_loj = sc2010_rows[0]['C2_LOJA']
     cursor.execute(f"SELECT A1_COD, A1_LOJA, A1_NOME, A1_NREDUC FROM SA1010 WHERE D_E_L_E_T_ = ' ' AND A1_COD = '{cli_cod}' AND A1_LOJA = '{cli_loj}'")
     for r in cursor.fetchall():

@@ -84,6 +84,73 @@ def load_rows_from_file(file_path):
         print(f"Lido Excel .xlsx ({len(rows)} linhas)")
         return rows
 
+def fetch_protheus_produto_pai_batch(ops, pvs):
+    """
+    Busca em lote o Produto Pai Concatenado (C2_PRODUTO + ' - ' + B1_DESC) no Protheus para OPs/PVs com campos em branco
+    """
+    try:
+        import pymssql
+        host = os.getenv('DB_PROTHEUS_HOST', '177.221.240.40')
+        port = int(os.getenv('DB_PROTHEUS_PORT', 14333))
+        database = os.getenv('DB_PROTHEUS_DATABASE', 'MP_12')
+        user = os.getenv('DB_PROTHEUS_USERNAME', 'ConsultaProtheus')
+        password = os.getenv('DB_PROTHEUS_PASSWORD', 'C*n$ult@#M@q#')
+
+        conn = pymssql.connect(
+            server=host,
+            port=port,
+            user=user,
+            password=password,
+            database=database,
+            charset='ISO-8859-1'
+        )
+        cursor = conn.cursor(as_dict=True)
+
+        op_nums = list(set([str(op)[:6] for op in ops if op and len(str(op)) >= 6]))
+        pv_nums = list(set([str(pv).strip() for pv in pvs if pv and str(pv).strip()]))
+
+        if not op_nums and not pv_nums:
+            return {}
+
+        where_clauses = []
+        if op_nums:
+            ops_formatted = "', '".join(op_nums[:200])
+            where_clauses.append(f"RTRIM(S.C2_NUM) IN ('{ops_formatted}')")
+        if pv_nums:
+            pvs_formatted = "', '".join(pv_nums[:200])
+            where_clauses.append(f"RTRIM(S.C2_PEDIDO) IN ('{pvs_formatted}')")
+
+        sql = f"""
+        SELECT DISTINCT
+            RTRIM(S.C2_NUM) AS C2_NUM,
+            RTRIM(S.C2_PEDIDO) AS C2_PEDIDO,
+            RTRIM(S.C2_PRODUTO) + ' - ' + RTRIM(ISNULL(B.B1_DESC, '')) AS PRODUTO_PAI
+        FROM SC2010 S WITH (NOLOCK)
+        LEFT JOIN SB1010 B WITH (NOLOCK) ON RTRIM(S.C2_PRODUTO) = RTRIM(B.B1_COD) AND B.D_E_L_E_T_ = ' '
+        WHERE S.D_E_L_E_T_ = ' ' AND ({' OR '.join(where_clauses)})
+        """
+
+        cursor.execute(sql)
+        rows = cursor.fetchall()
+        conn.close()
+
+        result = {}
+        for r in rows:
+            num = (r.get('C2_NUM') or '').strip()
+            ped = (r.get('C2_PEDIDO') or '').strip()
+            pai = (r.get('PRODUTO_PAI') or '').strip()
+
+            if num and pai:
+                result['OP_' + num] = pai
+            if ped and pai:
+                result['PV_' + ped] = pai
+
+        print(f"⚡ Protheus: Pré-buscados {len(result)} produtos pai concatenados para auto-preenchimento.")
+        return result
+    except Exception as e:
+        print(f"Aviso ao consultar Produto Pai no Protheus: {e}")
+        return {}
+
 def import_excel(target_path=None, mode='truncate'):
     excel_file = target_path if target_path and os.path.exists(target_path) else DEFAULT_EXCEL_PATH
 
@@ -96,6 +163,43 @@ def import_excel(target_path=None, mode='truncate'):
     if not rows:
         print("Aviso: Nenhuma linha foi encontrada no arquivo enviado.")
         return
+
+    # Pré-mapeamento de cabeçalho para coletar OPs e PVs
+    is_header = True
+    col_map = {}
+    ops_to_query = []
+    pvs_to_query = []
+
+    for row in rows:
+        if not row:
+            continue
+        row_str = [str(cell).strip().upper() for cell in row if cell is not None]
+        if is_header:
+            row_text = ' '.join(row_str)
+            if any(k in row_text for k in ['ORDEM PRODUCAO', 'ORDEM PRODUÇÃO', 'ORD PRODUCAO', 'ORD PRODUÇÃO', 'CODIGO PRODUTO', 'CÓDIGO PRODUTO', 'PV', 'CÓDIGO', 'CODIGO']):
+                is_header = False
+                for idx, cell in enumerate(row):
+                    if cell is not None:
+                        col_name = str(cell).strip().upper()
+                        col_map[col_name] = idx
+            continue
+
+        def temp_get_col_val(col_names):
+            for name in col_names:
+                name_upper = name.upper()
+                if name_upper in col_map:
+                    idx = col_map[name_upper]
+                    if idx < len(row) and row[idx] is not None:
+                        return row[idx]
+            return None
+
+        op_val = temp_get_col_val(['ORDEM PRODUCAO', 'ORDEM PRODUÇÃO', 'ORD PRODUCAO', 'ORD PRODUÇÃO'])
+        pv_val = temp_get_col_val(['PV', 'PEDIDO DE VENDA', 'PEDIDO'])
+        if op_val: ops_to_query.append(str(op_val).strip())
+        if pv_val: pvs_to_query.append(str(pv_val).strip())
+
+    # Busca em lote de Produtos Pai do Protheus se houverem campos em branco
+    father_protheus_map = fetch_protheus_produto_pai_batch(ops_to_query, pvs_to_query)
 
     conn = pymysql.connect(
         host=DB_HOST,
@@ -117,9 +221,7 @@ def import_excel(target_path=None, mode='truncate'):
 
     count = 0
     now_str = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
     is_header = True
-    col_map = {}
 
     for row in rows:
         if not row:
@@ -130,11 +232,6 @@ def import_excel(target_path=None, mode='truncate'):
             row_text = ' '.join(row_str)
             if any(k in row_text for k in ['ORDEM PRODUCAO', 'ORDEM PRODUÇÃO', 'ORD PRODUCAO', 'ORD PRODUÇÃO', 'CODIGO PRODUTO', 'CÓDIGO PRODUTO', 'PV', 'CÓDIGO', 'CODIGO']):
                 is_header = False
-                for idx, cell in enumerate(row):
-                    if cell is not None:
-                        col_name = str(cell).strip().upper()
-                        col_map[col_name] = idx
-                print(f"Cabeçalho mapeado com {len(col_map)} colunas.")
             continue
 
         def get_col_val(col_names, default=None):
@@ -164,7 +261,14 @@ def import_excel(target_path=None, mode='truncate'):
         descricao_longa = str(raw_desc_longa).strip() if raw_desc_longa is not None and str(raw_desc_longa).strip() != 'None' else descricao
 
         raw_pai = get_col_val(['PRODUTO PAI CONCATENADO', 'PRODUTO PAI'])
-        produto_pai = str(raw_pai).strip() if raw_pai is not None and str(raw_pai).strip() != 'None' else None
+        produto_pai = str(raw_pai).strip() if raw_pai is not None and str(raw_pai).strip() != 'None' and str(raw_pai).strip() != '' else None
+
+        # ⚡ Se o Produto Pai Concatenado estiver em branco na planilha enviada, auto-preenche via Protheus!
+        if not produto_pai:
+            if op and len(op) >= 6:
+                produto_pai = father_protheus_map.get('OP_' + op[:6])
+            if not produto_pai and pedido:
+                produto_pai = father_protheus_map.get('PV_' + pedido)
 
         raw_status = get_col_val(['STATUS PCP', 'STATUS PCP/ALMOX', 'STATUS ALMOX', 'STATUS PCP ATUAL'])
         status_pcp = str(raw_status).strip().upper() if raw_status is not None else 'FALTA'

@@ -125,11 +125,11 @@
             color: var(--text-muted);
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            margin-bottom: 0.35rem;
+            margin-bottom: 0.25rem;
         }
 
         .kpi-value {
-            font-size: 1.6rem;
+            font-size: 1.75rem;
             font-weight: 700;
             color: var(--text-main);
         }
@@ -140,28 +140,31 @@
             margin-top: 0.25rem;
         }
 
+        /* Tabelas Customizadas Dark Mode */
         .table-responsive {
+            width: 100%;
             overflow-x: auto;
+            border-radius: 0.375rem;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
             text-align: left;
-            font-size: 0.825rem;
+            font-size: 0.8rem;
         }
 
         th {
             background-color: #0f172a;
-            color: var(--text-muted);
+            color: #a5b4fc;
+            padding: 0.6rem 0.75rem;
             font-weight: 600;
-            padding: 0.65rem 0.85rem;
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 2px solid var(--border-color);
             white-space: nowrap;
         }
 
         td {
-            padding: 0.65rem 0.85rem;
+            padding: 0.5rem 0.75rem;
             border-bottom: 1px solid var(--border-color);
             vertical-align: middle;
         }
@@ -170,66 +173,69 @@
             background-color: rgba(255, 255, 255, 0.02);
         }
 
-        /* Estilo da Linha de Filtros na Tabela */
-        .filter-row th {
-            padding: 0.35rem 0.5rem !important;
-            background-color: #1e293b !important;
+        /* Linha de Filtros de Colunas */
+        tr.filter-row td, tr.filter-row th {
+            background-color: #1e293b;
+            padding: 0.35rem 0.5rem;
+            border-bottom: 2px solid var(--accent);
         }
 
         .filter-input {
             width: 100%;
+            padding: 0.2rem 0.4rem;
+            font-size: 0.75rem;
             background-color: #0f172a;
             border: 1px solid var(--border-color);
-            color: var(--text-main);
             border-radius: 0.25rem;
-            padding: 0.25rem 0.4rem;
-            font-size: 0.75rem;
+            color: var(--text-main);
         }
 
         .filter-input:focus {
-            border-color: var(--accent);
             outline: none;
-        }
-
-        .form-control, .form-select {
-            width: 100%;
-            background-color: #0f172a;
-            border: 1px solid var(--border-color);
-            color: var(--text-main);
-            border-radius: 0.375rem;
-            padding: 0.45rem 0.75rem;
-            font-size: 0.825rem;
-        }
-
-        .form-control:focus, .form-select:focus {
             border-color: var(--accent);
-            outline: none;
         }
 
+        /* Formulários e Inputs */
         .form-group {
-            margin-bottom: 0.85rem;
+            margin-bottom: 1rem;
         }
 
         .form-label {
             display: block;
             font-size: 0.75rem;
+            font-weight: 500;
             color: var(--text-muted);
-            margin-bottom: 0.35rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .form-control, .form-select {
+            width: 100%;
+            padding: 0.45rem 0.65rem;
+            background-color: #0f172a;
+            border: 1px solid var(--border-color);
+            border-radius: 0.375rem;
+            color: var(--text-main);
+            font-size: 0.8rem;
+            transition: border-color 0.2s;
+        }
+
+        .form-control:focus, .form-select:focus {
+            outline: none;
+            border-color: var(--accent);
         }
 
         .btn {
             display: inline-flex;
             align-items: center;
-            justify-content: center;
-            gap: 0.4rem;
+            gap: 0.35rem;
             padding: 0.45rem 0.85rem;
             border-radius: 0.375rem;
-            font-size: 0.825rem;
+            font-size: 0.8rem;
             font-weight: 500;
             cursor: pointer;
             border: none;
-            transition: all 0.2s;
             text-decoration: none;
+            transition: all 0.2s;
         }
 
         .btn-primary {
@@ -250,14 +256,9 @@
             background-color: #475569;
         }
 
-        .btn-danger {
-            background-color: var(--danger);
-            color: #ffffff;
-        }
-
         .badge {
             display: inline-block;
-            padding: 0.2rem 0.5rem;
+            padding: 0.15rem 0.45rem;
             border-radius: 0.25rem;
             font-size: 0.7rem;
             font-weight: 600;
@@ -323,7 +324,7 @@
             background-color: var(--accent);
             border-color: var(--accent);
             color: #ffffff;
-            font-weight: 600;
+            font-weight: 700;
         }
 
         .pagination-container .page-item.disabled .page-link {
@@ -331,20 +332,7 @@
             cursor: not-allowed;
         }
 
-        .pagination-container .page-item .page-link:hover:not(.disabled) {
-            background-color: var(--border-color);
-        }
-
-        .pagination-container svg {
-            width: 14px !important;
-            height: 14px !important;
-            max-width: 14px !important;
-            max-height: 14px !important;
-            fill: currentColor;
-            display: inline-block;
-        }
-
-        /* Overlay Spinner Global */
+        /* Loading Spinner */
         .loading-spinner {
             width: 50px;
             height: 50px;
@@ -384,6 +372,9 @@
                 🛒 Compras
             </a>
             @if(auth()->check() && auth()->user()->isAdmin())
+                <a href="{{ route('importar.index') }}" class="nav-link {{ request()->routeIs('importar.*') ? 'active' : '' }}">
+                    📥 Importar Base
+                </a>
                 <a href="{{ route('users.index') }}" class="nav-link {{ request()->routeIs('users.*') ? 'active' : '' }}">
                     👥 Usuários
                 </a>
@@ -422,30 +413,33 @@
     </main>
 
     <script>
-        window.mostrarLoading = function(mensagem = '⏳ Processando dados... Aguarde...') {
+        window.mostrarLoading = function(mensagem) {
             const overlay = document.getElementById('globalLoadingOverlay');
-            const textElem = document.getElementById('globalLoadingText');
-            if (overlay && textElem) {
-                textElem.innerHTML = mensagem;
+            const textEl = document.getElementById('globalLoadingText');
+            if (mensagem && textEl) {
+                textEl.innerHTML = mensagem;
+            }
+            if (overlay) {
                 overlay.style.display = 'flex';
             }
         };
 
         window.ocultarLoading = function() {
             const overlay = document.getElementById('globalLoadingOverlay');
-            if (overlay) overlay.style.display = 'none';
+            if (overlay) {
+                overlay.style.display = 'none';
+            }
         };
 
-        document.addEventListener('submit', (e) => {
-            if (e.target && !e.target.classList.contains('no-loading')) {
-                let msg = '⏳ Processando dados... Aguarde...';
-                if (e.target.action && e.target.action.includes('compras')) {
-                    msg = '🔍 Buscando e processando informações no Protheus... Aguarde...';
-                } else if (e.target.action && e.target.action.includes('estoque')) {
-                    msg = '📦 Gravando dados do estoque... Aguarde...';
-                }
-                window.mostrarLoading(msg);
-            }
+        document.addEventListener('DOMContentLoaded', function() {
+            const forms = document.querySelectorAll('form');
+            forms.forEach(form => {
+                form.addEventListener('submit', function() {
+                    if (this.checkValidity()) {
+                        window.mostrarLoading();
+                    }
+                });
+            });
         });
     </script>
 </body>

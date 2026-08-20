@@ -4,6 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ComprasController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EstoqueController;
+use App\Http\Controllers\ImportController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -37,8 +38,11 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/compras/update-batch', [ComprasController::class, 'updateBatch'])->name('compras.update-batch');
     Route::put('/compras/{id}', [ComprasController::class, 'update'])->name('compras.update');
 
-    // Gestão de Usuários (Apenas Administradores)
+    // Gestão de Usuários e Importador de Base (Apenas Administradores)
     Route::middleware([\App\Http\Middleware\AdminMiddleware::class])->group(function () {
         Route::resource('users', UserController::class)->except(['create', 'edit', 'show']);
+        Route::get('/importar', [ImportController::class, 'index'])->name('importar.index');
+        Route::post('/importar', [ImportController::class, 'import'])->name('importar.process');
+        Route::get('/importar/modelo', [ImportController::class, 'downloadModelo'])->name('importar.modelo');
     });
 });

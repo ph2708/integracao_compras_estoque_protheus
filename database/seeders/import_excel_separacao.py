@@ -1,11 +1,12 @@
+import sys
 import openpyxl
 import pymysql
 import os
 import datetime
 
-# Script para importar os 279 itens da planilha Separação.xlsx para o MySQL
+# Script otimizado para memória (read_only=True) para importar Separação.xlsx ou arquivo enviado no MySQL
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-EXCEL_PATH = os.path.join(BASE_DIR, 'Separação.xlsx')
+DEFAULT_EXCEL_PATH = os.path.join(BASE_DIR, 'Separação.xlsx')
 
 DB_HOST = os.getenv('DB_HOST', '127.0.0.1')
 DB_PORT = int(os.getenv('DB_PORT', 3306))
@@ -28,28 +29,16 @@ def parse_date(val):
     except:
         return None
 
-def import_excel():
-    if not os.path.exists(EXCEL_PATH):
-        print(f"Aviso: Planilha não encontrada no caminho {EXCEL_PATH}")
+def import_excel(target_path=None, mode='truncate'):
+    excel_file = target_path if target_path and os.path.exists(target_path) else DEFAULT_EXCEL_PATH
+
+    if not os.path.exists(excel_file):
+        print(f"Aviso: Planilha não encontrada no caminho {excel_file}")
         return
 
-    print(f"Lendo arquivo Excel: {EXCEL_PATH}...")
-    wb = openpyxl.load_workbook(EXCEL_PATH, data_only=True)
+    print(f"Lendo arquivo Excel: {excel_file}...")
+    wb = openpyxl.load_workbook(excel_file, read_only=True, data_only=True)
     sheet = wb.active
-    rows = list(sheet.iter_rows(values_only=True))
-
-    header_idx = None
-    for idx, r in enumerate(rows):
-        if r and 'ORDEM PRODUCAO' in [str(cell) for cell in r if cell]:
-            header_idx = idx
-            break
-
-    if header_idx is None:
-        print("Erro: Cabeçalho 'ORDEM PRODUCAO' não encontrado no Excel.")
-        return
-
-    data_rows = rows[header_idx + 1:]
-    print(f"Total de linhas de dados encontradas: {len(data_rows)}")
 
     conn = pymysql.connect(
         host=DB_HOST,
@@ -62,29 +51,36 @@ def import_excel():
     )
     cursor = conn.cursor()
 
-    # Zerar tabelas de estoque e compras
-    cursor.execute("SET FOREIGN_KEY_CHECKS=0;")
-    cursor.execute("TRUNCATE TABLE compras_items;")
-    cursor.execute("TRUNCATE TABLE estoque_items;")
-    cursor.execute("SET FOREIGN_KEY_CHECKS=1;")
-    print("Tabelas estoque_items e compras_items zeradas com sucesso!")
+    if mode == 'truncate':
+        cursor.execute("SET FOREIGN_KEY_CHECKS=0;")
+        cursor.execute("TRUNCATE TABLE compras_items;")
+        cursor.execute("TRUNCATE TABLE estoque_items;")
+        cursor.execute("SET FOREIGN_KEY_CHECKS=1;")
+        print("Tabelas estoque_items e compras_items zeradas com sucesso!")
 
     count = 0
     now_str = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-    for r in data_rows:
-        if not any(r):
+    is_header = True
+    for row in sheet.iter_rows(values_only=True):
+        if not row:
             continue
 
-        op = str(r[1]).strip() if r[1] is not None else None
-        pedido = str(r[2]).strip() if r[2] is not None else None
-        codigo_produto = str(r[3]).strip() if r[3] is not None else None
+        row_str = [str(cell) for cell in row if cell is not None]
+        if is_header:
+            if 'ORDEM PRODUCAO' in row_str or 'CODIGO PRODUTO' in row_str:
+                is_header = False
+            continue
+
+        op = str(row[1]).strip() if len(row) > 1 and row[1] is not None else None
+        pedido = str(row[2]).strip() if len(row) > 2 and row[2] is not None else None
+        codigo_produto = str(row[3]).strip() if len(row) > 3 and row[3] is not None else None
 
         if not codigo_produto or codigo_produto == 'None':
             continue
 
-        descricao = str(r[4]).strip() if r[4] is not None else ''
-        status_pcp = str(r[5]).strip().upper() if r[5] is not None else 'FALTA'
+        descricao = str(row[4]).strip() if len(row) > 4 and row[4] is not None else ''
+        status_pcp = str(row[5]).strip().upper() if len(row) > 5 and row[5] is not None else 'FALTA'
         if status_pcp not in ['FALTA', 'SEPARADO', 'RETIRADO', 'FABRICA', 'FABRICAR INTERNO KANBAN']:
             if 'KANBAN' in status_pcp:
                 status_pcp = 'FABRICAR INTERNO KANBAN'
@@ -94,36 +90,36 @@ def import_excel():
                 status_pcp = 'FALTA'
 
         try:
-            qtd_estoque = float(r[6]) if r[6] is not None else 0.0
+            qtd_estoque = float(row[6]) if len(row) > 6 and row[6] is not None else 0.0
         except:
             qtd_estoque = 0.0
 
-        obs_estoque = str(r[7]).strip() if r[7] is not None and str(r[7]).strip() != 'None' else None
-        solicitacao_compra = str(r[8]).strip() if r[8] is not None and str(r[8]).strip() != 'None' else None
+        obs_estoque = str(row[7]).strip() if len(row) > 7 and row[7] is not None and str(row[7]).strip() != 'None' else None
+        solicitacao_compra = str(row[8]).strip() if len(row) > 8 and row[8] is not None and str(row[8]).strip() != 'None' else None
 
         try:
-            qtd_comprado = float(r[9]) if r[9] is not None else 0.0
+            qtd_comprado = float(row[9]) if len(row) > 9 and row[9] is not None else 0.0
         except:
             qtd_comprado = 0.0
 
         quantidade_op = max(1.0, qtd_estoque + qtd_comprado)
 
         try:
-            valor_unitario = float(r[10]) if r[10] is not None else 0.0
+            valor_unitario = float(row[10]) if len(row) > 10 and row[10] is not None else 0.0
         except:
             valor_unitario = 0.0
 
-        status_pagamento = str(r[12]).strip().upper() if r[12] is not None else 'PENDENTE'
-        fornecedor = str(r[13]).strip() if r[13] is not None and str(r[13]).strip() != 'None' else None
-        pedido_compra = str(r[14]).strip() if r[14] is not None and str(r[14]).strip() != 'None' else None
+        status_pagamento = str(row[12]).strip().upper() if len(row) > 12 and row[12] is not None else 'PENDENTE'
+        fornecedor = str(row[13]).strip() if len(row) > 13 and row[13] is not None and str(row[13]).strip() != 'None' else None
+        pedido_compra = str(row[14]).strip() if len(row) > 14 and row[14] is not None and str(row[14]).strip() != 'None' else None
 
         try:
-            ipi = float(r[15]) if r[15] is not None else 0.0
+            ipi = float(row[15]) if len(row) > 15 and row[15] is not None else 0.0
         except:
             ipi = 0.0
 
-        data_pc = parse_date(r[16])
-        data_pagamento = parse_date(r[17])
+        data_pc = parse_date(row[16]) if len(row) > 16 else None
+        data_pagamento = parse_date(row[17]) if len(row) > 17 else None
 
         val_total = (valor_unitario * qtd_comprado) + (valor_unitario * qtd_comprado * (ipi / 100))
 
@@ -144,8 +140,11 @@ def import_excel():
 
         count += 1
 
+    wb.close()
     conn.close()
     print(f"✅ Importação finalizada com sucesso! Total de {count} itens importados para o MySQL.")
 
 if __name__ == '__main__':
-    import_excel()
+    target = sys.argv[1] if len(sys.argv) > 1 else None
+    mode = sys.argv[2] if len(sys.argv) > 2 else 'truncate'
+    import_excel(target, mode)

@@ -1,0 +1,140 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\EstoqueItem;
+use App\Models\CompraItem;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\StreamedResponse;
+
+class ImportController extends Controller
+{
+    /**
+     * Tela de Importação de Planilha Excel (Apenas Admin)
+     */
+    public function index()
+    {
+        return view('importar.index');
+    }
+
+    /**
+     * Gera e realiza o download de uma planilha modelo preenchida com cabeçalhos e exemplos
+     */
+    public function downloadModelo(): StreamedResponse
+    {
+        $headers = [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="modelo_importacao_estoque_compras.csv"',
+        ];
+
+        return response()->stream(function () {
+            $handle = fopen('php://output', 'w');
+            // Bom para UTF-8 no Excel
+            fputs($handle, "\xEF\xBB\xBF");
+
+            // Cabeçalho da planilha
+            fputcsv($handle, [
+                'ORDEM PRODUCAO',
+                'PV',
+                'CODIGO PRODUTO',
+                'DESCRIÇÃO COMPONENTE',
+                'STATUS PCP',
+                'QTD EM ESTOQUE',
+                'OBSERVAÇÃO ESTOQUE',
+                'SOLICITAÇÃO DE COMPRA',
+                'COMPRADO',
+                'VALOR UNITARIO COMPRA',
+                'TIPO PAGAMENTO/FATURADO',
+                'FORNECEDOR SELECIONADO',
+                'PEDIDO COMPRA (PROTHEUS)',
+                'IPI COMPRA',
+                'DATA EMISSÃO PC',
+                'DATA PREVISÃO PGTO'
+            ], ';');
+
+            // Linha Exemplo 1
+            fputcsv($handle, [
+                '01872201001',
+                '006614',
+                '61645000102',
+                'CABO COBRE FLEXIVEL 750V 1.5MM2',
+                'RETIRADO',
+                '17.5',
+                'Material separado na prateleira B2',
+                '',
+                '0',
+                '10.50',
+                'PENDENTE',
+                '003825 (FORNECEDOR EXEMPLO)',
+                '',
+                '0',
+                '2026-08-20',
+                '2026-08-25'
+            ], ';');
+
+            // Linha Exemplo 2
+            fputcsv($handle, [
+                '01872201002',
+                '006614',
+                '105049500',
+                'CONTATOR FORCA TRIPOLAR 160A ABB',
+                'FALTA',
+                '0',
+                'Aguardando cotação de compras',
+                'SC-55401',
+                '2',
+                '271.00',
+                'FATURADO',
+                '016117 (GW METAL)',
+                '014297',
+                '5',
+                '2026-08-15',
+                '2026-08-30'
+            ], ';');
+
+            fclose($handle);
+        }, 200, $headers);
+    }
+
+    /**
+     * Processa o upload da planilha (.xlsx ou .csv) e importa os dados para o MySQL
+     */
+    public function import(Request $request)
+    {
+        $request->validate([
+            'arquivo' => 'required|file|mimes:xlsx,csv,txt,xls|max:20480',
+            'modo' => 'required|in:truncate,append'
+        ]);
+
+        $file = $request->file('arquivo');
+        $extension = strtolower($file->getClientOriginalExtension());
+        $tempPath = $file->storeAs('imports', 'upload_temp_' . time() . '.' . $extension);
+        $fullPath = storage_path('app/' . $tempPath);
+
+        // Se for modo zerar base
+        if ($request->modo === 'truncate') {
+            \Illuminate\Support\Facades\DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+            CompraItem::truncate();
+            EstoqueItem::truncate();
+            \Illuminate\Support\Facades\DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+        }
+
+        $importedCount = 0;
+
+        // Executar o script python otimizado import_excel_separacao.py se for arquivo excel/csv
+        $scriptPath = base_path('database/seeders/import_excel_separacao.py');
+        if (file_exists($scriptPath)) {
+            // Se o modo for append, não trunca no script
+            $cmd = "python3 " . escapeshellarg($scriptPath) . " " . escapeshellarg($fullPath) . " " . escapeshellarg($request->modo);
+            $output = shell_exec($cmd);
+            
+            // Apagar arquivo temporário
+            Storage::delete($tempPath);
+
+            return redirect()->back()->with('success', '✅ Planilha importada com sucesso! Os itens foram carregados no banco MySQL.');
+        }
+
+        return redirect()->back()->with('error', 'Ocorreu um erro ao processar o script de importação.');
+    }
+}

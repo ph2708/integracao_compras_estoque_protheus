@@ -85,9 +85,14 @@ class DashboardController extends Controller
         $valorTotalFaturado = floatval((clone $comprasQuery)->where('status_pagamento', 'FATURADO')->sum('valor_total') ?? 0);
         $valorTotalPago = floatval((clone $comprasQuery)->where('status_pagamento', 'PAGO')->sum('valor_total') ?? 0);
         $valorTotalAntecipado = floatval((clone $comprasQuery)->where('status_pagamento', 'PAGAMENTO ANTECIPADO')->sum('valor_total') ?? 0);
-        $valorTotalSeparado = floatval((clone $comprasQuery)->whereHas('estoqueItem', function ($q) {
-            $q->where('status', 'SEPARADO');
-        })->sum('valor_total') ?? 0);
+
+        // Opção B: Valor Bruto Total dos Itens com Status SEPARADO (Qtd OP * Valor Unitário)
+        $valorTotalSeparado = floatval(
+            (clone $estoqueQuery)->where('status', 'SEPARADO')
+                ->join('compras_items', 'estoque_items.id', '=', 'compras_items.estoque_item_id')
+                ->select(DB::raw('SUM(estoque_items.quantidade * compras_items.valor_unitario) as total'))
+                ->value('total') ?? 0
+        );
 
         // Status PCP breakdown para Gráfico 1
         $statusEstoqueCounts = [
@@ -150,15 +155,17 @@ class DashboardController extends Controller
             ->distinct('op')
             ->count('op');
 
-        // Histórico mensal de OPs fechadas nos últimos 6 meses para o Gráfico
+        // Histórico mensal de OPs fechadas nos últimos 6 meses (Qtd + Valor R$)
         $opsFechadasPorMesRaw = EstoqueItem::select(
-                DB::raw("DATE_FORMAT(fechada_em, '%Y-%m') as mes_ano"),
-                DB::raw("COUNT(DISTINCT op) as total_ops")
+                DB::raw("DATE_FORMAT(estoque_items.fechada_em, '%Y-%m') as mes_ano"),
+                DB::raw("COUNT(DISTINCT estoque_items.op) as total_ops"),
+                DB::raw("SUM(estoque_items.quantidade * compras_items.valor_unitario) as valor_total_ops")
             )
-            ->where('status', 'FECHADO')
-            ->whereNotNull('op')
-            ->where('op', '!=', '')
-            ->whereNotNull('fechada_em')
+            ->leftJoin('compras_items', 'estoque_items.id', '=', 'compras_items.estoque_item_id')
+            ->where('estoque_items.status', 'FECHADO')
+            ->whereNotNull('estoque_items.op')
+            ->where('estoque_items.op', '!=', '')
+            ->whereNotNull('estoque_items.fechada_em')
             ->groupBy('mes_ano')
             ->orderBy('mes_ano', 'asc')
             ->limit(6)
@@ -166,9 +173,11 @@ class DashboardController extends Controller
 
         $opsFechadasPorMesLabels = [];
         $opsFechadasPorMesValues = [];
+        $opsFechadasPorMesValoresRs = [];
         foreach ($opsFechadasPorMesRaw as $row) {
             $opsFechadasPorMesLabels[] = $row->mes_ano;
             $opsFechadasPorMesValues[] = (int) $row->total_ops;
+            $opsFechadasPorMesValoresRs[] = floatval($row->valor_total_ops ?? 0);
         }
 
         // Lista de Pedidos para o Filtro Dropdown
@@ -191,6 +200,7 @@ class DashboardController extends Controller
             'opsFechadasMes',
             'opsFechadasPorMesLabels',
             'opsFechadasPorMesValues',
+            'opsFechadasPorMesValoresRs',
             'statusEstoqueCounts',
             'statusComprasValores',
             'topPedidosValores',

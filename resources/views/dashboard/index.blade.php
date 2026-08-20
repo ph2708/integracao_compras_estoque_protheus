@@ -356,10 +356,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Chart 4: Bar - OPs Fechadas por Mês
+    // Chart 4: Bar - OPs Fechadas por Mês (Qtd + Valor R$)
     const ctx4 = document.getElementById('chartOpsFechadas').getContext('2d');
     const opsFechadasLabels = {!! json_encode($opsFechadasPorMesLabels) !!};
     const opsFechadasValues = {!! json_encode($opsFechadasPorMesValues) !!};
+    const opsFechadasValoresRs = {!! json_encode($opsFechadasPorMesValoresRs) !!};
 
     new Chart(ctx4, {
         type: 'bar',
@@ -377,15 +378,27 @@ document.addEventListener('DOMContentLoaded', () => {
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            layout: { padding: { top: 25 } },
             plugins: {
                 legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let q = context.raw || 0;
+                            let v = opsFechadasValoresRs[context.dataIndex] || 0;
+                            return q + ' OP(s) - Montante: R$ ' + v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                        }
+                    }
+                },
                 datalabels: {
                     anchor: 'end',
                     align: 'top',
                     color: '#34d399',
-                    font: { weight: 'bold', size: 12 },
-                    formatter: function(value) {
-                        return value > 0 ? value + ' OP(s)' : '0';
+                    font: { weight: 'bold', size: 11 },
+                    formatter: function(value, context) {
+                        if (value <= 0) return '0';
+                        let v = opsFechadasValoresRs[context.dataIndex] || 0;
+                        return value + ' OP(s) | R$ ' + v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                     }
                 }
             },

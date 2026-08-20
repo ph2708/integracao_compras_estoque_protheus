@@ -26,12 +26,14 @@ def parse_date(val):
             parts = val_str.split('/')
             if len(parts) == 3:
                 d, m, y = int(parts[0]), int(parts[1]), int(parts[2])
-                return f"{y:04d}-{m:02d}-{d:02d}"
+                dt = datetime.date(y, m, d)
+                return dt.strftime('%Y-%m-%d')
         if '-' in val_str:
             parts = val_str.split('-')
             if len(parts) == 3 and len(parts[0]) == 4:
-                int(parts[0]); int(parts[1]); int(parts[2])
-                return val_str
+                y, m, d = int(parts[0]), int(parts[1]), int(parts[2])
+                dt = datetime.date(y, m, d)
+                return dt.strftime('%Y-%m-%d')
         return None
     except:
         return None

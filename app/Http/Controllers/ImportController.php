@@ -191,6 +191,10 @@ class ImportController extends Controller
      */
     public function import(Request $request)
     {
+        @set_time_limit(600);
+        @ini_set('max_execution_time', '600');
+        @ini_set('memory_limit', '512M');
+
         $request->validate([
             'arquivo' => 'required|file|max:20480',
             'modo' => 'required|in:truncate,append'

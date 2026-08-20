@@ -15,17 +15,22 @@
     </div>
 </div>
 
-<!-- Filtros no Dashboard (Pedido de Venda + Status PCP + Status Pagamento) -->
+<!-- Filtros no Dashboard (Digitação de Pedido de Venda + Listas Suspensas de Status) -->
 <div class="card" style="border-color: rgba(99, 102, 241, 0.4); margin-bottom: 1.25rem;">
     <form action="{{ route('dashboard') }}" method="GET" style="display: flex; flex-wrap: wrap; gap: 0.85rem; align-items: flex-end;">
-        <div class="form-group" style="margin-bottom: 0; min-width: 180px; flex: 2;">
-            <label class="form-label">Pedido de Venda</label>
-            <select name="pedido" class="form-select" onchange="this.form.submit()">
-                <option value="">-- Todos os Pedidos --</option>
+        <div class="form-group" style="margin-bottom: 0; min-width: 200px; flex: 2;">
+            <label class="form-label">Número do Pedido de Venda ✏️</label>
+            <input type="text" 
+                   name="pedido" 
+                   value="{{ $searchPedido }}" 
+                   class="form-control" 
+                   placeholder="Digite o N° do Pedido (Ex: 006614)..."
+                   list="listPedidosDisponiveis">
+            <datalist id="listPedidosDisponiveis">
                 @foreach($pedidosDisponiveis as $p)
-                    <option value="{{ $p }}" {{ $searchPedido == $p ? 'selected' : '' }}>Pedido: {{ $p }}</option>
+                    <option value="{{ $p }}">
                 @endforeach
-            </select>
+            </datalist>
         </div>
 
         <div class="form-group" style="margin-bottom: 0; min-width: 180px; flex: 2;">

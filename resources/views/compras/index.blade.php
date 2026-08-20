@@ -82,6 +82,7 @@
             <table>
                 <thead>
                     <tr>
+                        <th style="min-width: 120px;">Status PCP</th>
                         <th>PV</th>
                         <th>Cliente (C2_OBS)</th>
                         <th>Código Produto</th>
@@ -89,7 +90,6 @@
                         <th class="col-desc-longa" style="display: none; color: #38bdf8;">Descrição Longa (B5_CEME - SB5010)</th>
                         <th class="col-produto-pai" style="display: none; color: #c084fc;">Código / Produto Pai Concatenado</th>
                         <th style="color: #6ee7b7; text-align: center;">Qtd Comprar</th>
-                        <th>Status PCP</th>
                         <th style="color: #38bdf8; min-width: 140px;">Pedido Compra ✏️</th>
                         <th style="color: #38bdf8; min-width: 150px;">Código / Fornecedor ✏️</th>
                         <th style="color: #fcd34d; min-width: 110px;">Valor Unit. (R$) ✏️</th>
@@ -103,6 +103,9 @@
                         <th style="text-align: center; color: #a5b4fc;">Ações</th>
                     </tr>
                     <tr class="filter-row">
+                        <th>
+                            <input type="text" name="f_status_pcp" value="{{ request('f_status_pcp') }}" class="filter-input" placeholder="Multi: FALTA, RETIRADO..." form="formFilterCompras" onchange="document.getElementById('formFilterCompras').submit()">
+                        </th>
                         <th></th>
                         <th>
                             <input type="text" name="f_cliente" value="{{ request('f_cliente') }}" class="filter-input" placeholder="Multi: A, B..." form="formFilterCompras" onchange="document.getElementById('formFilterCompras').submit()">
@@ -120,9 +123,6 @@
                             <input type="text" name="f_prod_pai" value="{{ request('f_prod_pai') }}" class="filter-input" placeholder="Multi: QUADRO, 9510..." form="formFilterCompras" onchange="document.getElementById('formFilterCompras').submit()">
                         </th>
                         <th></th>
-                        <th>
-                            <input type="text" name="f_status_pcp" value="{{ request('f_status_pcp') }}" class="filter-input" placeholder="Multi: FALTA, RETIRADO..." form="formFilterCompras" onchange="document.getElementById('formFilterCompras').submit()">
-                        </th>
                         <th>
                             <input type="text" name="f_pedido_compra" value="{{ request('f_pedido_compra') }}" class="filter-input" placeholder="Multi: PC1, PC2..." form="formFilterCompras" onchange="document.getElementById('formFilterCompras').submit()">
                         </th>
@@ -148,6 +148,9 @@
                         $estoqueId = $item['estoque_item_id'];
                     @endphp
                     <tr id="row_compra_{{ $estoqueId ?? $loop->index }}">
+                        <td>
+                            <span class="badge {{ $item['status_pcp_badge'] }}">{{ $item['status_pcp'] }}</span>
+                        </td>
                         <td><strong>{{ $item['pedido_venda'] }}</strong></td>
                         <td style="font-size: 0.775rem;">{{ $item['cliente_obs'] }}</td>
                         <td><strong>{{ $item['codigo_produto'] }}</strong></td>
@@ -162,9 +165,6 @@
                             <strong id="qtd_comprar_{{ $estoqueId }}" style="color: {{ $item['quantidade_comprar'] > 0 ? '#ef4444' : '#10b981' }};">
                                 {{ $item['quantidade_comprar'] }}
                             </strong>
-                        </td>
-                        <td>
-                            <span class="badge {{ $item['status_pcp_badge'] }}">{{ $item['status_pcp'] }}</span>
                         </td>
 
                         @if($estoqueId)

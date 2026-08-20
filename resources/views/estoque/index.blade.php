@@ -176,7 +176,7 @@
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem; flex-wrap: wrap; gap: 0.5rem;">
             <h3 style="font-size: 1rem;">📋 Itens Cadastrados no Estoque Local (MySQL)</h3>
             <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
-                <!-- Quadradinho Toggle para Exibir/Ocultar Coluna Descricao Longa -->
+                <!-- Quadradinho Toggle para Exibir/Ocultar Coluna Descrição Longa -->
                 <button type="button" class="btn btn-secondary" onclick="toggleColunaDescricaoLonga()" style="padding: 0.35rem 0.65rem; font-size: 0.75rem; border-color: rgba(56, 189, 248, 0.5); font-weight: 500;">
                     <span id="iconSquareDescLonga">🔲</span> Descrição Longa (SB5010)
                 </button>
@@ -201,6 +201,7 @@
             <table>
                 <thead>
                     <tr>
+                        <th style="min-width: 130px;">Status PCP Atual</th>
                         <th>Pedido (C2_PEDIDO)</th>
                         <th>Código Produto</th>
                         <th>Descrição</th>
@@ -210,13 +211,15 @@
                         <th style="text-align: center;">Qtd OP</th>
                         <th style="color: #fcd34d; text-align: center;">Qtd Estoque ✏️</th>
                         <th style="color: #6ee7b7; text-align: center;">Qtd a Comprar</th>
-                        <th>Status PCP Atual</th>
                         <th>Nome do Cliente (C2_OBS)</th>
                         <th style="color: #38bdf8;">Observação Estoque ✏️</th>
                         <th>Alterar Status PCP ✏️</th>
                         <th style="text-align: center; color: #a5b4fc;">Ações</th>
                     </tr>
                     <tr class="filter-row">
+                        <th>
+                            <input type="text" name="f_status" value="{{ request('f_status') }}" class="filter-input" placeholder="Multi: FALTA, RETIRADO..." form="formFilterEstoque" onchange="document.getElementById('formFilterEstoque').submit()">
+                        </th>
                         <th>
                             <input type="text" name="f_pedido" value="{{ request('f_pedido') }}" class="filter-input" placeholder="Multi: 0066, 0067..." form="formFilterEstoque" onchange="document.getElementById('formFilterEstoque').submit()">
                         </th>
@@ -239,9 +242,6 @@
                         <th></th>
                         <th></th>
                         <th>
-                            <input type="text" name="f_status" value="{{ request('f_status') }}" class="filter-input" placeholder="Multi: FALTA, RETIRADO..." form="formFilterEstoque" onchange="document.getElementById('formFilterEstoque').submit()">
-                        </th>
-                        <th>
                             <input type="text" name="f_cliente" value="{{ request('f_cliente') }}" class="filter-input" placeholder="Multi: CLIENTE A, B..." form="formFilterEstoque" onchange="document.getElementById('formFilterEstoque').submit()">
                         </th>
                         <th></th>
@@ -252,6 +252,19 @@
                 <tbody>
                     @forelse($items as $item)
                     <tr id="row_estoque_{{ $item->id }}">
+                        <td>
+                            @php
+                                $badgeClass = match($item->status) {
+                                    'FALTA' => 'badge-falta',
+                                    'SEPARADO' => 'badge-separado',
+                                    'RETIRADO' => 'badge-retirado',
+                                    'FABRICA' => 'badge-fabrica',
+                                    'FABRICAR INTERNO KANBAN' => 'badge-kanban',
+                                    default => 'badge-falta'
+                                };
+                            @endphp
+                            <span class="badge {{ $badgeClass }}" id="badge_status_{{ $item->id }}">{{ $item->status }}</span>
+                        </td>
                         <td><strong>{{ $item->pedido ?? '-' }}</strong></td>
                         <td><strong>{{ $item->codigo_produto }}</strong></td>
                         <td style="font-size: 0.775rem;">{{ $item->descricao ?? '-' }}</td>
@@ -286,19 +299,6 @@
                                   style="font-weight: 700; font-size: 0.85rem; color: {{ $valQtdComprar > 0 ? '#ef4444' : '#10b981' }};">
                                 {{ $valQtdComprar }}
                             </span>
-                        </td>
-                        <td>
-                            @php
-                                $badgeClass = match($item->status) {
-                                    'FALTA' => 'badge-falta',
-                                    'SEPARADO' => 'badge-separado',
-                                    'RETIRADO' => 'badge-retirado',
-                                    'FABRICA' => 'badge-fabrica',
-                                    'FABRICAR INTERNO KANBAN' => 'badge-kanban',
-                                    default => 'badge-falta'
-                                };
-                            @endphp
-                            <span class="badge {{ $badgeClass }}" id="badge_status_{{ $item->id }}">{{ $item->status }}</span>
                         </td>
                         <td style="font-size: 0.775rem;">{{ $item->cliente_obs ?? '-' }}</td>
                         <td>

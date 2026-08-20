@@ -192,35 +192,34 @@ class ImportController extends Controller
     public function import(Request $request)
     {
         $request->validate([
-            'arquivo' => 'required|file|mimes:xlsx,csv,txt,xls|max:20480',
+            'arquivo' => 'required|file|max:20480',
             'modo' => 'required|in:truncate,append'
         ]);
 
         $file = $request->file('arquivo');
-        $extension = strtolower($file->getClientOriginalExtension());
-        $tempPath = $file->storeAs('imports', 'upload_temp_' . time() . '.' . $extension);
-        $fullPath = storage_path('app/' . $tempPath);
+        $fullPath = $file->getRealPath();
 
-        // Se for modo zerar base
-        if ($request->modo === 'truncate') {
-            \Illuminate\Support\Facades\DB::statement('SET FOREIGN_KEY_CHECKS=0;');
-            CompraItem::truncate();
-            EstoqueItem::truncate();
-            \Illuminate\Support\Facades\DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+        if (!$fullPath || !file_exists($fullPath)) {
+            return redirect()->back()->with('error', 'O arquivo temporário de upload não pôde ser lido pelo servidor.');
         }
 
-        // Executar o script python otimizado import_excel_separacao.py se for arquivo excel/csv
+        // Executar o script python otimizado import_excel_separacao.py
         $scriptPath = base_path('database/seeders/import_excel_separacao.py');
         if (file_exists($scriptPath)) {
-            $cmd = "python3 " . escapeshellarg($scriptPath) . " " . escapeshellarg($fullPath) . " " . escapeshellarg($request->modo);
+            $cmd = "python3 " . escapeshellarg($scriptPath) . " " . escapeshellarg($fullPath) . " " . escapeshellarg($request->modo) . " 2>&1";
             $output = shell_exec($cmd);
-            
-            // Apagar arquivo temporário
-            Storage::delete($tempPath);
 
-            return redirect()->back()->with('success', '✅ Planilha importada com sucesso! Os itens foram carregados no banco MySQL.');
+            // Verifica se a saída do script Python contem a confirmação de importação
+            if (str_contains($output, 'Importação finalizada com sucesso!')) {
+                // Extrai a mensagem de contagem
+                preg_match('/Total de (\d+) itens importados/', $output, $matches);
+                $totalImportados = $matches[1] ?? 'vários';
+                return redirect()->back()->with('success', "✅ Planilha importada com sucesso! {$totalImportados} itens foram carregados no banco MySQL.");
+            } else {
+                return redirect()->back()->with('error', 'Ocorreu uma falha ao processar o arquivo: ' . nl2br(e($output)));
+            }
         }
 
-        return redirect()->back()->with('error', 'Ocorreu um erro ao processar o script de importação.');
+        return redirect()->back()->with('error', 'Ocorreu um erro: script de importação não encontrado.');
     }
 }

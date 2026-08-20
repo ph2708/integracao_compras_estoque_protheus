@@ -223,7 +223,7 @@ class EstoqueController extends Controller
         if ($estoqueItem->compraItem) {
             $valQtdComprar = max(0, floatval($estoqueItem->quantidade) - floatval($estoqueItem->quantidade_estoque));
             $valUnitario = floatval($estoqueItem->compraItem->valor_unitario);
-            $ipi = floatval($estoqueItem->compraItem->ipi);
+            $valIpi = floatval($estoqueItem->compraItem->ipi);
             $frete = floatval($estoqueItem->compraItem->frete);
 
             $valTotal = ($valUnitario * $valQtdComprar) + ($valUnitario * $valQtdComprar * ($valIpi / 100)) + $frete;
@@ -274,7 +274,7 @@ class EstoqueController extends Controller
                 if ($estoqueItem->compraItem) {
                     $valQtdComprar = max(0, floatval($estoqueItem->quantidade) - floatval($estoqueItem->quantidade_estoque));
                     $valUnitario = floatval($estoqueItem->compraItem->valor_unitario);
-                    $ipi = floatval($estoqueItem->compraItem->ipi);
+                    $valIpi = floatval($estoqueItem->compraItem->ipi);
                     $frete = floatval($estoqueItem->compraItem->frete);
 
                     $valTotal = ($valUnitario * $valQtdComprar) + ($valUnitario * $valQtdComprar * ($valIpi / 100)) + $frete;

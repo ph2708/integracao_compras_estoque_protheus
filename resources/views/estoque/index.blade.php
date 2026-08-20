@@ -64,6 +64,7 @@
                         <th>OP</th>
                         <th>Código Produto</th>
                         <th>Descrição</th>
+                        <th class="col-desc-longa" style="display: none; color: #38bdf8;">Descrição Longa (SB5010)</th>
                         <th class="col-produto-pai" style="display: none; color: #c084fc;">Produto Pai Concatenado</th>
                         <th>Qtd OP</th>
                         <th>Nome do Cliente (C2_OBS)</th>
@@ -99,8 +100,12 @@
                 <input type="text" name="codigo_produto" class="form-control" placeholder="Ex: PROD-1001" required>
             </div>
             <div class="form-group">
-                <label class="form-label">Descrição</label>
+                <label class="form-label">Descrição Curta (B1_DESC)</label>
                 <input type="text" name="descricao" class="form-control" placeholder="Descrição do componente">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Descrição Longa (B5_CEME)</label>
+                <input type="text" name="descricao_longa" class="form-control" placeholder="Descrição longa detalhada da SB5010">
             </div>
             <div class="form-group">
                 <label class="form-label">Produto Pai Concatenado</label>
@@ -171,12 +176,17 @@
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem; flex-wrap: wrap; gap: 0.5rem;">
             <h3 style="font-size: 1rem;">📋 Itens Cadastrados no Estoque Local (MySQL)</h3>
             <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
-                <!-- Quadradinho Toggle para Exibir/Ocultar Coluna Produto Pai -->
-                <button type="button" class="btn btn-secondary" onclick="toggleColunaProdutoPai()" style="padding: 0.35rem 0.65rem; font-size: 0.75rem; border-color: rgba(168, 85, 247, 0.5); font-weight: 500;">
-                    <span id="iconSquarePai">🔲</span> Exibir Produto Pai Concatenado
+                <!-- Quadradinho Toggle para Exibir/Ocultar Coluna Descricao Longa -->
+                <button type="button" class="btn btn-secondary" onclick="toggleColunaDescricaoLonga()" style="padding: 0.35rem 0.65rem; font-size: 0.75rem; border-color: rgba(56, 189, 248, 0.5); font-weight: 500;">
+                    <span id="iconSquareDescLonga">🔲</span> Descrição Longa (SB5010)
                 </button>
 
-                @if(request()->hasAny(['f_pedido', 'f_produto', 'f_descricao', 'f_prod_pai', 'f_op', 'f_status', 'f_cliente']))
+                <!-- Quadradinho Toggle para Exibir/Ocultar Coluna Produto Pai -->
+                <button type="button" class="btn btn-secondary" onclick="toggleColunaProdutoPai()" style="padding: 0.35rem 0.65rem; font-size: 0.75rem; border-color: rgba(168, 85, 247, 0.5); font-weight: 500;">
+                    <span id="iconSquarePai">🔲</span> Produto Pai Concatenado
+                </button>
+
+                @if(request()->hasAny(['f_pedido', 'f_produto', 'f_descricao', 'f_desc_longa', 'f_prod_pai', 'f_op', 'f_status', 'f_cliente']))
                     <a href="{{ route('estoque.index') }}" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="window.mostrarLoading('⏳ Limpando filtros...')">
                         ✕ Limpar Filtros
                     </a>
@@ -194,6 +204,7 @@
                         <th>Pedido (C2_PEDIDO)</th>
                         <th>Código Produto</th>
                         <th>Descrição</th>
+                        <th class="col-desc-longa" style="display: none; color: #38bdf8;">Descrição Longa (B5_CEME - SB5010)</th>
                         <th class="col-produto-pai" style="display: none; color: #c084fc;">Código / Produto Pai Concatenado</th>
                         <th>OP</th>
                         <th style="text-align: center;">Qtd OP</th>
@@ -214,6 +225,9 @@
                         </th>
                         <th>
                             <input type="text" name="f_descricao" value="{{ request('f_descricao') }}" class="filter-input" placeholder="Multi: CABO, CHAVE..." form="formFilterEstoque" onchange="document.getElementById('formFilterEstoque').submit()">
+                        </th>
+                        <th class="col-desc-longa" style="display: none;">
+                            <input type="text" name="f_desc_longa" value="{{ request('f_desc_longa') }}" class="filter-input" placeholder="Multi: FLEXIVEL, ISOLADO..." form="formFilterEstoque" onchange="document.getElementById('formFilterEstoque').submit()">
                         </th>
                         <th class="col-produto-pai" style="display: none;">
                             <input type="text" name="f_prod_pai" value="{{ request('f_prod_pai') }}" class="filter-input" placeholder="Multi: QUADRO, 9510..." form="formFilterEstoque" onchange="document.getElementById('formFilterEstoque').submit()">
@@ -241,6 +255,9 @@
                         <td><strong>{{ $item->pedido ?? '-' }}</strong></td>
                         <td><strong>{{ $item->codigo_produto }}</strong></td>
                         <td style="font-size: 0.775rem;">{{ $item->descricao ?? '-' }}</td>
+                        <td class="col-desc-longa" style="display: none; font-size: 0.75rem; color: #38bdf8;">
+                            <span style="background: rgba(56, 189, 248, 0.12); padding: 0.15rem 0.35rem; border-radius: 0.25rem; border: 1px solid rgba(56, 189, 248, 0.3);">{{ $item->descricao_longa ?? ($item->descricao ?? '-') }}</span>
+                        </td>
                         <td class="col-produto-pai" style="display: none; font-size: 0.75rem; color: #c084fc;">
                             <code style="background: rgba(168, 85, 247, 0.15); padding: 0.15rem 0.35rem; border-radius: 0.25rem; border: 1px solid rgba(168, 85, 247, 0.3);">{{ $item->produto_pai ?? '-' }}</code>
                         </td>
@@ -316,7 +333,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="13" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                        <td colspan="14" style="text-align: center; color: var(--text-muted); padding: 2rem;">
                             Nenhum item encontrado no estoque com os filtros aplicados.
                         </td>
                     </tr>
@@ -343,29 +360,42 @@
 let protheusItemsCache = [];
 let pendingSaveItemId = null;
 
-function checkProdutoPaiVisibility() {
-    const hasFilter = {{ request()->filled('f_prod_pai') ? 'true' : 'false' }};
-    const show = localStorage.getItem('showColProdutoPai') === 'true' || hasFilter;
+function checkColumnsVisibility() {
+    const hasFilterPai = {{ request()->filled('f_prod_pai') ? 'true' : 'false' }};
+    const showPai = localStorage.getItem('showColProdutoPai') === 'true' || hasFilterPai;
     
     document.querySelectorAll('.col-produto-pai').forEach(el => {
-        el.style.display = show ? 'table-cell' : 'none';
+        el.style.display = showPai ? 'table-cell' : 'none';
     });
     
-    const icon = document.getElementById('iconSquarePai');
-    if (icon) {
-        icon.innerText = show ? '☑️' : '🔲';
-    }
+    const iconPai = document.getElementById('iconSquarePai');
+    if (iconPai) iconPai.innerText = showPai ? '☑️' : '🔲';
+
+    const hasFilterDesc = {{ request()->filled('f_desc_longa') ? 'true' : 'false' }};
+    const showDesc = localStorage.getItem('showColDescLonga') === 'true' || hasFilterDesc;
+
+    document.querySelectorAll('.col-desc-longa').forEach(el => {
+        el.style.display = showDesc ? 'table-cell' : 'none';
+    });
+
+    const iconDesc = document.getElementById('iconSquareDescLonga');
+    if (iconDesc) iconDesc.innerText = showDesc ? '☑️' : '🔲';
 }
 
 function toggleColunaProdutoPai() {
     const current = localStorage.getItem('showColProdutoPai') === 'true';
-    const newState = !current;
-    localStorage.setItem('showColProdutoPai', newState);
-    checkProdutoPaiVisibility();
+    localStorage.setItem('showColProdutoPai', !current);
+    checkColumnsVisibility();
+}
+
+function toggleColunaDescricaoLonga() {
+    const current = localStorage.getItem('showColDescLonga') === 'true';
+    localStorage.setItem('showColDescLonga', !current);
+    checkColumnsVisibility();
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    checkProdutoPaiVisibility();
+    checkColumnsVisibility();
 });
 
 function abrirModalConsultaProtheus() {
@@ -422,6 +452,7 @@ function buscarItensProtheus() {
                 <td><code style="color: var(--accent);">${item.op || '-'}</code></td>
                 <td><strong>${item.codigo_produto}</strong></td>
                 <td style="font-size: 0.75rem;">${item.descricao || '-'}</td>
+                <td class="col-desc-longa" style="display: none; font-size: 0.75rem; color: #38bdf8;">${item.descricao_longa || '-'}</td>
                 <td class="col-produto-pai" style="display: none; font-size: 0.75rem; color: #c084fc;"><code>${item.produto_pai || '-'}</code></td>
                 <td style="text-align: center;"><strong>${item.quantidade}</strong></td>
                 <td style="font-size: 0.75rem;">${item.cliente_obs || '-'}</td>
@@ -431,7 +462,7 @@ function buscarItensProtheus() {
 
         formBatch.style.display = 'block';
         atualizarContadorSelecionados();
-        checkProdutoPaiVisibility();
+        checkColumnsVisibility();
     })
     .catch(err => {
         console.error(err);

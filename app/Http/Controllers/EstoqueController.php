@@ -46,6 +46,7 @@ class EstoqueController extends Controller
         $this->applyMultiFilter($query, 'pedido', $request->f_pedido);
         $this->applyMultiFilter($query, 'codigo_produto', $request->f_produto);
         $this->applyMultiFilter($query, 'descricao', $request->f_descricao);
+        $this->applyMultiFilter($query, 'descricao_longa', $request->f_desc_longa);
         $this->applyMultiFilter($query, 'produto_pai', $request->f_prod_pai);
         $this->applyMultiFilter($query, 'op', $request->f_op);
         $this->applyMultiFilter($query, 'status', $request->f_status);
@@ -122,6 +123,7 @@ class EstoqueController extends Controller
                 ],
                 [
                     'descricao' => $itemData['descricao'] ?? null,
+                    'descricao_longa' => $itemData['descricao_longa'] ?? ($itemData['descricao'] ?? null),
                     'produto_pai' => $itemData['produto_pai'] ?? null,
                     'cliente_obs' => $itemData['cliente_obs'] ?? null,
                     'quantidade' => $qtdOp,
@@ -163,6 +165,7 @@ class EstoqueController extends Controller
         $validated = $request->validate([
             'codigo_produto' => 'required|string',
             'descricao' => 'nullable|string',
+            'descricao_longa' => 'nullable|string',
             'produto_pai' => 'nullable|string',
             'op' => 'nullable|string',
             'pedido' => 'nullable|string',
@@ -209,6 +212,7 @@ class EstoqueController extends Controller
             'status' => 'required|in:FALTA,SEPARADO,RETIRADO,FABRICA,FABRICAR INTERNO KANBAN',
             'observacao_estoque' => 'nullable|string',
             'produto_pai' => 'nullable|string',
+            'descricao_longa' => 'nullable|string',
         ]);
 
         $estoqueItem->update($validated);
@@ -220,7 +224,7 @@ class EstoqueController extends Controller
             $ipi = floatval($estoqueItem->compraItem->ipi);
             $frete = floatval($estoqueItem->compraItem->frete);
 
-            $valTotal = ($valUnitario * $valQtdComprar) + ($valUnitario * $valQtdComprar * ($ipi / 100)) + $frete;
+            $valTotal = ($valUnitario * $valQtdComprar) + ($valUnitario * $valQtdComprar * ($valIpi / 100)) + $frete;
             $estoqueItem->compraItem->update(['valor_total' => $valTotal]);
         }
 
@@ -257,6 +261,9 @@ class EstoqueController extends Controller
             if (array_key_exists('produto_pai', $data)) {
                 $updateData['produto_pai'] = $data['produto_pai'];
             }
+            if (array_key_exists('descricao_longa', $data)) {
+                $updateData['descricao_longa'] = $data['descricao_longa'];
+            }
 
             if (!empty($updateData)) {
                 $estoqueItem->update($updateData);
@@ -268,7 +275,7 @@ class EstoqueController extends Controller
                     $ipi = floatval($estoqueItem->compraItem->ipi);
                     $frete = floatval($estoqueItem->compraItem->frete);
 
-                    $valTotal = ($valUnitario * $valQtdComprar) + ($valUnitario * $valQtdComprar * ($ipi / 100)) + $frete;
+                    $valTotal = ($valUnitario * $valQtdComprar) + ($valUnitario * $valQtdComprar * ($valIpi / 100)) + $frete;
                     $estoqueItem->compraItem->update(['valor_total' => $valTotal]);
                 }
 

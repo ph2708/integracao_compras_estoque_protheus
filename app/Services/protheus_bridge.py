@@ -56,7 +56,7 @@ def get_pedido_items(c2_pedido, filial=None):
     """
     Consulta componentes/matérias-primas requisitados da OP na SD4010 + SC2010
     EXCLUINDO produtos do tipo PI (Produto Intermediário) e PA (Produto Acabado) na SB1010 (B1_TIPO NOT IN ('PI', 'PA'))
-    Inclui o campo concatenado do Produto Pai (C2_PRODUTO + ' - ' + B_PAI.B1_DESC)
+    Retorna B1_DESC (Descrição Curta), B5_CEME (Descrição Longa SB5010) e PRODUTO_PAI concatenado
     """
     conn = get_connection()
     cursor = conn.cursor(as_dict=True)
@@ -99,13 +99,16 @@ def get_pedido_items(c2_pedido, filial=None):
         if b1_tipo in ['PI', 'PA']:
             continue
 
-        desc = r.get('B5_CEME') or r.get('B1_DESC') or ''
+        descCurta = (r.get('B1_DESC') or '').strip()
+        descLonga = (r.get('B5_CEME') or descCurta).strip()
+
         formatted_rows.append({
             'filial': (r.get('C2_FILIAL') or '').strip(),
             'pedido': (r.get('C2_PEDIDO') or '').strip(),
             'op': (r.get('D4_OP') or '').strip(),
             'codigo_produto': (r.get('C2_PRODUTO') or '').strip(),
-            'descricao': desc.strip(),
+            'descricao': descCurta,
+            'descricao_longa': descLonga,
             'produto_pai': (r.get('PRODUTO_PAI') or '').strip(),
             'cliente_obs': (r.get('C2_OBS') or '').strip(),
             'quantidade': float(r.get('QUANTIDADE') or 1.0)

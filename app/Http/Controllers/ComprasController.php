@@ -94,6 +94,7 @@ class ComprasController extends Controller
                     'cliente_obs' => $pItem['cliente_obs'] ?? ($estoqueMatch ? $estoqueMatch->cliente_obs : '-'),
                     'codigo_produto' => $codProduto ?: '-',
                     'descricao' => $pItem['descricao'] ?? ($estoqueMatch ? $estoqueMatch->descricao : '-'),
+                    'descricao_longa' => $pItem['descricao_longa'] ?? ($estoqueMatch ? $estoqueMatch->descricao_longa : '-'),
                     'produto_pai' => $pItem['produto_pai'] ?? ($estoqueMatch ? $estoqueMatch->produto_pai : '-'),
                     'op' => $pItem['op'] ?? ($estoqueMatch ? $estoqueMatch->op : '-'),
                     'quantidade' => $valQtdOp,
@@ -149,6 +150,7 @@ class ComprasController extends Controller
                     'cliente_obs' => $estoqueItem->cliente_obs ?? '-',
                     'codigo_produto' => $estoqueItem->codigo_produto,
                     'descricao' => $estoqueItem->descricao ?? '-',
+                    'descricao_longa' => $estoqueItem->descricao_longa ?? ($estoqueItem->descricao ?? '-'),
                     'produto_pai' => $estoqueItem->produto_pai ?? '-',
                     'op' => $estoqueItem->op ?? '-',
                     'quantidade' => $valQtdOp,
@@ -180,6 +182,9 @@ class ComprasController extends Controller
         }
         if ($request->filled('f_descricao')) {
             $combinedItems = $combinedItems->filter(fn($i) => $this->matchMultiFilter($i['descricao'], $request->f_descricao));
+        }
+        if ($request->filled('f_desc_longa')) {
+            $combinedItems = $combinedItems->filter(fn($i) => $this->matchMultiFilter($i['descricao_longa'], $request->f_desc_longa));
         }
         if ($request->filled('f_prod_pai')) {
             $combinedItems = $combinedItems->filter(fn($i) => $this->matchMultiFilter($i['produto_pai'], $request->f_prod_pai));

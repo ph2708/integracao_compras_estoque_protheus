@@ -44,7 +44,6 @@ def parse_float(val):
     val_str = str(val).strip()
     if not val_str or val_str.upper() in ['NONE', '#N/D', 'NULL', '']:
         return 0.0
-    # Trata formato de moeda/número brasileiro com vírgula (ex: 220,97 -> 220.97 ou 1.585,40 -> 1585.40)
     if ',' in val_str:
         val_str = val_str.replace('.', '').replace(',', '.')
     try:
@@ -53,11 +52,7 @@ def parse_float(val):
         return 0.0
 
 def load_rows_from_file(file_path):
-    """
-    Carrega as linhas de arquivos .csv ou .xlsx/.xls com detecção automática de delimitadores e codificação UTF-8/ISO-8859-1
-    """
     ext = os.path.splitext(file_path)[1].lower()
-    
     if ext in ['.csv', '.txt']:
         for encoding in ['utf-8-sig', 'utf-8', 'iso-8859-1', 'cp1252']:
             try:
@@ -70,7 +65,7 @@ def load_rows_from_file(file_path):
                     if rows:
                         print(f"Lido CSV com codificação {encoding} e delimitador '{delimiter}' ({len(rows)} linhas)")
                         return rows
-            except Exception as e:
+            except Exception:
                 continue
         return []
     else:
@@ -84,10 +79,14 @@ def load_rows_from_file(file_path):
         print(f"Lido Excel .xlsx ({len(rows)} linhas)")
         return rows
 
-def fetch_protheus_produto_pai_batch(ops, pvs):
+def fetch_protheus_enrichment_data(codigos_produtos, ops, pvs):
     """
-    Busca em lote o Produto Pai Concatenado (C2_PRODUTO + ' - ' + B1_DESC) no Protheus para OPs/PVs com campos em branco
+    Auto-enriquece em LOTE todos os campos não-obrigatórios que vierem em branco na planilha (Descrição Curta, Descrição Longa SB5010, Produto Pai, Cliente C2_OBS, Último Preço e Fornecedor da SC7010)
     """
+    product_map = {}
+    order_map = {}
+    purchase_map = {}
+
     try:
         import pymssql
         host = os.getenv('DB_PROTHEUS_HOST', '177.221.240.40')
@@ -106,12 +105,35 @@ def fetch_protheus_produto_pai_batch(ops, pvs):
         )
         cursor = conn.cursor(as_dict=True)
 
+        cods_unicos = list(set([c.strip() for c in codigos_produtos if c and c.strip()]))
         op_nums = list(set([str(op)[:6] for op in ops if op and len(str(op)) >= 6]))
         pv_nums = list(set([str(pv).strip() for pv in pvs if pv and str(pv).strip()]))
 
-        if not op_nums and not pv_nums:
-            return {}
+        # 1. Consulta Descrição Curta (B1_DESC) e Descrição Longa (B5_CEME da SB5010)
+        if cods_unicos:
+            for chunk_idx in range(0, len(cods_unicos), 200):
+                chunk = cods_unicos[chunk_idx:chunk_idx+200]
+                placeholders = "', '".join(chunk)
+                sql_prod = f"""
+                SELECT 
+                    RTRIM(B.B1_COD) AS B1_COD,
+                    RTRIM(B.B1_DESC) AS B1_DESC,
+                    RTRIM(B5.B5_CEME) AS B5_CEME
+                FROM SB1010 B WITH (NOLOCK)
+                LEFT JOIN SB5010 B5 WITH (NOLOCK) ON RTRIM(B.B1_COD) = RTRIM(B5.B5_COD) AND B5.D_E_L_E_T_ = ' '
+                WHERE B.D_E_L_E_T_ = ' ' AND RTRIM(B.B1_COD) IN ('{placeholders}')
+                """
+                cursor.execute(sql_prod)
+                for r in cursor.fetchall():
+                    c_cod = (r.get('B1_COD') or '').strip()
+                    c_desc = (r.get('B1_DESC') or '').strip()
+                    c_longa = (r.get('B5_CEME') or c_desc).strip()
+                    product_map[c_cod] = {
+                        'descricao': c_desc,
+                        'descricao_longa': c_longa
+                    }
 
+        # 2. Consulta Produto Pai Concatenado e Cliente C2_OBS na SC2010 + SB1010
         where_clauses = []
         if op_nums:
             ops_formatted = "', '".join(op_nums[:200])
@@ -120,36 +142,62 @@ def fetch_protheus_produto_pai_batch(ops, pvs):
             pvs_formatted = "', '".join(pv_nums[:200])
             where_clauses.append(f"RTRIM(S.C2_PEDIDO) IN ('{pvs_formatted}')")
 
-        sql = f"""
-        SELECT DISTINCT
-            RTRIM(S.C2_NUM) AS C2_NUM,
-            RTRIM(S.C2_PEDIDO) AS C2_PEDIDO,
-            RTRIM(S.C2_PRODUTO) + ' - ' + RTRIM(ISNULL(B.B1_DESC, '')) AS PRODUTO_PAI
-        FROM SC2010 S WITH (NOLOCK)
-        LEFT JOIN SB1010 B WITH (NOLOCK) ON RTRIM(S.C2_PRODUTO) = RTRIM(B.B1_COD) AND B.D_E_L_E_T_ = ' '
-        WHERE S.D_E_L_E_T_ = ' ' AND ({' OR '.join(where_clauses)})
-        """
+        if where_clauses:
+            sql_orders = f"""
+            SELECT DISTINCT
+                RTRIM(S.C2_NUM) AS C2_NUM,
+                RTRIM(S.C2_PEDIDO) AS C2_PEDIDO,
+                RTRIM(S.C2_OBS) AS C2_OBS,
+                RTRIM(S.C2_PRODUTO) + ' - ' + RTRIM(ISNULL(B.B1_DESC, '')) AS PRODUTO_PAI
+            FROM SC2010 S WITH (NOLOCK)
+            LEFT JOIN SB1010 B WITH (NOLOCK) ON RTRIM(S.C2_PRODUTO) = RTRIM(B.B1_COD) AND B.D_E_L_E_T_ = ' '
+            WHERE S.D_E_L_E_T_ = ' ' AND ({' OR '.join(where_clauses)})
+            """
+            cursor.execute(sql_orders)
+            for r in cursor.fetchall():
+                num = (r.get('C2_NUM') or '').strip()
+                ped = (r.get('C2_PEDIDO') or '').strip()
+                obs = (r.get('C2_OBS') or '').strip()
+                pai = (r.get('PRODUTO_PAI') or '').strip()
 
-        cursor.execute(sql)
-        rows = cursor.fetchall()
+                val_data = {'produto_pai': pai, 'cliente_obs': obs}
+                if num: order_map['OP_' + num] = val_data
+                if ped: order_map['PV_' + ped] = val_data
+
+        # 3. Consulta Último Preço (C7_PRECO) e Fornecedor (C7_FORNECE) na SC7010
+        if cods_unicos:
+            for chunk_idx in range(0, len(cods_unicos), 200):
+                chunk = cods_unicos[chunk_idx:chunk_idx+200]
+                placeholders = "', '".join(chunk)
+                sql_sc7 = f"""
+                WITH RankedSC7 AS (
+                    SELECT 
+                        RTRIM(C7_PRODUTO) AS C7_PRODUTO,
+                        C7_PRECO,
+                        RTRIM(C7_FORNECE) AS C7_FORNECE,
+                        ROW_NUMBER() OVER(PARTITION BY RTRIM(C7_PRODUTO) ORDER BY C7_EMISSAO DESC, R_E_C_N_O_ DESC) as rn
+                    FROM SC7010 WITH (NOLOCK)
+                    WHERE D_E_L_E_T_ = ' ' 
+                      AND RTRIM(C7_PRODUTO) IN ('{placeholders}')
+                      AND C7_PRECO > 0
+                )
+                SELECT C7_PRODUTO, C7_PRECO, C7_FORNECE
+                FROM RankedSC7
+                WHERE rn = 1
+                """
+                cursor.execute(sql_sc7)
+                for r in cursor.fetchall():
+                    c_cod = (r.get('C7_PRODUTO') or '').strip()
+                    c_preco = float(r.get('C7_PRECO') or 0.0)
+                    c_forn = (r.get('C7_FORNECE') or '').strip()
+                    purchase_map[c_cod] = {'preco': c_preco, 'fornecedor': c_forn}
+
         conn.close()
-
-        result = {}
-        for r in rows:
-            num = (r.get('C2_NUM') or '').strip()
-            ped = (r.get('C2_PEDIDO') or '').strip()
-            pai = (r.get('PRODUTO_PAI') or '').strip()
-
-            if num and pai:
-                result['OP_' + num] = pai
-            if ped and pai:
-                result['PV_' + ped] = pai
-
-        print(f"⚡ Protheus: Pré-buscados {len(result)} produtos pai concatenados para auto-preenchimento.")
-        return result
+        print(f"⚡ Enriquecimento Protheus: {len(product_map)} produtos, {len(order_map)} OPs/PVs e {len(purchase_map)} preços consultados.")
     except Exception as e:
-        print(f"Aviso ao consultar Produto Pai no Protheus: {e}")
-        return {}
+        print(f"Aviso ao enriquecer dados no Protheus: {e}")
+
+    return product_map, order_map, purchase_map
 
 def import_excel(target_path=None, mode='truncate'):
     excel_file = target_path if target_path and os.path.exists(target_path) else DEFAULT_EXCEL_PATH
@@ -164,9 +212,9 @@ def import_excel(target_path=None, mode='truncate'):
         print("Aviso: Nenhuma linha foi encontrada no arquivo enviado.")
         return
 
-    # Pré-mapeamento de cabeçalho para coletar OPs e PVs
     is_header = True
     col_map = {}
+    cods_to_query = []
     ops_to_query = []
     pvs_to_query = []
 
@@ -193,13 +241,16 @@ def import_excel(target_path=None, mode='truncate'):
                         return row[idx]
             return None
 
+        cod_val = temp_get_col_val(['CODIGO PRODUTO', 'CÓDIGO PRODUTO', 'CÓDIGO', 'CODIGO'])
         op_val = temp_get_col_val(['ORDEM PRODUCAO', 'ORDEM PRODUÇÃO', 'ORD PRODUCAO', 'ORD PRODUÇÃO'])
         pv_val = temp_get_col_val(['PV', 'PEDIDO DE VENDA', 'PEDIDO'])
+
+        if cod_val: cods_to_query.append(str(cod_val).strip())
         if op_val: ops_to_query.append(str(op_val).strip())
         if pv_val: pvs_to_query.append(str(pv_val).strip())
 
-    # Busca em lote de Produtos Pai do Protheus se houverem campos em branco
-    father_protheus_map = fetch_protheus_produto_pai_batch(ops_to_query, pvs_to_query)
+    # Pre-busca enriquecimento do Protheus
+    product_map, order_map, purchase_map = fetch_protheus_enrichment_data(cods_to_query, ops_to_query, pvs_to_query)
 
     conn = pymysql.connect(
         host=DB_HOST,
@@ -254,21 +305,26 @@ def import_excel(target_path=None, mode='truncate'):
         if not codigo_produto or codigo_produto == '':
             continue
 
+        # ⚡ Auto-preenchimento inteligente de campos em branco no Protheus!
+        protheus_prod = product_map.get(codigo_produto, {})
+        protheus_ord = {}
+        if op and len(op) >= 6:
+            protheus_ord = order_map.get('OP_' + op[:6], {})
+        if not protheus_ord and pedido:
+            protheus_ord = order_map.get('PV_' + pedido, {})
+        protheus_pur = purchase_map.get(codigo_produto, {})
+
         raw_desc = get_col_val(['DESCRIÇÃO COMPONENTE', 'DESCRICAO COMPONENTE', 'DESCRIÇÃO MATERIAL', 'DESCRICAO MATERIAL', 'DESCRIÇÃO', 'DESCRICAO'])
-        descricao = str(raw_desc).strip() if raw_desc is not None and str(raw_desc).strip() != 'None' else ''
+        descricao = str(raw_desc).strip() if raw_desc is not None and str(raw_desc).strip() != 'None' and str(raw_desc).strip() != '' else protheus_prod.get('descricao', '')
 
         raw_desc_longa = get_col_val(['DESCRIÇÃO LONGA (B5_CEME)', 'DESCRIÇÃO LONGA', 'DESCRICAO LONGA', 'DESC. LONGA'])
-        descricao_longa = str(raw_desc_longa).strip() if raw_desc_longa is not None and str(raw_desc_longa).strip() != 'None' else descricao
+        descricao_longa = str(raw_desc_longa).strip() if raw_desc_longa is not None and str(raw_desc_longa).strip() != 'None' and str(raw_desc_longa).strip() != '' else protheus_prod.get('descricao_longa', descricao)
 
         raw_pai = get_col_val(['PRODUTO PAI CONCATENADO', 'PRODUTO PAI'])
-        produto_pai = str(raw_pai).strip() if raw_pai is not None and str(raw_pai).strip() != 'None' and str(raw_pai).strip() != '' else None
+        produto_pai = str(raw_pai).strip() if raw_pai is not None and str(raw_pai).strip() != 'None' and str(raw_pai).strip() != '' else protheus_ord.get('produto_pai', None)
 
-        # ⚡ Se o Produto Pai Concatenado estiver em branco na planilha enviada, auto-preenche via Protheus!
-        if not produto_pai:
-            if op and len(op) >= 6:
-                produto_pai = father_protheus_map.get('OP_' + op[:6])
-            if not produto_pai and pedido:
-                produto_pai = father_protheus_map.get('PV_' + pedido)
+        raw_cliente = get_col_val(['CLIENTE', 'NOME CLIENTE', 'CLIENTE (C2_OBS)'])
+        cliente_obs = str(raw_cliente).strip() if raw_cliente is not None and str(raw_cliente).strip() != 'None' and str(raw_cliente).strip() != '' else protheus_ord.get('cliente_obs', None)
 
         raw_status = get_col_val(['STATUS PCP', 'STATUS PCP/ALMOX', 'STATUS ALMOX', 'STATUS PCP ATUAL'])
         status_pcp = str(raw_status).strip().upper() if raw_status is not None else 'FALTA'
@@ -289,14 +345,17 @@ def import_excel(target_path=None, mode='truncate'):
 
         qtd_comprado = parse_float(get_col_val(['COMPRADO', 'QTD COMPRADO', 'QTD']))
         quantidade_op = max(1.0, qtd_estoque + qtd_comprado)
+        
         valor_unitario = parse_float(get_col_val(['VALOR UNITARIO COMPRA', 'VALOR UNITÁRIO COMPRA', 'VALOR UNITÁRIO', 'VALOR UNITARIO']))
+        if valor_unitario == 0.0 and protheus_pur.get('preco'):
+            valor_unitario = protheus_pur.get('preco')
+
+        raw_forn = get_col_val(['FORNECEDOR SELECIONADO', 'FORNECEDOR'])
+        fornecedor = str(raw_forn).strip() if raw_forn is not None and str(raw_forn).strip() != 'None' and str(raw_forn).strip() != '' else protheus_pur.get('fornecedor', None)
 
         raw_pagto = get_col_val(['TIPO PAGAMENTO/FATURADO', 'TIPO PAGAMENTO', 'SITUACAO'])
         status_pagamento_raw = str(raw_pagto).strip().upper() if raw_pagto is not None else 'PENDENTE'
         status_pagamento = status_pagamento_raw if status_pagamento_raw in ['PENDENTE', 'PAGAMENTO ANTECIPADO', 'FATURADO', 'PAGO'] else 'PENDENTE'
-
-        raw_forn = get_col_val(['FORNECEDOR SELECIONADO', 'FORNECEDOR'])
-        fornecedor = str(raw_forn).strip() if raw_forn is not None and str(raw_forn).strip() != 'None' else None
 
         raw_pc = get_col_val(['PEDIDO COMPRA (PROTHEUS)', 'PEDIDO COMPRA'])
         pedido_compra = str(raw_pc).strip() if raw_pc is not None and str(raw_pc).strip() != 'None' else None
@@ -314,7 +373,7 @@ def import_excel(target_path=None, mode='truncate'):
         INSERT INTO estoque_items (codigo_produto, descricao, descricao_longa, produto_pai, op, pedido, cliente_obs, quantidade, quantidade_estoque, status, observacao_estoque, created_at, updated_at)
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
-        cursor.execute(sql_est, (codigo_produto, descricao, descricao_longa, produto_pai, op, pedido, None, quantidade_op, qtd_estoque, status_pcp, obs_estoque, now_str, now_str))
+        cursor.execute(sql_est, (codigo_produto, descricao, descricao_longa, produto_pai, op, pedido, cliente_obs, quantidade_op, qtd_estoque, status_pcp, obs_estoque, now_str, now_str))
         estoque_id = cursor.lastrowid
 
         # Inserir em Compras

@@ -217,6 +217,10 @@ class EstoqueController extends Controller
             'descricao_longa' => 'nullable|string',
         ]);
 
+        if (array_key_exists('quantidade_estoque', $validated)) {
+            $validated['quantidade_estoque'] = (is_null($validated['quantidade_estoque']) || $validated['quantidade_estoque'] === '') ? 0 : floatval($validated['quantidade_estoque']);
+        }
+
         $estoqueItem->update($validated);
 
         // Recalcula o valor total em compras se a quantidade em estoque mudou
@@ -251,8 +255,8 @@ class EstoqueController extends Controller
             if (!$estoqueItem) continue;
 
             $updateData = [];
-            if (isset($data['quantidade_estoque'])) {
-                $updateData['quantidade_estoque'] = floatval($data['quantidade_estoque']);
+            if (array_key_exists('quantidade_estoque', $data)) {
+                $updateData['quantidade_estoque'] = (is_null($data['quantidade_estoque']) || $data['quantidade_estoque'] === '') ? 0 : floatval($data['quantidade_estoque']);
             }
             if (isset($data['status'])) {
                 $updateData['status'] = $data['status'];

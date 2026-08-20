@@ -349,6 +349,7 @@
                         <td class="col-obs-estoque">
                             <input type="text" 
                                    name="items[{{ $item->id }}][observacao_estoque]" 
+                                   id="input_obs_est_{{ $item->id }}"
                                    value="{{ $item->observacao_estoque }}" 
                                    class="form-control" 
                                    placeholder="Observação..."
@@ -620,8 +621,17 @@ document.getElementById('btnConfirmarSaveAction').addEventListener('click', func
         const estInput = document.createElement('input');
         estInput.type = 'hidden';
         estInput.name = 'quantidade_estoque';
-        estInput.value = inputEst.value;
+        estInput.value = (inputEst.value === '' || inputEst.value === null) ? '0' : inputEst.value;
         form.appendChild(estInput);
+    }
+
+    const inputObs = document.getElementById('input_obs_est_' + pendingSaveItemId);
+    if (inputObs) {
+        const obsInput = document.createElement('input');
+        obsInput.type = 'hidden';
+        obsInput.name = 'observacao_estoque';
+        obsInput.value = inputObs.value;
+        form.appendChild(obsInput);
     }
 
     if (selectStatus) {

@@ -167,11 +167,12 @@ def fetch_protheus_enrichment_data(codigos_produtos, ops, pvs):
                 RTRIM(S.C2_NUM) AS C2_NUM,
                 RTRIM(S.C2_PEDIDO) AS C2_PEDIDO,
                 RTRIM(S.C2_OBS) AS C2_OBS,
-                RTRIM(S.C2_PRODUTO) + ' - ' + RTRIM(ISNULL(B.B1_DESC, '')) AS PRODUTO_PAI
+                RTRIM(S.C2_PRODUTO) + ' - ' + RTRIM(ISNULL(B.B1_DESC, '')) AS PRODUTO_PAI,
+                CASE WHEN RTRIM(S.C2_OBS) LIKE '%ESTOQUE%' THEN 1 ELSE 0 END AS IS_ESTOQUE
             FROM SC2010 S WITH (NOLOCK)
             LEFT JOIN SB1010 B WITH (NOLOCK) ON RTRIM(S.C2_PRODUTO) = RTRIM(B.B1_COD) AND B.D_E_L_E_T_ = ' '
             WHERE S.D_E_L_E_T_ = ' ' AND ({' OR '.join(where_clauses)})
-            ORDER BY CASE WHEN RTRIM(S.C2_OBS) LIKE '%ESTOQUE%' THEN 1 ELSE 0 END ASC
+            ORDER BY IS_ESTOQUE ASC
             """
             cursor.execute(sql_orders)
             for r in cursor.fetchall():

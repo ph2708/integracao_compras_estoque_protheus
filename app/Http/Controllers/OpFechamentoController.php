@@ -18,7 +18,71 @@ class OpFechamentoController extends Controller
         $searchPedido = $request->get('search_pedido');
         $searchCliente = $request->get('search_cliente');
         $searchDescricao = $request->get('search_descricao');
-        $tab = $request->get('tab', 'prontas'); // prontas, pendentes, encerradas, todas
+        $tab = $request->get('tab', 'prontas'); // prontas, pendentes, encerradas, items_expandidos, todas
+
+        // ABA ESPECIAL: Itens Expandidos de OPs Encerradas
+        if ($tab === 'items_expandidos') {
+            $queryItems = EstoqueItem::where('status', 'FECHADO');
+
+            if ($searchOp) {
+                $terms = array_filter(array_map('trim', explode(',', $searchOp)));
+                if (!empty($terms)) {
+                    $queryItems->where(function ($q) use ($terms) {
+                        foreach ($terms as $term) {
+                            $q->orWhere('op', 'like', '%' . $term . '%');
+                        }
+                    });
+                }
+            }
+
+            if ($searchPedido) {
+                $terms = array_filter(array_map('trim', explode(',', $searchPedido)));
+                if (!empty($terms)) {
+                    $queryItems->where(function ($q) use ($terms) {
+                        foreach ($terms as $term) {
+                            $q->orWhere('pedido', 'like', '%' . $term . '%');
+                        }
+                    });
+                }
+            }
+
+            if ($searchCliente) {
+                $terms = array_filter(array_map('trim', explode(',', $searchCliente)));
+                if (!empty($terms)) {
+                    $queryItems->where(function ($q) use ($terms) {
+                        foreach ($terms as $term) {
+                            $q->orWhere('cliente_obs', 'like', '%' . $term . '%');
+                        }
+                    });
+                }
+            }
+
+            if ($searchDescricao) {
+                $terms = array_filter(array_map('trim', explode(',', $searchDescricao)));
+                if (!empty($terms)) {
+                    $queryItems->where(function ($q) use ($terms) {
+                        foreach ($terms as $term) {
+                            $q->orWhere('descricao', 'like', '%' . $term . '%')
+                              ->orWhere('descricao_longa', 'like', '%' . $term . '%')
+                              ->orWhere('produto_pai', 'like', '%' . $term . '%');
+                        }
+                    });
+                }
+            }
+
+            $paginatedItems = $queryItems->orderBy('fechada_em', 'desc')->orderBy('op', 'asc')->paginate(20)->appends($request->query());
+            $paginatedOps = new LengthAwarePaginator([], 0, 15);
+
+            return view('fechamento_op.index', compact(
+                'paginatedItems',
+                'paginatedOps',
+                'searchOp',
+                'searchPedido',
+                'searchCliente',
+                'searchDescricao',
+                'tab'
+            ));
+        }
 
         // Busca todas as OPs agrupadas do Estoque com filtros aplicados
         $query = EstoqueItem::select('op')
@@ -124,7 +188,9 @@ class OpFechamentoController extends Controller
             ['path' => $request->url(), 'query' => $request->query()]
         );
 
-        return view('fechamento_op.index', compact('paginatedOps', 'searchOp', 'searchPedido', 'searchCliente', 'searchDescricao', 'tab'));
+        $paginatedItems = null;
+
+        return view('fechamento_op.index', compact('paginatedOps', 'paginatedItems', 'searchOp', 'searchPedido', 'searchCliente', 'searchDescricao', 'tab'));
     }
 
     /**

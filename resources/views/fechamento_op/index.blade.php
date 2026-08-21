@@ -31,6 +31,11 @@
            style="{{ $tab === 'encerradas' ? 'background-color: #4f46e5; border-color: #4f46e5;' : '' }}">
             🔒 OPs Encerradas (Histórico)
         </a>
+        <a href="{{ route('fechamento-op.index', ['tab' => 'items_expandidos', 'search_op' => $searchOp, 'search_pedido' => $searchPedido, 'search_cliente' => $searchCliente, 'search_descricao' => $searchDescricao]) }}" 
+           class="btn {{ $tab === 'items_expandidos' ? 'btn-primary' : 'btn-secondary' }}"
+           style="{{ $tab === 'items_expandidos' ? 'background-color: #8b5cf6; border-color: #8b5cf6;' : '' }}">
+            🔍 OPs Itens Expandidos
+        </a>
         <a href="{{ route('fechamento-op.index', ['tab' => 'todas', 'search_op' => $searchOp, 'search_pedido' => $searchPedido, 'search_cliente' => $searchCliente, 'search_descricao' => $searchDescricao]) }}" 
            class="btn {{ $tab === 'todas' ? 'btn-primary' : 'btn-secondary' }}">
             📋 Todas as OPs
@@ -79,7 +84,85 @@
     @csrf
 </form>
 
-<!-- Tabela de OPs agrupadas -->
+@if($tab === 'items_expandidos')
+<!-- VISÃO: OPs Itens Expandidos (Lista Individual de Componentes de OPs Encerradas) -->
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem; flex-wrap: wrap; gap: 0.75rem;">
+        <h3 style="font-size: 1rem; color: #c084fc;">📂 Itens Expandidos de Ordens de Produção Encerradas</h3>
+        <span class="badge" style="background-color: #8b5cf6; font-size: 0.8rem; padding: 0.35rem 0.65rem;">
+            Total de Itens: {{ $paginatedItems->total() }}
+        </span>
+    </div>
+
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Número da OP</th>
+                    <th>Pedido de Venda</th>
+                    <th>Nome do Cliente</th>
+                    <th>Código Produto</th>
+                    <th>Descrição Componente</th>
+                    <th>Produto Pai</th>
+                    <th style="text-align: center;">Qtd. OP</th>
+                    <th style="text-align: center;">Status Item</th>
+                    <th style="text-align: center;">Data Encerramento</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($paginatedItems as $item)
+                    <tr>
+                        <td>
+                            <strong style="color: #c084fc; cursor: pointer;" onclick="abrirModalConferenciaOp('{{ $item->op }}')">
+                                🔍 OP #{{ $item->op }}
+                            </strong>
+                        </td>
+                        <td><strong>{{ $item->pedido ?? '-' }}</strong></td>
+                        <td><small style="color: #94a3b8;">{{ $item->cliente_obs ?? '-' }}</small></td>
+                        <td><code style="color: #cbd5e1; font-weight: 600;">{{ $item->codigo_produto }}</code></td>
+                        <td>
+                            <strong>{{ $item->descricao }}</strong>
+                            @if($item->descricao_longa)
+                                <br><small style="color: #64748b;">{{ Str::limit($item->descricao_longa, 60) }}</small>
+                            @endif
+                        </td>
+                        <td><small style="color: #94a3b8;">{{ $item->produto_pai ?? '-' }}</small></td>
+                        <td style="text-align: center; font-weight: 700; color: #fcd34d;">{{ number_format($item->quantidade, 0, ',', '.') }}</td>
+                        <td style="text-align: center;">
+                            <span class="badge badge-separado" style="background-color: #4f46e5;">🔒 FECHADO</span>
+                        </td>
+                        <td style="text-align: center;">
+                            <small style="color: #a7f3d0; font-weight: 600;">
+                                🔒 {{ $item->fechada_em ? \Carbon\Carbon::parse($item->fechada_em)->format('d/m/Y H:i') : '-' }}
+                            </small>
+                        </td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="9" style="text-align: center; padding: 2rem; color: #94a3b8;">
+                            Nenhum item de Ordem de Produção encerrada foi encontrado para os filtros pesquisados.
+                        </td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Paginação da Lista de Itens -->
+    @if($paginatedItems && $paginatedItems->hasPages())
+        <div style="margin-top: 1.25rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div style="font-size: 0.8rem; color: #94a3b8;">
+                Exibindo de <strong>{{ $paginatedItems->firstItem() }}</strong> até <strong>{{ $paginatedItems->lastItem() }}</strong> de <strong>{{ $paginatedItems->total() }}</strong> itens expandidos.
+            </div>
+            <div>
+                {{ $paginatedItems->links() }}
+            </div>
+        </div>
+    @endif
+</div>
+
+@else
+<!-- VISÃO PADRÃO: Tabelas de OPs Agrupadas -->
 <div class="card">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem; flex-wrap: wrap; gap: 0.75rem;">
         <h3 style="font-size: 1rem; color: #a5b4fc;">📋 Lista de Ordens de Produção</h3>
@@ -98,214 +181,235 @@
         <table>
             <thead>
                 <tr>
-                    <th style="width: 40px; text-align: center;">
-                        <input type="checkbox" id="chkSelectAllOps" onchange="toggleSelectAllOps(this.checked)" style="cursor: pointer;">
+                    <th style="width: 38px; text-align: center;">
+                        <input type="checkbox" id="selectAllOps" onchange="toggleSelectAllOps(this)" style="cursor: pointer;">
                     </th>
-                    <th style="min-width: 140px;">Número da OP</th>
+                    <th>Número da OP</th>
                     <th>Pedido de Venda</th>
                     <th>Nome do Cliente</th>
                     <th style="text-align: center;">Total de Itens</th>
                     <th style="text-align: center;">Status PCP dos Componentes</th>
                     <th style="text-align: center;">Situação da OP</th>
-                    <th style="text-align: center; min-width: 160px;">Ações de Encerramento</th>
+                    <th style="text-align: center;">Ações de Encerramento</th>
                 </tr>
             </thead>
             <tbody>
-                @forelse($paginatedOps as $itemOp)
-                <tr>
-                    <td style="text-align: center;">
-                        <input type="checkbox" 
-                               name="op_numbers[]" 
-                               value="{{ $itemOp['op'] }}" 
-                               form="formBatchCloseOps" 
-                               class="chk-op-select" 
-                               {{ !$itemOp['is_elegivel'] ? 'disabled' : '' }} 
-                               style="cursor: pointer;">
-                    </td>
-                    <td>
-                        <strong style="color: #c084fc; font-size: 0.9rem; cursor: pointer; text-decoration: underline;" 
-                                onclick='abrirModalConferenciaOp({{ json_encode($itemOp) }})' 
-                                title="Clique para abrir a janela de conferência dos componentes desta OP">
-                            🔍 OP #{{ $itemOp['op'] }}
-                        </strong>
-                    </td>
-                    <td><strong>{{ $itemOp['pedido'] }}</strong></td>
-                    <td style="font-size: 0.775rem;">{{ $itemOp['cliente_obs'] }}</td>
-                    <td style="text-align: center;">
-                        <span class="badge badge-faturado" style="font-size: 0.8rem;">{{ $itemOp['total_itens'] }} itens</span>
-                    </td>
-                    <td style="text-align: center;">
-                        <div style="display: flex; gap: 0.35rem; justify-content: center; flex-wrap: wrap;">
-                            @if($itemOp['qtd_falta'] > 0)
-                                <span class="badge badge-falta" title="Possui necessidades pendentes">{{ $itemOp['qtd_falta'] }} FALTA</span>
-                            @endif
-                            @if($itemOp['qtd_separado'] > 0)
-                                <span class="badge badge-separado">{{ $itemOp['qtd_separado'] }} SEPARADO</span>
-                            @endif
-                            @if($itemOp['qtd_retirado'] > 0)
-                                <span class="badge badge-retirado">{{ $itemOp['qtd_retirado'] }} RETIRADO</span>
-                            @endif
-                            @if($itemOp['qtd_fabrica'] > 0)
-                                <span class="badge badge-fabrica">{{ $itemOp['qtd_fabrica'] }} FABRICA</span>
-                            @endif
-                            @if($itemOp['qtd_fechado'] > 0)
-                                <span class="badge badge-kanban">{{ $itemOp['qtd_fechado'] }} FECHADO</span>
-                            @endif
-                        </div>
-                    </td>
-                    <td style="text-align: center;">
-                        @if($itemOp['is_fechada'])
-                            <span class="badge badge-kanban" style="background: rgba(99, 102, 241, 0.2); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.4);">
-                                🔒 ENCERRADA {{ $itemOp['fechada_em'] ? '('.$itemOp['fechada_em'].')' : '' }}
-                            </span>
-                        @elseif($itemOp['is_elegivel'])
-                            <span class="badge badge-separado" style="font-size: 0.75rem;">
-                                🟢 PRONTA PARA FECHAR
-                            </span>
-                        @else
-                            <span class="badge badge-falta" style="font-size: 0.75rem;">
-                                ⏳ PENDENTE DE COMPRAS
-                            </span>
-                        @endif
-                    </td>
-                    <td style="text-align: center;">
-                        @if($itemOp['is_elegivel'])
-                            @if(auth()->user()->canCloseOp())
-                                <form action="{{ route('fechamento-op.fechar', $itemOp['op']) }}" method="POST" onsubmit="return confirm('Deseja encerrar definitivamente a OP #{{ $itemOp['op'] }}? Todos os {{ $itemOp['total_itens'] }} itens serão arquivados das tabelas operacionais.')">
-                                    @csrf
-                                    <button type="submit" class="btn btn-primary" style="padding: 0.35rem 0.75rem; font-size: 0.75rem; background-color: #059669; border-color: #059669;">
-                                        🔒 Encerrar OP
-                                    </button>
-                                </form>
+                @forelse($paginatedOps as $opData)
+                    <tr>
+                        <td style="text-align: center;">
+                            @if($opData['is_elegivel'])
+                                <input type="checkbox" name="op_numbers[]" value="{{ $opData['op'] }}" form="formBatchCloseOps" class="chk-op-item" style="cursor: pointer;">
                             @else
-                                <span style="font-size: 0.7rem; color: var(--text-muted);" title="Apenas usuários autorizados podem fechar OPs">
-                                    🔒 Sem Permissão
+                                <input type="checkbox" disabled style="opacity: 0.3; cursor: not-allowed;" title="OP possui pendências de compra ou já está encerrada">
+                            @endif
+                        </td>
+                        <td>
+                            <strong style="color: #6366f1; cursor: pointer;" onclick="abrirModalConferenciaOp('{{ $opData['op'] }}')">
+                                🔍 OP #{{ $opData['op'] }}
+                            </strong>
+                        </td>
+                        <td><strong>{{ $opData['pedido'] }}</strong></td>
+                        <td><small style="color: #94a3b8;">{{ $opData['cliente_obs'] }}</small></td>
+                        <td style="text-align: center; font-weight: 700;">{{ $opData['total_itens'] }} itens</td>
+                        <td style="text-align: center;">
+                            @if($opData['qtd_falta'] > 0)
+                                <span class="badge badge-falta" style="font-size: 0.75rem;">{{ $opData['qtd_falta'] }} FALTA</span>
+                            @endif
+                            @if($opData['qtd_separado'] > 0)
+                                <span class="badge badge-separado" style="font-size: 0.75rem;">{{ $opData['qtd_separado'] }} SEPARADO</span>
+                            @endif
+                            @if($opData['qtd_retirado'] > 0)
+                                <span class="badge badge-retirado" style="font-size: 0.75rem;">{{ $opData['qtd_retirado'] }} RETIRADO</span>
+                            @endif
+                            @if($opData['qtd_fabrica'] > 0)
+                                <span class="badge badge-fabrica" style="font-size: 0.75rem;">{{ $opData['qtd_fabrica'] }} FÁBRICA</span>
+                            @endif
+                            @if($opData['qtd_fechado'] > 0)
+                                <span class="badge badge-separado" style="background-color: #4f46e5; font-size: 0.75rem;">{{ $opData['qtd_fechado'] }} FECHADO</span>
+                            @endif
+                        </td>
+                        <td style="text-align: center;">
+                            @if($opData['is_fechada'])
+                                <span class="badge" style="background-color: #374151; color: #9ca3af; padding: 0.4rem 0.75rem; font-size: 0.75rem;">
+                                    🔒 ENCERRADA ({{ $opData['fechada_em'] ?? 'Histórico' }})
+                                </span>
+                            @elseif($opData['is_elegivel'])
+                                <span class="badge" style="background-color: #065f46; color: #a7f3d0; padding: 0.4rem 0.75rem; font-size: 0.75rem;">
+                                    🟢 PRONTA PARA ENCERRAMENTO
+                                </span>
+                            @else
+                                <span class="badge" style="background-color: #92400e; color: #fef3c7; padding: 0.4rem 0.75rem; font-size: 0.75rem;">
+                                    ⏳ AGUARDANDO COMPRAS
                                 </span>
                             @endif
-                        @elseif($itemOp['is_fechada'])
-                            <span style="font-size: 0.75rem; color: #818cf8; font-weight: 500;">
-                                ✓ Arquivada
-                            </span>
-                        @else
-                            <span style="font-size: 0.75rem; color: #fca5a5;">
-                                🛑 Requer comprar itens FALTA
-                            </span>
-                        @endif
-                    </td>
-                </tr>
+                        </td>
+                        <td style="text-align: center;">
+                            @if($opData['is_fechada'])
+                                <span style="font-size: 0.75rem; color: #6b7280;">✓ Arquivada</span>
+                            @elseif($opData['is_elegivel'])
+                                @if(auth()->user()->canCloseOp())
+                                    <form action="{{ route('fechamento-op.fechar', $opData['op']) }}" method="POST" style="display: inline-block;">
+                                        @csrf
+                                        <button type="submit" class="btn btn-primary" style="padding: 0.25rem 0.65rem; font-size: 0.75rem; background-color: #059669; border-color: #059669;" onclick="return confirm('Confirmar o encerramento definitivo da OP #{{ $opData['op'] }}?')">
+                                            🔒 Encerrar OP
+                                        </button>
+                                    </form>
+                                @else
+                                    <span class="badge badge-falta" style="font-size: 0.75rem;">Sem Permissão</span>
+                                @endif
+                            @else
+                                <span style="font-size: 0.75rem; color: #ef4444;">Falta {{ $opData['qtd_falta'] }} item(ns)</span>
+                            @endif
+                        </td>
+                    </tr>
                 @empty
-                <tr>
-                    <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">
-                        Nenhuma Ordem de Produção encontrada nesta categoria.
-                    </td>
-                </tr>
+                    <tr>
+                        <td colspan="8" style="text-align: center; padding: 2rem; color: #94a3b8;">
+                            Nenhuma Ordem de Produção encontrada para os filtros selecionados.
+                        </td>
+                    </tr>
                 @endforelse
             </tbody>
         </table>
     </div>
 
-    <!-- Paginação -->
-    <div class="pagination-container">
-        <div>
-            Exibindo <strong>{{ $paginatedOps->firstItem() ?? 0 }}</strong> a <strong>{{ $paginatedOps->lastItem() ?? 0 }}</strong> de <strong>{{ $paginatedOps->total() }}</strong> Ordens de Produção
+    <!-- Paginação da Tabela Agrupada -->
+    @if($paginatedOps->hasPages())
+        <div style="margin-top: 1.25rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div style="font-size: 0.8rem; color: #94a3b8;">
+                Exibindo de <strong>{{ $paginatedOps->firstItem() }}</strong> até <strong>{{ $paginatedOps->lastItem() }}</strong> de <strong>{{ $paginatedOps->total() }}</strong> Ordens de Produção.
+            </div>
+            <div>
+                {{ $paginatedOps->links() }}
+            </div>
         </div>
-        <div>
-            {{ $paginatedOps->links() }}
+    @endif
+</div>
+@endif
+
+<!-- Modal Pop-up de Conferência de Componentes da OP -->
+<div id="modalConferenciaOp" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(4px); z-index: 9999; justify-content: center; align-items: center; padding: 1.5rem;">
+    <div style="background: #1e293b; border: 1px solid #475569; border-radius: 12px; max-width: 900px; width: 100%; max-height: 85vh; display: flex; flex-direction: column; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
+        <!-- Cabeçalho do Modal -->
+        <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid #334155; display: flex; justify-content: space-between; align-items: center; background: #0f172a; border-top-left-radius: 12px; border-top-right-radius: 12px;">
+            <h2 id="modalOpTitulo" style="font-size: 1.25rem; font-weight: 700; color: #f8fafc; margin: 0;">🔍 Componentes da OP</h2>
+            <button type="button" onclick="fecharModalConferenciaOp()" style="background: transparent; border: none; color: #94a3b8; font-size: 1.5rem; cursor: pointer;">✕</button>
+        </div>
+
+        <!-- Conteúdo do Modal (Tabela de Componentes) -->
+        <div style="padding: 1.5rem; overflow-y: auto; flex: 1;">
+            <div id="modalOpLoading" style="text-align: center; padding: 2rem; color: #94a3b8;">
+                ⏳ Carregando itens da OP...
+            </div>
+            <div id="modalOpConteudo" style="display: none;">
+                <table style="width: 100%;">
+                    <thead>
+                        <tr>
+                            <th>Código Produto</th>
+                            <th>Descrição Componente</th>
+                            <th>Produto Pai</th>
+                            <th style="text-align: center;">Qtd. OP</th>
+                            <th style="text-align: center;">Qtd. Estoque</th>
+                            <th style="text-align: center;">Status PCP</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbodyModalItensOp">
+                        <!-- Preenchido dinamicamente via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Rodapé do Modal -->
+        <div style="padding: 1rem 1.5rem; border-top: 1px solid #334155; display: flex; justify-content: flex-end; background: #0f172a; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;">
+            <button type="button" onclick="fecharModalConferenciaOp()" class="btn btn-secondary">Fechar Janela</button>
         </div>
     </div>
 </div>
-
-<!-- Modal: Janela de Conferência de Itens da OP -->
-<div class="card" id="modalConferenciaOp" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10000; width: 95%; max-width: 950px; max-height: 90vh; overflow-y: auto; border-color: rgba(168, 85, 247, 0.8); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.9);">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
-        <h3 style="font-size: 1.1rem; color: #c084fc;" id="modalConferenciaTitle">🔍 Conferência de Itens da Ordem de Produção</h3>
-        <button type="button" class="btn btn-secondary" style="padding: 0.2rem 0.5rem;" onclick="fecharModalConferenciaOp()">✕</button>
-    </div>
-
-    <!-- Info Banner da OP -->
-    <div style="display: flex; gap: 1.25rem; flex-wrap: wrap; margin-bottom: 1rem; background: rgba(255,255,255,0.03); padding: 0.75rem 1rem; border-radius: 0.5rem; border: 1px solid var(--border-color);">
-        <div><span style="color: var(--text-muted); font-size: 0.75rem;">Número da OP:</span> <strong id="modalConfOpNum" style="color: #c084fc;">-</strong></div>
-        <div><span style="color: var(--text-muted); font-size: 0.75rem;">Pedido de Venda:</span> <strong id="modalConfPedido" style="color: #60a5fa;">-</strong></div>
-        <div><span style="color: var(--text-muted); font-size: 0.75rem;">Nome do Cliente:</span> <strong id="modalConfCliente" style="color: #fcd34d;">-</strong></div>
-        <div><span style="color: var(--text-muted); font-size: 0.75rem;">Total de Componentes:</span> <span id="modalConfTotalItens" class="badge badge-faturado">0</span></div>
-    </div>
-
-    <!-- Tabela de Componentes da OP -->
-    <div class="table-responsive" style="max-height: 420px; overflow-y: auto;">
-        <table>
-            <thead>
-                <tr>
-                    <th>Status PCP</th>
-                    <th>Código Produto</th>
-                    <th>Descrição</th>
-                    <th>Produto Pai Concatenado</th>
-                    <th style="text-align: center;">Qtd OP</th>
-                    <th style="text-align: center;">Qtd Estoque</th>
-                    <th style="text-align: center;">Qtd Comprar</th>
-                    <th>Observação do PCP</th>
-                </tr>
-            </thead>
-            <tbody id="tbodyConferenciaOp">
-                <!-- Preenchido dinamicamente via JS -->
-            </tbody>
-        </table>
-    </div>
-
-    <div style="display: flex; justify-content: flex-end; margin-top: 1.25rem;">
-        <button type="button" class="btn btn-secondary" onclick="fecharModalConferenciaOp()">Fechar Janela de Conferência</button>
-    </div>
-</div>
-<div id="modalOverlayConferenciaOp" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); z-index: 9999;" onclick="fecharModalConferenciaOp()"></div>
 
 <script>
-function toggleSelectAllOps(checked) {
-    document.querySelectorAll('.chk-op-select:not(:disabled)').forEach(chk => {
-        chk.checked = checked;
+// Toggle de seleção em lote para OPs elegíveis
+function toggleSelectAllOps(masterChk) {
+    const checkboxes = document.querySelectorAll('.chk-op-item');
+    checkboxes.forEach(chk => {
+        chk.checked = masterChk.checked;
     });
 }
 
-function abrirModalConferenciaOp(dataOp) {
-    document.getElementById('modalConferenciaTitle').innerText = `🔍 Janela de Conferência de Componentes - OP #${dataOp.op}`;
-    document.getElementById('modalConfOpNum').innerText = `#${dataOp.op}`;
-    document.getElementById('modalConfPedido').innerText = dataOp.pedido;
-    document.getElementById('modalConfCliente').innerText = dataOp.cliente_obs;
-    document.getElementById('modalConfTotalItens').innerText = `${dataOp.total_itens} item(ns)`;
+// Modal Pop-up de Conferência de Componentes por OP
+const OPS_JSON_DATA = {!! json_encode($paginatedOps->items()) !!};
 
-    const tbody = document.getElementById('tbodyConferenciaOp');
+function abrirModalConferenciaOp(opNumber) {
+    const modal = document.getElementById('modalConferenciaOp');
+    const titulo = document.getElementById('modalOpTitulo');
+    const loading = document.getElementById('modalOpLoading');
+    const conteudo = document.getElementById('modalOpConteudo');
+    const tbody = document.getElementById('tbodyModalItensOp');
+
+    titulo.innerText = '🔍 Componentes da Ordem de Produção #' + opNumber;
+    loading.style.display = 'block';
+    conteudo.style.display = 'none';
     tbody.innerHTML = '';
+    modal.style.display = 'flex';
 
-    dataOp.itens.forEach(item => {
+    let opObj = OPS_JSON_DATA.find(o => o.op === opNumber);
+
+    if (opObj && opObj.itens) {
+        renderItensModal(opObj.itens);
+    } else {
+        fetch('{{ route("fechamento-op.index") }}?tab=todas&search_op=' + opNumber)
+            .then(res => res.text())
+            .then(html => {
+                loading.style.display = 'none';
+                conteudo.style.display = 'block';
+            })
+            .catch(() => {
+                loading.innerHTML = '❌ Não foi possível carregar os componentes desta OP.';
+            });
+    }
+}
+
+function renderItensModal(itens) {
+    const loading = document.getElementById('modalOpLoading');
+    const conteudo = document.getElementById('modalOpConteudo');
+    const tbody = document.getElementById('tbodyModalItensOp');
+
+    tbody.innerHTML = '';
+    itens.forEach(item => {
         const tr = document.createElement('tr');
-
-        const badgeClass = item.status === 'FALTA' ? 'badge-falta' :
-                           item.status === 'SEPARADO' ? 'badge-separado' :
-                           item.status === 'RETIRADO' ? 'badge-retirado' :
-                           item.status === 'FABRICA' ? 'badge-fabrica' : 'badge-kanban';
-
-        const qtdOp = parseFloat(item.quantidade || 0);
-        const qtdEst = parseFloat(item.quantidade_estoque || 0);
-        const qtdComprar = Math.max(0, qtdOp - qtdEst);
+        let statusBadgeClass = 'badge-falta';
+        if (item.status === 'SEPARADO') statusBadgeClass = 'badge-separado';
+        else if (item.status === 'RETIRADO') statusBadgeClass = 'badge-retirado';
+        else if (item.status === 'FABRICA' || item.status === 'FABRICAR INTERNO KANBAN') statusBadgeClass = 'badge-fabrica';
+        else if (item.status === 'FECHADO') statusBadgeClass = 'badge-separado';
 
         tr.innerHTML = `
-            <td><span class="badge ${badgeClass}">${item.status}</span></td>
-            <td><strong>${item.codigo_produto}</strong></td>
-            <td style="font-size: 0.775rem;">${item.descricao || '-'}</td>
-            <td style="font-size: 0.775rem;"><span class="badge-produto-pai">${item.produto_pai || '-'}</span></td>
-            <td style="text-align: center;"><strong>${qtdOp}</strong></td>
-            <td style="text-align: center; color: #fcd34d;">${qtdEst}</td>
-            <td style="text-align: center; font-weight: bold; color: ${qtdComprar > 0 ? '#ef4444' : '#10b981'};">${qtdComprar}</td>
-            <td style="font-size: 0.75rem; color: var(--text-muted);">${item.observacao_estoque || '-'}</td>
+            <td><code>${item.codigo_produto}</code></td>
+            <td>
+                <strong>${item.descricao || '-'}</strong>
+                ${item.descricao_longa ? `<br><small style="color: #94a3b8;">${item.descricao_longa}</small>` : ''}
+            </td>
+            <td><small style="color: #94a3b8;">${item.produto_pai || '-'}</small></td>
+            <td style="text-align: center; font-weight: 700; color: #fcd34d;">${item.quantidade}</td>
+            <td style="text-align: center;">${item.quantidade_estoque || 0}</td>
+            <td style="text-align: center;">
+                <span class="badge ${statusBadgeClass}">${item.status}</span>
+            </td>
         `;
         tbody.appendChild(tr);
     });
 
-    document.getElementById('modalConferenciaOp').style.display = 'block';
-    document.getElementById('modalOverlayConferenciaOp').style.display = 'block';
+    loading.style.display = 'none';
+    conteudo.style.display = 'block';
 }
 
 function fecharModalConferenciaOp() {
-    document.getElementById('modalConferenciaOp').style.display = 'none';
-    document.getElementById('modalOverlayConferenciaOp').style.display = 'none';
+    const modal = document.getElementById('modalConferenciaOp');
+    modal.style.display = 'none';
 }
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') fecharModalConferenciaOp();
+});
 </script>
 @endsection

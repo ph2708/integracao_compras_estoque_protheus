@@ -209,7 +209,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Gráfico Top Fornecedores (Primeiro Lugar nos Gráficos)
     const ctxFornecedores = document.getElementById('chartTopFornecedores').getContext('2d');
-    const fornecedoresLabels = {!! json_encode($topFornecedoresValores->pluck('codigo_fornecedor')) !!};
+    const rawFornecedoresLabels = {!! json_encode($topFornecedoresValores->pluck('codigo_fornecedor')) !!};
+    const fornecedoresLabels = rawFornecedoresLabels.map(f => {
+        let str = String(f || '').trim();
+        return (str === '' || str === '0') ? 'SEM FORNECEDOR' : str;
+    });
     const fornecedoresQtdValues = {!! json_encode($topFornecedoresValores->pluck('total_qtd_comprar')->map(fn($v) => (float)$v)) !!};
     const fornecedoresRsValues = {!! json_encode($topFornecedoresValores->pluck('total_valor')->map(fn($v) => (float)$v)) !!};
 

@@ -152,15 +152,15 @@ class DashboardController extends Controller
             ->limit(7)
             ->get();
 
-        // Top Fornecedores por Quantidade a Comprar e Valor Total (R$)
+        // Top Fornecedores por Quantidade a Comprar e Valor Total (R$) - Mapeia '0' ou vazio para 'SEM FORNECEDOR'
+        $fornecedorExpr = "CASE WHEN compras_items.codigo_fornecedor IS NULL OR TRIM(compras_items.codigo_fornecedor) = '' OR TRIM(compras_items.codigo_fornecedor) = '0' THEN 'SEM FORNECEDOR' ELSE TRIM(compras_items.codigo_fornecedor) END";
+
         $topFornecedoresQuery = CompraItem::join('estoque_items', 'compras_items.estoque_item_id', '=', 'estoque_items.id')
             ->select(
-                'compras_items.codigo_fornecedor',
+                DB::raw("{$fornecedorExpr} as codigo_fornecedor"),
                 DB::raw('SUM(GREATEST(0, estoque_items.quantidade - estoque_items.quantidade_estoque)) as total_qtd_comprar'),
                 DB::raw('SUM(estoque_items.quantidade * compras_items.valor_unitario) as total_valor')
             )
-            ->whereNotNull('compras_items.codigo_fornecedor')
-            ->where('compras_items.codigo_fornecedor', '!=', '')
             ->where('estoque_items.status', '!=', 'FECHADO');
 
         if ($searchPedido) {
@@ -187,7 +187,7 @@ class DashboardController extends Controller
             }
         }
 
-        $topFornecedoresValores = $topFornecedoresQuery->groupBy('compras_items.codigo_fornecedor')
+        $topFornecedoresValores = $topFornecedoresQuery->groupBy(DB::raw($fornecedorExpr))
             ->orderBy('total_qtd_comprar', 'desc')
             ->limit(7)
             ->get();

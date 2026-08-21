@@ -234,7 +234,7 @@ document.addEventListener('DOMContentLoaded', () => {
             indexAxis: 'y',
             responsive: true,
             maintainAspectRatio: false,
-            layout: { padding: { right: 170 } },
+            layout: { padding: { right: 270 } },
             plugins: {
                 legend: { display: false },
                 tooltip: {
@@ -247,12 +247,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 },
                 datalabels: {
+                    display: true,
                     anchor: 'end',
                     align: 'right',
                     color: '#fcd34d',
                     font: { weight: 'bold', size: 11 },
                     formatter: function(value, context) {
-                        if (value <= 0) return '0 un';
                         let v = fornecedoresRsValues[context.dataIndex] || 0;
                         return value.toLocaleString('pt-BR') + ' un | R$ ' + v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                     }
@@ -354,6 +354,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 },
                 datalabels: {
+                    display: true,
                     anchor: 'end',
                     align: 'top',
                     color: '#e2e8f0',
@@ -400,7 +401,7 @@ document.addEventListener('DOMContentLoaded', () => {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            layout: { padding: { top: 25 } },
+            layout: { padding: { top: 35 } },
             plugins: {
                 legend: { display: false },
                 tooltip: {
@@ -412,6 +413,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 },
                 datalabels: {
+                    display: true,
                     anchor: 'end',
                     align: 'top',
                     color: '#d8b4fe',
@@ -459,7 +461,7 @@ document.addEventListener('DOMContentLoaded', () => {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            layout: { padding: { top: 25 } },
+            layout: { padding: { top: 35 } },
             plugins: {
                 legend: { display: false },
                 tooltip: {
@@ -472,6 +474,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 },
                 datalabels: {
+                    display: true,
                     anchor: 'end',
                     align: 'top',
                     color: '#34d399',

@@ -7,7 +7,7 @@ DB_HOST = os.getenv('DB_PROTHEUS_HOST', '177.221.240.40')
 DB_PORT = int(os.getenv('DB_PROTHEUS_PORT', 14333))
 DB_NAME = os.getenv('DB_PROTHEUS_DATABASE', 'MP_12')
 DB_USER = os.getenv('DB_PROTHEUS_USERNAME', 'ConsultaProtheus')
-DB_PASS = os.getenv('DB_PROTHEUS_PASSWORD', 'C*n$ult@#M@q#')
+DB_PASS = os.getenv('DB_PROTHEUS_PASSWORD', '')
 
 def get_connection():
     return pymssql.connect(

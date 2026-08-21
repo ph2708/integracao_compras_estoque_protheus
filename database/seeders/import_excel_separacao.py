@@ -112,7 +112,7 @@ def fetch_protheus_enrichment_data(codigos_produtos, ops, pvs):
         port = int(os.getenv('DB_PROTHEUS_PORT', 14333))
         database = os.getenv('DB_PROTHEUS_DATABASE', 'MP_12')
         user = os.getenv('DB_PROTHEUS_USERNAME', 'ConsultaProtheus')
-        password = os.getenv('DB_PROTHEUS_PASSWORD', 'C*n$ult@#M@q#')
+        password = os.getenv('DB_PROTHEUS_PASSWORD', '')
 
         conn = pymssql.connect(
             server=host,

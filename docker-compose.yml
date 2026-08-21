@@ -19,7 +19,7 @@ services:
       DB_PORT: 3306
       DB_DATABASE: pcp_compras
       DB_USERNAME: pcp_user
-      DB_PASSWORD: pcp_secret
+      DB_PASSWORD: '${DB_PASSWORD}'
     depends_on:
       - mysql
     networks:
@@ -34,8 +34,8 @@ services:
     environment:
       MYSQL_DATABASE: pcp_compras
       MYSQL_USER: pcp_user
-      MYSQL_PASSWORD: pcp_secret
-      MYSQL_ROOT_PASSWORD: pcp_secret
+      MYSQL_PASSWORD: '${DB_PASSWORD}'
+      MYSQL_ROOT_PASSWORD: '${DB_PASSWORD}'
     volumes:
       - 'pcp_mysql_data:/var/lib/mysql'
     networks:

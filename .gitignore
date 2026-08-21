@@ -16,3 +16,9 @@ npm-debug.log
 yarn-error.log
 /.idea
 /.vscode
+.DS_Store
+*.key
+*.pem
+cookie.txt
+*.csv
+!modelo_importacao_estoque_compras.csv

@@ -120,7 +120,7 @@ return [
             'port' => env('DB_PROTHEUS_PORT', '14333'),
             'database' => env('DB_PROTHEUS_DATABASE', 'MP_12'),
             'username' => env('DB_PROTHEUS_USERNAME', 'ConsultaProtheus'),
-            'password' => env('DB_PROTHEUS_PASSWORD', 'C*n$ult@#M@q#'),
+            'password' => env('DB_PROTHEUS_PASSWORD', ''),
             'charset' => 'utf8',
             'prefix' => '',
             'prefix_indexes' => true,

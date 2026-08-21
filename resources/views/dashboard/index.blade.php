@@ -112,34 +112,34 @@
 </div>
 
 <!-- Grid de Indicadores Financeiros (R$) -->
-<div class="kpi-grid" style="margin-bottom: 1.5rem; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+<div class="kpi-grid" style="margin-bottom: 1.5rem; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
     <div class="kpi-card" style="border-left-color: #38bdf8;">
         <div class="kpi-title" style="color: #7dd3fc;">Valor Total de Compras</div>
-        <div class="kpi-value" style="font-size: 1.5rem; color: #38bdf8;">R$ {{ number_format($valorTotalGeral, 2, ',', '.') }}</div>
+        <div class="kpi-value" style="font-size: 1.85rem; color: #38bdf8;">R$ {{ number_format($valorTotalGeral, 2, ',', '.') }}</div>
         <div class="kpi-subtitle">Montante total acumulado</div>
     </div>
 
     <div class="kpi-card" style="border-left-color: #a855f7;">
         <div class="kpi-title" style="color: #c084fc;">Valor Total SEPARADO</div>
-        <div class="kpi-value" style="font-size: 1.5rem; color: #c084fc;">R$ {{ number_format($valorTotalSeparado, 2, ',', '.') }}</div>
+        <div class="kpi-value" style="font-size: 1.85rem; color: #c084fc;">R$ {{ number_format($valorTotalSeparado, 2, ',', '.') }}</div>
         <div class="kpi-subtitle">Montante dos itens separados</div>
     </div>
 
     <div class="kpi-card" style="border-left-color: #f59e0b;">
         <div class="kpi-title" style="color: #fcd34d;">Compras Pendentes</div>
-        <div class="kpi-value" style="font-size: 1.5rem; color: #f59e0b;">R$ {{ number_format($valorTotalPendente, 2, ',', '.') }}</div>
+        <div class="kpi-value" style="font-size: 1.85rem; color: #f59e0b;">R$ {{ number_format($valorTotalPendente, 2, ',', '.') }}</div>
         <div class="kpi-subtitle">Valor em aberto / cotação</div>
     </div>
 
     <div class="kpi-card" style="border-left-color: #60a5fa;">
         <div class="kpi-title" style="color: #93c5fd;">Compras Faturadas</div>
-        <div class="kpi-value" style="font-size: 1.5rem; color: #60a5fa;">R$ {{ number_format($valorTotalFaturado, 2, ',', '.') }}</div>
+        <div class="kpi-value" style="font-size: 1.85rem; color: #60a5fa;">R$ {{ number_format($valorTotalFaturado, 2, ',', '.') }}</div>
         <div class="kpi-subtitle">NF faturada pelo fornecedor</div>
     </div>
 
     <div class="kpi-card" style="border-left-color: #10b981;">
         <div class="kpi-title" style="color: #6ee7b7;">Compras Pagas</div>
-        <div class="kpi-value" style="font-size: 1.5rem; color: #10b981;">R$ {{ number_format($valorTotalPago, 2, ',', '.') }}</div>
+        <div class="kpi-value" style="font-size: 1.85rem; color: #10b981;">R$ {{ number_format($valorTotalPago, 2, ',', '.') }}</div>
         <div class="kpi-subtitle">Pagamentos liquidados</div>
     </div>
 </div>

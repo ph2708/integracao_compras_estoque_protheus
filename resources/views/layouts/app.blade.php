@@ -123,17 +123,19 @@
         }
 
         .kpi-title {
-            font-size: 0.75rem;
+            font-size: 0.85rem;
+            font-weight: 600;
             color: var(--text-muted);
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            margin-bottom: 0.25rem;
+            margin-bottom: 0.35rem;
         }
 
         .kpi-value {
-            font-size: 1.75rem;
-            font-weight: 700;
+            font-size: 2.25rem;
+            font-weight: 800;
             color: var(--text-main);
+            line-height: 1.1;
         }
 
         .kpi-subtitle {

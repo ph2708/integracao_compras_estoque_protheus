@@ -46,32 +46,32 @@
 
 <!-- Subtotal e Métricas Dinâmicas do Filtro Atual em Compras -->
 <div style="display: flex; gap: 1rem; margin-bottom: 1.25rem; flex-wrap: wrap;">
-    <div class="card" style="flex: 1.5; min-width: 260px; padding: 1rem; border-left: 4px solid #10b981; background: rgba(16, 185, 129, 0.05); display: flex; align-items: center; justify-content: space-between;">
+    <div class="card" style="flex: 1.5; min-width: 280px; padding: 1.1rem; border-left: 4px solid #10b981; background: rgba(16, 185, 129, 0.05); display: flex; align-items: center; justify-content: space-between;">
         <div>
-            <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">💰 Subtotal dos Pedidos (Filtro Atual)</div>
-            <div style="font-size: 1.6rem; font-weight: 800; color: #10b981; margin-top: 0.2rem;">
+            <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">💰 Subtotal dos Pedidos (Filtro Atual)</div>
+            <div style="font-size: 2.2rem; font-weight: 800; color: #10b981; margin-top: 0.2rem; line-height: 1.1;">
                 R$ {{ number_format($subtotalValorFiltro ?? 0, 2, ',', '.') }}
             </div>
         </div>
-        <div style="font-size: 2rem; opacity: 0.8;">💵</div>
+        <div style="font-size: 2.4rem; opacity: 0.8;">💵</div>
     </div>
-    <div class="card" style="flex: 1; min-width: 180px; padding: 1rem; border-left: 4px solid #38bdf8; background: rgba(56, 189, 248, 0.05); display: flex; align-items: center; justify-content: space-between;">
+    <div class="card" style="flex: 1; min-width: 200px; padding: 1.1rem; border-left: 4px solid #38bdf8; background: rgba(56, 189, 248, 0.05); display: flex; align-items: center; justify-content: space-between;">
         <div>
-            <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">📦 Total de Itens Filtrados</div>
-            <div style="font-size: 1.6rem; font-weight: 800; color: #38bdf8; margin-top: 0.2rem;">
-                {{ number_format($totalItensFiltro ?? 0, 0, ',', '.') }} <span style="font-size: 0.9rem; font-weight: 500;">itens</span>
+            <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">📦 Total de Itens Filtrados</div>
+            <div style="font-size: 2.2rem; font-weight: 800; color: #38bdf8; margin-top: 0.2rem; line-height: 1.1;">
+                {{ number_format($totalItensFiltro ?? 0, 0, ',', '.') }} <span style="font-size: 1.1rem; font-weight: 600;">itens</span>
             </div>
         </div>
-        <div style="font-size: 2rem; opacity: 0.8;">📊</div>
+        <div style="font-size: 2.4rem; opacity: 0.8;">📊</div>
     </div>
-    <div class="card" style="flex: 1; min-width: 180px; padding: 1rem; border-left: 4px solid #f59e0b; background: rgba(245, 158, 11, 0.05); display: flex; align-items: center; justify-content: space-between;">
+    <div class="card" style="flex: 1; min-width: 200px; padding: 1.1rem; border-left: 4px solid #f59e0b; background: rgba(245, 158, 11, 0.05); display: flex; align-items: center; justify-content: space-between;">
         <div>
-            <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">🛒 Soma Qtd. a Comprar</div>
-            <div style="font-size: 1.6rem; font-weight: 800; color: #f59e0b; margin-top: 0.2rem;">
-                {{ number_format($subtotalQtdComprar ?? 0, 0, ',', '.') }} <span style="font-size: 0.9rem; font-weight: 500;">un</span>
+            <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">🛒 Soma Qtd. a Comprar</div>
+            <div style="font-size: 2.2rem; font-weight: 800; color: #f59e0b; margin-top: 0.2rem; line-height: 1.1;">
+                {{ number_format($subtotalQtdComprar ?? 0, 0, ',', '.') }} <span style="font-size: 1.1rem; font-weight: 600;">un</span>
             </div>
         </div>
-        <div style="font-size: 2rem; opacity: 0.8;">📦</div>
+        <div style="font-size: 2.4rem; opacity: 0.8;">📦</div>
     </div>
 </div>
 

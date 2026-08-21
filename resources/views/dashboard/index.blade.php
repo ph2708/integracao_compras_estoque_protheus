@@ -1,22 +1,27 @@
 @extends('layouts.app')
 
 @section('content')
-<!-- Plugin ChartDataLabels CDN -->
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
-
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
-    <div>
-        <h1 style="font-size: 1.5rem; font-weight: 700;">📊 Dashboard de Indicadores & Gráficos</h1>
-        <p style="color: var(--text-muted); font-size: 0.8rem;">Visão gerencial em tempo real com montantes financeiros (R$) e demandas de estoque.</p>
+<div class="card" style="margin-bottom: 1.5rem; background: linear-gradient(135deg, rgba(30,41,59,0.9), rgba(15,23,42,0.95)); border: 1fr solid rgba(99,102,241,0.2);">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
+        <div>
+            <h1 style="font-size: 1.6rem; font-weight: 700; margin: 0; color: #f8fafc; display: flex; align-items: center; gap: 0.5rem;">
+                📊 Dashboard de Indicadores & Gráficos
+            </h1>
+            <p style="color: #94a3b8; margin: 0.25rem 0 0 0; font-size: 0.85rem;">
+                Visão gerencial em tempo real com montantes financeiros (R$) e demandas de estoque.
+            </p>
+        </div>
+        <div style="display: flex; gap: 0.5rem;">
+            <a href="{{ route('estoque.index') }}" class="btn btn-secondary" style="font-size: 0.8rem;">
+                📦 Ir para Estoque
+            </a>
+            <a href="{{ route('compras.index') }}" class="btn btn-primary" style="font-size: 0.8rem;">
+                🛒 Ir para Compras
+            </a>
+        </div>
     </div>
-    <div style="display: flex; gap: 0.5rem;">
-        <a href="{{ route('estoque.index') }}" class="btn btn-secondary">📦 Ir para Estoque</a>
-        <a href="{{ route('compras.index') }}" class="btn btn-primary">🛒 Ir para Compras</a>
-    </div>
-</div>
 
-<!-- Filtros no Dashboard (Digitação de Pedido de Venda + Listas Suspensas de Status + Descrição Multi-Termos) -->
-<div class="card" style="border-color: rgba(99, 102, 241, 0.4); margin-bottom: 1.25rem;">
+    <!-- Barra de Filtros do Dashboard -->
     <form action="{{ route('dashboard') }}" method="GET" style="display: flex; flex-wrap: wrap; gap: 0.85rem; align-items: flex-end;">
         <div class="form-group" style="margin-bottom: 0; min-width: 180px; flex: 2;">
             <label class="form-label">Número do Pedido de Venda ✏️</label>
@@ -34,12 +39,12 @@
         </div>
 
         <div class="form-group" style="margin-bottom: 0; min-width: 220px; flex: 2.5;">
-            <label class="form-label">Descrição do Produto (Multi: CABO, CHAVE...) ✏️</label>
+            <label class="form-label">Nome do Cliente (C2_OBS) ✏️</label>
             <input type="text" 
-                   name="descricao" 
-                   value="{{ $searchDescricao }}" 
+                   name="search_cliente" 
+                   value="{{ $searchCliente }}" 
                    class="form-control" 
-                   placeholder="Multi: CABO, CHAVE, DISJUNTOR...">
+                   placeholder="Multi: CONDOMINIO, ISA, SP...">
         </div>
 
         <div class="form-group" style="margin-bottom: 0; min-width: 170px; flex: 1.8;">
@@ -69,7 +74,7 @@
             <button type="submit" class="btn btn-primary" style="flex: 1; justify-content: center;">
                 🔍 Filtrar
             </button>
-            @if($searchPedido || $searchStatusPcp || $searchStatusPagamento || $searchDescricao)
+            @if($searchPedido || $searchStatusPcp || $searchStatusPagamento || $searchCliente)
                 <a href="{{ route('dashboard') }}" class="btn btn-secondary" style="padding: 0.45rem 0.65rem;">
                     ✕ Limpar
                 </a>
@@ -144,9 +149,21 @@
     </div>
 </div>
 
-<!-- Grid de Gráficos parte 1 -->
+<!-- PRIMEIRO LUGAR NOS GRÁFICOS: Top Fornecedores por Quantidade a Comprar -->
+<div style="display: grid; grid-template-columns: 1fr; gap: 1.25rem; margin-bottom: 1.25rem;">
+    <div class="card" style="border: 1px solid rgba(245,158,11,0.3);">
+        <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 1rem; color: #f59e0b; display: flex; align-items: center; gap: 0.5rem;">
+            🏭 Top Fornecedores por Quantidade a Comprar (unidades) e Montante (R$)
+        </h3>
+        <div style="position: relative; height: 320px;">
+            <canvas id="chartTopFornecedores"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Grid de Gráficos parte 2 (Status PCP & Status Pagamento) -->
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 1.25rem; margin-bottom: 1.25rem;">
-    <!-- Gráfico 1: Status PCP / Estoque -->
+    <!-- Gráfico 2: Status PCP / Estoque -->
     <div class="card">
         <h3 style="font-size: 1rem; margin-bottom: 1rem; color: #a5b4fc;">📦 Distribuição por Status no PCP/Estoque</h3>
         <div style="position: relative; height: 280px; display: flex; justify-content: center;">
@@ -154,7 +171,7 @@
         </div>
     </div>
 
-    <!-- Gráfico 2: Montantes Financeiros em Compras (R$) -->
+    <!-- Gráfico 3: Montantes Financeiros em Compras (R$) -->
     <div class="card">
         <h3 style="font-size: 1rem; margin-bottom: 1rem; color: #38bdf8;">💳 Montantes Financeiros por Status de Pagamento (R$)</h3>
         <div style="position: relative; height: 280px;">
@@ -163,9 +180,9 @@
     </div>
 </div>
 
-<!-- Grid de Gráficos parte 2 (Top Pedidos & OPs Fechadas por Mês) -->
+<!-- Grid de Gráficos parte 3 (Top Pedidos & OPs Fechadas por Mês) -->
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 1.25rem; margin-bottom: 1.25rem;">
-    <!-- Gráfico 3: Demandas por Pedido de Venda em R$ -->
+    <!-- Gráfico 4: Demandas por Pedido de Venda em R$ -->
     <div class="card">
         <h3 style="font-size: 1rem; margin-bottom: 1rem; color: #c084fc;">📋 Top Pedidos de Venda por Valor Total em Compras (R$)</h3>
         <div style="position: relative; height: 270px;">
@@ -173,22 +190,11 @@
         </div>
     </div>
 
-    <!-- Gráfico 4: OPs Fechadas por Mês -->
+    <!-- Gráfico 5: OPs Fechadas por Mês -->
     <div class="card">
         <h3 style="font-size: 1rem; margin-bottom: 1rem; color: #34d399;">🔒 Ordens de Produção (OPs) Fechadas por Mês</h3>
         <div style="position: relative; height: 270px;">
             <canvas id="chartOpsFechadas"></canvas>
-        </div>
-    </div>
-</div>
-
-<!-- Grid de Gráficos parte 3 (Top Fornecedores por Necessidade de Compra) -->
-<div style="display: grid; grid-template-columns: 1fr; gap: 1.25rem; margin-bottom: 1.25rem;">
-    <!-- Gráfico 5: Top Fornecedores por Quantidade a Comprar -->
-    <div class="card">
-        <h3 style="font-size: 1rem; margin-bottom: 1rem; color: #f59e0b;">🏭 Top Fornecedores por Quantidade a Comprar (unidades) e Montante (R$)</h3>
-        <div style="position: relative; height: 300px;">
-            <canvas id="chartTopFornecedores"></canvas>
         </div>
     </div>
 </div>
@@ -201,232 +207,13 @@ document.addEventListener('DOMContentLoaded', () => {
         Chart.register(ChartDataLabels);
     }
 
-    // Chart 1: Donut Chart - Status PCP
-    const ctx1 = document.getElementById('chartStatusEstoque').getContext('2d');
-    new Chart(ctx1, {
-        type: 'doughnut',
-        data: {
-            labels: ['FALTA *', 'SEPARADO', 'RETIRADO', 'FÁBRICA', 'KANBAN'],
-            datasets: [{
-                data: [
-                    {{ $statusEstoqueCounts['FALTA'] }},
-                    {{ $statusEstoqueCounts['SEPARADO'] }},
-                    {{ $statusEstoqueCounts['RETIRADO'] }},
-                    {{ $statusEstoqueCounts['FABRICA'] }},
-                    {{ $statusEstoqueCounts['KANBAN'] }}
-                ],
-                backgroundColor: [
-                    'rgba(239, 68, 68, 0.85)',   // FALTA - Red
-                    'rgba(245, 158, 11, 0.85)',  // SEPARADO - Orange
-                    'rgba(16, 185, 129, 0.85)',  // RETIRADO - Green
-                    'rgba(59, 130, 246, 0.85)',  // FABRICA - Blue
-                    'rgba(168, 85, 247, 0.85)'   // KANBAN - Purple
-                ],
-                borderColor: 'rgba(15, 23, 42, 1)',
-                borderWidth: 2
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'bottom',
-                    labels: { color: '#f8fafc', font: { family: 'Inter', size: 11 } }
-                },
-                datalabels: {
-                    color: '#ffffff',
-                    font: { weight: 'bold', size: 12 },
-                    formatter: function(value) {
-                        return value > 0 ? value : '';
-                    }
-                }
-            }
-        }
-    });
-
-    // Chart 2: Bar Chart - Status Compras em R$
-    const ctx2 = document.getElementById('chartStatusCompras').getContext('2d');
-    new Chart(ctx2, {
-        type: 'bar',
-        data: {
-            labels: ['PENDENTE', 'PA (ANTECIPADO)', 'FATURADO', 'PAGO'],
-            datasets: [{
-                label: 'Valor Total (R$)',
-                data: [
-                    {{ $statusComprasValores['PENDENTE'] }},
-                    {{ $statusComprasValores['PA'] }},
-                    {{ $statusComprasValores['FATURADO'] }},
-                    {{ $statusComprasValores['PAGO'] }}
-                ],
-                backgroundColor: [
-                    'rgba(245, 158, 11, 0.85)',
-                    'rgba(148, 163, 184, 0.85)',
-                    'rgba(59, 130, 246, 0.85)',
-                    'rgba(16, 185, 129, 0.85)'
-                ],
-                borderRadius: 6
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            layout: { padding: { top: 25 } },
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            let value = context.raw || 0;
-                            return 'R$ ' + value.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-                        }
-                    }
-                },
-                datalabels: {
-                    anchor: 'end',
-                    align: 'top',
-                    color: '#38bdf8',
-                    font: { weight: 'bold', size: 11 },
-                    formatter: function(value) {
-                        return value > 0 ? 'R$ ' + value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : 'R$ 0,00';
-                    }
-                }
-            },
-            scales: {
-                x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
-                y: { 
-                    ticks: { 
-                        color: '#94a3b8',
-                        callback: function(value) { return 'R$ ' + value.toLocaleString('pt-BR'); }
-                    }, 
-                    grid: { color: 'rgba(255,255,255,0.05)' } 
-                }
-            }
-        }
-    });
-
-    // Chart 3: Horizontal Bar - Top Pedidos por R$
-    const ctx3 = document.getElementById('chartTopPedidos').getContext('2d');
-    const pedidosLabels = [
-        @foreach($topPedidosValores as $p)
-            'Pedido {{ $p->pedido }}',
-        @endforeach
-    ];
-    const pedidosData = [
-        @foreach($topPedidosValores as $p)
-            {{ floatval($p->total_valor) }},
-        @endforeach
-    ];
-
-    new Chart(ctx3, {
-        type: 'bar',
-        data: {
-            labels: pedidosLabels.length ? pedidosLabels : ['Nenhum Pedido Salvo'],
-            datasets: [{
-                label: 'Valor Total (R$)',
-                data: pedidosData.length ? pedidosData : [0],
-                backgroundColor: 'rgba(99, 102, 241, 0.85)',
-                borderRadius: 6
-            }]
-        },
-        options: {
-            indexAxis: 'y',
-            responsive: true,
-            maintainAspectRatio: false,
-            layout: { padding: { right: 80 } },
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            let value = context.raw || 0;
-                            return 'R$ ' + value.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-                        }
-                    }
-                },
-                datalabels: {
-                    anchor: 'end',
-                    align: 'right',
-                    color: '#c084fc',
-                    font: { weight: 'bold', size: 11 },
-                    formatter: function(value) {
-                        return value > 0 ? 'R$ ' + value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : 'R$ 0,00';
-                    }
-                }
-            },
-            scales: {
-                x: { 
-                    ticks: { 
-                        color: '#94a3b8',
-                        callback: function(value) { return 'R$ ' + value.toLocaleString('pt-BR'); }
-                    }, 
-                    grid: { color: 'rgba(255,255,255,0.05)' } 
-                },
-                y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } }
-            }
-        }
-    });
-
-    // Chart 4: Bar - OPs Fechadas por Mês (Qtd + Valor R$)
-    const ctx4 = document.getElementById('chartOpsFechadas').getContext('2d');
-    const opsFechadasLabels = {!! json_encode($opsFechadasPorMesLabels) !!};
-    const opsFechadasValues = {!! json_encode($opsFechadasPorMesValues) !!};
-    const opsFechadasValoresRs = {!! json_encode($opsFechadasPorMesValoresRs) !!};
-
-    new Chart(ctx4, {
-        type: 'bar',
-        data: {
-            labels: opsFechadasLabels.length ? opsFechadasLabels : ['Sem OPs Fechadas'],
-            datasets: [{
-                label: 'OPs Fechadas',
-                data: opsFechadasValues.length ? opsFechadasValues : [0],
-                backgroundColor: 'rgba(52, 211, 153, 0.85)',
-                borderColor: '#10b981',
-                borderWidth: 1,
-                borderRadius: 6
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            layout: { padding: { top: 25 } },
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            let q = context.raw || 0;
-                            let v = opsFechadasValoresRs[context.dataIndex] || 0;
-                            return q + ' OP(s) - Montante: R$ ' + v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                        }
-                    }
-                },
-                datalabels: {
-                    anchor: 'end',
-                    align: 'top',
-                    color: '#34d399',
-                    font: { weight: 'bold', size: 11 },
-                    formatter: function(value, context) {
-                        if (value <= 0) return '0';
-                        let v = opsFechadasValoresRs[context.dataIndex] || 0;
-                        return value + ' OP(s) | R$ ' + v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                    }
-                }
-            },
-            scales: {
-                x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
-                y: { ticks: { color: '#94a3b8', stepSize: 1 }, grid: { color: 'rgba(255,255,255,0.05)' }, beginAtZero: true }
-            }
-        }
-    });
-
-    // Chart 5: Horizontal Bar - Top Fornecedores por Quantidade a Comprar
-    const ctx5 = document.getElementById('chartTopFornecedores').getContext('2d');
+    // Gráfico Top Fornecedores (Primeiro Lugar nos Gráficos)
+    const ctxFornecedores = document.getElementById('chartTopFornecedores').getContext('2d');
     const fornecedoresLabels = {!! json_encode($topFornecedoresValores->pluck('codigo_fornecedor')) !!};
     const fornecedoresQtdValues = {!! json_encode($topFornecedoresValores->pluck('total_qtd_comprar')->map(fn($v) => (float)$v)) !!};
     const fornecedoresRsValues = {!! json_encode($topFornecedoresValores->pluck('total_valor')->map(fn($v) => (float)$v)) !!};
 
-    new Chart(ctx5, {
+    new Chart(ctxFornecedores, {
         type: 'bar',
         data: {
             labels: fornecedoresLabels.length ? fornecedoresLabels : ['Sem Dados'],
@@ -469,7 +256,232 @@ document.addEventListener('DOMContentLoaded', () => {
             },
             scales: {
                 x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' }, beginAtZero: true },
-                y: { ticks: { color: '#f8fafc', font: { weight: 'bold' } }, grid: { color: 'rgba(255,255,255,0.05)' } }
+                y: { ticks: { color: '#f8fafc', font: { weight: 'bold', size: 11 } }, grid: { color: 'rgba(255,255,255,0.05)' } }
+            }
+        }
+    });
+
+    // Gráfico Status PCP / Estoque (Doughnut)
+    const ctx1 = document.getElementById('chartStatusEstoque').getContext('2d');
+    new Chart(ctx1, {
+        type: 'doughnut',
+        data: {
+            labels: ['FALTA *', 'SEPARADO', 'RETIRADO', 'FÁBRICA', 'KANBAN'],
+            datasets: [{
+                data: [
+                    {{ $statusEstoqueCounts['FALTA'] }},
+                    {{ $statusEstoqueCounts['SEPARADO'] }},
+                    {{ $statusEstoqueCounts['RETIRADO'] }},
+                    {{ $statusEstoqueCounts['FABRICA'] }},
+                    {{ $statusEstoqueCounts['KANBAN'] }}
+                ],
+                backgroundColor: [
+                    '#ef4444',
+                    '#f59e0b',
+                    '#10b981',
+                    '#3b82f6',
+                    '#a855f7'
+                ],
+                borderWidth: 2,
+                borderColor: '#1e293b'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: { color: '#cbd5e1', font: { size: 11, weight: 'bold' }, padding: 12 }
+                },
+                datalabels: {
+                    color: '#ffffff',
+                    font: { weight: 'bold', size: 11 },
+                    formatter: function(value) {
+                        return value > 0 ? value : '';
+                    }
+                }
+            }
+        }
+    });
+
+    // Gráfico Status Compras em R$ (Bar Chart)
+    const ctx2 = document.getElementById('chartStatusCompras').getContext('2d');
+    new Chart(ctx2, {
+        type: 'bar',
+        data: {
+            labels: ['PENDENTE', 'PA (ANTECIPADO)', 'FATURADO', 'PAGO'],
+            datasets: [{
+                label: 'Valor Total (R$)',
+                data: [
+                    {{ $statusComprasValores['PENDENTE'] }},
+                    {{ $statusComprasValores['PA'] }},
+                    {{ $statusComprasValores['FATURADO'] }},
+                    {{ $statusComprasValores['PAGO'] }}
+                ],
+                backgroundColor: [
+                    'rgba(245, 158, 11, 0.85)',
+                    'rgba(168, 85, 247, 0.85)',
+                    'rgba(96, 165, 250, 0.85)',
+                    'rgba(16, 185, 129, 0.85)'
+                ],
+                borderColor: [
+                    '#f59e0b',
+                    '#a855f7',
+                    '#60a5fa',
+                    '#10b981'
+                ],
+                borderWidth: 1,
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            layout: { padding: { top: 25 } },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let value = context.raw || 0;
+                            return 'R$ ' + value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                        }
+                    }
+                },
+                datalabels: {
+                    anchor: 'end',
+                    align: 'top',
+                    color: '#e2e8f0',
+                    font: { weight: 'bold', size: 10 },
+                    formatter: function(value) {
+                        return 'R$ ' + value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                    }
+                }
+            },
+            scales: {
+                x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                y: {
+                    ticks: {
+                        color: '#94a3b8',
+                        callback: function(value) {
+                            return 'R$ ' + (value / 1000000).toFixed(1) + 'M';
+                        }
+                    },
+                    grid: { color: 'rgba(255,255,255,0.05)' },
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Gráfico Top Pedidos de Venda em R$
+    const ctx3 = document.getElementById('chartTopPedidos').getContext('2d');
+    const pedidosLabels = {!! json_encode($topPedidosValores->pluck('pedido')) !!};
+    const pedidosData = {!! json_encode($topPedidosValores->pluck('total_valor')->map(fn($v) => (float)$v)) !!};
+
+    new Chart(ctx3, {
+        type: 'bar',
+        data: {
+            labels: pedidosLabels.length ? pedidosLabels : ['Sem Dados'],
+            datasets: [{
+                label: 'Valor Total (R$)',
+                data: pedidosData.length ? pedidosData : [0],
+                backgroundColor: 'rgba(192, 132, 252, 0.85)',
+                borderColor: '#c084fc',
+                borderWidth: 1,
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            layout: { padding: { top: 25 } },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let value = context.raw || 0;
+                            return 'R$ ' + value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                        }
+                    }
+                },
+                datalabels: {
+                    anchor: 'end',
+                    align: 'top',
+                    color: '#d8b4fe',
+                    font: { weight: 'bold', size: 10 },
+                    formatter: function(value) {
+                        return 'R$ ' + value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                    }
+                }
+            },
+            scales: {
+                x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                y: {
+                    ticks: {
+                        color: '#94a3b8',
+                        callback: function(value) {
+                            return 'R$ ' + (value / 1000).toFixed(0) + 'k';
+                        }
+                    },
+                    grid: { color: 'rgba(255,255,255,0.05)' },
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Gráfico OPs Fechadas por Mês
+    const ctx4 = document.getElementById('chartOpsFechadas').getContext('2d');
+    const opsFechadasLabels = {!! json_encode($opsFechadasPorMesLabels) !!};
+    const opsFechadasValues = {!! json_encode($opsFechadasPorMesValues) !!};
+    const opsFechadasValoresRs = {!! json_encode($opsFechadasPorMesValoresRs) !!};
+
+    new Chart(ctx4, {
+        type: 'bar',
+        data: {
+            labels: opsFechadasLabels.length ? opsFechadasLabels : ['Sem Dados'],
+            datasets: [{
+                label: 'OPs Fechadas',
+                data: opsFechadasValues.length ? opsFechadasValues : [0],
+                backgroundColor: 'rgba(52, 211, 153, 0.85)',
+                borderColor: '#10b981',
+                borderWidth: 1,
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            layout: { padding: { top: 25 } },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let q = context.raw || 0;
+                            let v = opsFechadasValoresRs[context.dataIndex] || 0;
+                            return q + ' OP(s) - Montante: R$ ' + v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                        }
+                    }
+                },
+                datalabels: {
+                    anchor: 'end',
+                    align: 'top',
+                    color: '#34d399',
+                    font: { weight: 'bold', size: 11 },
+                    formatter: function(value, context) {
+                        if (value <= 0) return '0';
+                        let v = opsFechadasValoresRs[context.dataIndex] || 0;
+                        return value + ' OP(s) | R$ ' + v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                    }
+                }
+            },
+            scales: {
+                x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                y: { ticks: { color: '#94a3b8', stepSize: 1 }, grid: { color: 'rgba(255,255,255,0.05)' }, beginAtZero: true }
             }
         }
     });

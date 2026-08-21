@@ -2,22 +2,22 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\EstoqueItem;
 use App\Models\CompraItem;
+use App\Models\EstoqueItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
     /**
-     * Dashboard com Indicadores Quantitativos, Financeiros (R$) e Filtros por Pedido de Venda e Status em Lista Suspensa
+     * Exibe o Dashboard de Indicadores e Gráficos Gerenciais
      */
     public function index(Request $request)
     {
         $searchPedido = $request->get('pedido');
         $searchStatusPcp = $request->get('status_pcp');
         $searchStatusPagamento = $request->get('status_pagamento');
-        $searchDescricao = $request->get('descricao');
+        $searchCliente = $request->get('search_cliente');
 
         // Query Base Estoque
         $estoqueQuery = EstoqueItem::query();
@@ -29,16 +29,19 @@ class DashboardController extends Controller
         }
         if ($searchStatusPagamento) {
             $estoqueQuery->whereHas('compraItem', function ($q) use ($searchStatusPagamento) {
-                $q->where('status_pagamento', $searchStatusPagamento);
+                if (in_array($searchStatusPagamento, ['PA', 'PAG. ANTECIPADO', 'PAGAMENTO ANTECIPADO', 'ANTECIPADO'])) {
+                    $q->whereIn('status_pagamento', ['PA', 'PAG. ANTECIPADO', 'PAGAMENTO ANTECIPADO', 'ANTECIPADO']);
+                } else {
+                    $q->where('status_pagamento', $searchStatusPagamento);
+                }
             });
         }
-        if ($searchDescricao) {
-            $terms = array_filter(array_map('trim', explode(',', $searchDescricao)));
+        if ($searchCliente) {
+            $terms = array_filter(array_map('trim', explode(',', $searchCliente)));
             if (!empty($terms)) {
                 $estoqueQuery->where(function ($q) use ($terms) {
                     foreach ($terms as $term) {
-                        $q->orWhere('descricao', 'like', '%' . $term . '%')
-                          ->orWhere('descricao_longa', 'like', '%' . $term . '%');
+                        $q->orWhere('cliente_obs', 'like', '%' . $term . '%');
                     }
                 });
             }
@@ -63,14 +66,13 @@ class DashboardController extends Controller
                 $comprasQuery->where('status_pagamento', $searchStatusPagamento);
             }
         }
-        if ($searchDescricao) {
-            $terms = array_filter(array_map('trim', explode(',', $searchDescricao)));
+        if ($searchCliente) {
+            $terms = array_filter(array_map('trim', explode(',', $searchCliente)));
             if (!empty($terms)) {
                 $comprasQuery->whereHas('estoqueItem', function ($q) use ($terms) {
                     $q->where(function ($subQ) use ($terms) {
                         foreach ($terms as $term) {
-                            $subQ->orWhere('descricao', 'like', '%' . $term . '%')
-                                 ->orWhere('descricao_longa', 'like', '%' . $term . '%');
+                            $subQ->orWhere('cliente_obs', 'like', '%' . $term . '%');
                         }
                     });
                 });
@@ -115,7 +117,7 @@ class DashboardController extends Controller
             'PAGO' => $valorTotalPago,
         ];
 
-        // Top Pedidos por Valor Total (R$) para Gráfico 3
+        // Top Pedidos por Valor Total (R$)
         $topPedidosQuery = EstoqueItem::join('compras_items', 'estoque_items.id', '=', 'compras_items.estoque_item_id')
             ->select('estoque_items.pedido', DB::raw('SUM(compras_items.valor_total) as total_valor'))
             ->whereNotNull('estoque_items.pedido')
@@ -134,13 +136,12 @@ class DashboardController extends Controller
                 $topPedidosQuery->where('compras_items.status_pagamento', $searchStatusPagamento);
             }
         }
-        if ($searchDescricao) {
-            $terms = array_filter(array_map('trim', explode(',', $searchDescricao)));
+        if ($searchCliente) {
+            $terms = array_filter(array_map('trim', explode(',', $searchCliente)));
             if (!empty($terms)) {
                 $topPedidosQuery->where(function ($q) use ($terms) {
                     foreach ($terms as $term) {
-                        $q->orWhere('estoque_items.descricao', 'like', '%' . $term . '%')
-                          ->orWhere('estoque_items.descricao_longa', 'like', '%' . $term . '%');
+                        $q->orWhere('estoque_items.cliente_obs', 'like', '%' . $term . '%');
                     }
                 });
             }
@@ -175,13 +176,12 @@ class DashboardController extends Controller
                 $topFornecedoresQuery->where('compras_items.status_pagamento', $searchStatusPagamento);
             }
         }
-        if ($searchDescricao) {
-            $terms = array_filter(array_map('trim', explode(',', $searchDescricao)));
+        if ($searchCliente) {
+            $terms = array_filter(array_map('trim', explode(',', $searchCliente)));
             if (!empty($terms)) {
                 $topFornecedoresQuery->where(function ($q) use ($terms) {
                     foreach ($terms as $term) {
-                        $q->orWhere('estoque_items.descricao', 'like', '%' . $term . '%')
-                          ->orWhere('estoque_items.descricao_longa', 'like', '%' . $term . '%');
+                        $q->orWhere('estoque_items.cliente_obs', 'like', '%' . $term . '%');
                     }
                 });
             }
@@ -258,7 +258,7 @@ class DashboardController extends Controller
             'searchPedido',
             'searchStatusPcp',
             'searchStatusPagamento',
-            'searchDescricao'
+            'searchCliente'
         ));
     }
 }

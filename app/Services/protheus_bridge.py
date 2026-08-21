@@ -42,9 +42,15 @@ def list_pedidos(filial=None):
     WHERE D_E_L_E_T_ = ' ' AND C2_PEDIDO IS NOT NULL AND RTRIM(C2_PEDIDO) != ''
     """
     params = []
-    if filial:
-        sql += " AND RTRIM(S.C2_FILIAL) = %s"
-        params.append(filial)
+    if filial and filial != 'null':
+        filiais_list = [f.strip() for f in filial.split(',') if f and f.strip()]
+        if len(filiais_list) == 1:
+            sql += " AND RTRIM(C2_FILIAL) = %s"
+            params.append(filiais_list[0])
+        elif len(filiais_list) > 1:
+            placeholders = ', '.join(['%s'] * len(filiais_list))
+            sql += f" AND RTRIM(C2_FILIAL) IN ({placeholders})"
+            params.extend(filiais_list)
 
     sql += " ORDER BY C2_PEDIDO DESC"
     cursor.execute(sql, params)
@@ -123,19 +129,16 @@ def get_pedido_items(c2_pedido, filial=None):
     return formatted_rows
 
 def get_ultimos_precos_batch(codigos_produtos):
-    """
-    Consulta o último preço (C7_PRECO) e fornecedor (C7_FORNECE) na SC7010
-    em LOTE (uma única query SQL Server usando IN (...))
-    """
     if not codigos_produtos:
-        return {}
-
-    codigos_unicos = list(set([c.strip() for c in codigos_produtos if c and c.strip()]))
-    if not codigos_unicos:
         return {}
 
     conn = get_connection()
     cursor = conn.cursor(as_dict=True)
+
+    codigos_unicos = list(set([str(c).strip() for c in codigos_produtos if c and str(c).strip()]))
+    if not codigos_unicos:
+        conn.close()
+        return {}
 
     placeholders = ', '.join(['%s'] * len(codigos_unicos))
     sql = f"""
@@ -177,18 +180,23 @@ def get_ultimo_preco_fornecedor(codigo_produto):
 if __name__ == '__main__':
     command = sys.argv[1] if len(sys.argv) > 1 else ''
 
-    if command == 'filiais':
-        print(json.dumps(list_filiais()))
-    elif command == 'pedidos':
-        fil = sys.argv[2] if len(sys.argv) > 2 else None
-        print(json.dumps(list_pedidos(fil)))
-    elif command == 'pedido_itens':
-        ped = sys.argv[2] if len(sys.argv) > 2 else ''
-        fil = sys.argv[3] if len(sys.argv) > 3 else None
-        print(json.dumps(get_pedido_items(ped, fil)))
-    elif command == 'ultimo_preco':
-        cod = sys.argv[2] if len(sys.argv) > 2 else ''
-        print(json.dumps(get_ultimo_preco_fornecedor(cod)))
-    elif command == 'ultimos_precos_batch':
-        cods = json.loads(sys.argv[2]) if len(sys.argv) > 2 else []
-        print(json.dumps(get_ultimos_precos_batch(cods)))
+    try:
+        if command in ['list_filiais', 'filiais']:
+            print(json.dumps({'success': True, 'data': list_filiais()}))
+        elif command in ['list_pedidos', 'pedidos']:
+            fil = sys.argv[2] if len(sys.argv) > 2 and sys.argv[2] != 'null' else None
+            print(json.dumps({'success': True, 'data': list_pedidos(fil)}))
+        elif command in ['get_pedido_items', 'pedido_itens']:
+            ped = sys.argv[2] if len(sys.argv) > 2 else ''
+            fil = sys.argv[3] if len(sys.argv) > 3 and sys.argv[3] != 'null' else None
+            print(json.dumps({'success': True, 'data': get_pedido_items(ped, fil)}))
+        elif command in ['get_ultimo_preco', 'ultimo_preco']:
+            cod = sys.argv[2] if len(sys.argv) > 2 else ''
+            print(json.dumps({'success': True, 'data': get_ultimo_preco_fornecedor(cod)}))
+        elif command in ['get_precos_batch', 'ultimos_precos_batch']:
+            cods = json.loads(sys.argv[2]) if len(sys.argv) > 2 else []
+            print(json.dumps({'success': True, 'data': get_ultimos_precos_batch(cods)}))
+        else:
+            print(json.dumps({'success': False, 'message': f'Comando desconhecido: {command}'}))
+    except Exception as e:
+        print(json.dumps({'success': False, 'message': str(e)}))

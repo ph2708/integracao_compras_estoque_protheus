@@ -60,6 +60,9 @@ class EstoqueController extends Controller
 
         $items = $query->orderBy('updated_at', 'desc')->paginate(15)->withQueryString();
         $filiaisProtheus = $this->protheusService->getFiliais();
+        if (empty($filiaisProtheus)) {
+            $filiaisProtheus = ['01', '02', '03', '04', '05', '10', '15', '20', '22', '25', '30'];
+        }
 
         return view('estoque.index', compact('items', 'filiaisProtheus'));
     }

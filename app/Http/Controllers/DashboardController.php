@@ -143,6 +143,43 @@ class DashboardController extends Controller
             ->limit(7)
             ->get();
 
+        // Top Fornecedores por Quantidade a Comprar e Valor Total (R$)
+        $topFornecedoresQuery = CompraItem::join('estoque_items', 'compras_items.estoque_item_id', '=', 'estoque_items.id')
+            ->select(
+                'compras_items.codigo_fornecedor',
+                DB::raw('SUM(GREATEST(0, estoque_items.quantidade - estoque_items.quantidade_estoque)) as total_qtd_comprar'),
+                DB::raw('SUM(estoque_items.quantidade * compras_items.valor_unitario) as total_valor')
+            )
+            ->whereNotNull('compras_items.codigo_fornecedor')
+            ->where('compras_items.codigo_fornecedor', '!=', '')
+            ->where('estoque_items.status', '!=', 'FECHADO');
+
+        if ($searchPedido) {
+            $topFornecedoresQuery->where('estoque_items.pedido', 'like', '%' . $searchPedido . '%');
+        }
+        if ($searchStatusPcp) {
+            $topFornecedoresQuery->where('estoque_items.status', $searchStatusPcp);
+        }
+        if ($searchStatusPagamento) {
+            $topFornecedoresQuery->where('compras_items.status_pagamento', $searchStatusPagamento);
+        }
+        if ($searchDescricao) {
+            $terms = array_filter(array_map('trim', explode(',', $searchDescricao)));
+            if (!empty($terms)) {
+                $topFornecedoresQuery->where(function ($q) use ($terms) {
+                    foreach ($terms as $term) {
+                        $q->orWhere('estoque_items.descricao', 'like', '%' . $term . '%')
+                          ->orWhere('estoque_items.descricao_longa', 'like', '%' . $term . '%');
+                    }
+                });
+            }
+        }
+
+        $topFornecedoresValores = $topFornecedoresQuery->groupBy('compras_items.codigo_fornecedor')
+            ->orderBy('total_qtd_comprar', 'desc')
+            ->limit(7)
+            ->get();
+
         // Métricas de Fechamento de OPs
         $currentMonth = now()->month;
         $currentYear = now()->year;
@@ -204,6 +241,7 @@ class DashboardController extends Controller
             'statusEstoqueCounts',
             'statusComprasValores',
             'topPedidosValores',
+            'topFornecedoresValores',
             'pedidosDisponiveis',
             'searchPedido',
             'searchStatusPcp',

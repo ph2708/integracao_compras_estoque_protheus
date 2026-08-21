@@ -182,6 +182,17 @@
     </div>
 </div>
 
+<!-- Grid de Gráficos parte 3 (Top Fornecedores por Necessidade de Compra) -->
+<div style="display: grid; grid-template-columns: 1fr; gap: 1.25rem; margin-bottom: 1.25rem;">
+    <!-- Gráfico 5: Top Fornecedores por Quantidade a Comprar -->
+    <div class="card">
+        <h3 style="font-size: 1rem; margin-bottom: 1rem; color: #f59e0b;">🏭 Top Fornecedores por Quantidade a Comprar (unidades) e Montante (R$)</h3>
+        <div style="position: relative; height: 300px;">
+            <canvas id="chartTopFornecedores"></canvas>
+        </div>
+    </div>
+</div>
+
 <!-- Script Chart.js -->
 <script>
 document.addEventListener('DOMContentLoaded', () => {
@@ -405,6 +416,60 @@ document.addEventListener('DOMContentLoaded', () => {
             scales: {
                 x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
                 y: { ticks: { color: '#94a3b8', stepSize: 1 }, grid: { color: 'rgba(255,255,255,0.05)' }, beginAtZero: true }
+            }
+        }
+    });
+
+    // Chart 5: Horizontal Bar - Top Fornecedores por Quantidade a Comprar
+    const ctx5 = document.getElementById('chartTopFornecedores').getContext('2d');
+    const fornecedoresLabels = {!! json_encode($topFornecedoresValores->pluck('codigo_fornecedor')) !!};
+    const fornecedoresQtdValues = {!! json_encode($topFornecedoresValores->pluck('total_qtd_comprar')->map(fn($v) => (float)$v)) !!};
+    const fornecedoresRsValues = {!! json_encode($topFornecedoresValores->pluck('total_valor')->map(fn($v) => (float)$v)) !!};
+
+    new Chart(ctx5, {
+        type: 'bar',
+        data: {
+            labels: fornecedoresLabels.length ? fornecedoresLabels : ['Sem Dados'],
+            datasets: [{
+                label: 'Qtd. a Comprar (un)',
+                data: fornecedoresQtdValues.length ? fornecedoresQtdValues : [0],
+                backgroundColor: 'rgba(245, 158, 11, 0.85)',
+                borderColor: '#f59e0b',
+                borderWidth: 1,
+                borderRadius: 6
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            layout: { padding: { right: 170 } },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let q = context.raw || 0;
+                            let v = fornecedoresRsValues[context.dataIndex] || 0;
+                            return q.toLocaleString('pt-BR') + ' un | Montante: R$ ' + v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                        }
+                    }
+                },
+                datalabels: {
+                    anchor: 'end',
+                    align: 'right',
+                    color: '#fcd34d',
+                    font: { weight: 'bold', size: 11 },
+                    formatter: function(value, context) {
+                        if (value <= 0) return '0 un';
+                        let v = fornecedoresRsValues[context.dataIndex] || 0;
+                        return value.toLocaleString('pt-BR') + ' un | R$ ' + v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                    }
+                }
+            },
+            scales: {
+                x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' }, beginAtZero: true },
+                y: { ticks: { color: '#f8fafc', font: { weight: 'bold' } }, grid: { color: 'rgba(255,255,255,0.05)' } }
             }
         }
     });

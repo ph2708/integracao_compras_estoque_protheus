@@ -17,6 +17,7 @@ class OpFechamentoController extends Controller
         $searchOp = $request->get('search_op');
         $searchPedido = $request->get('search_pedido');
         $searchCliente = $request->get('search_cliente');
+        $searchCodigo = $request->get('search_codigo');
         $searchDescricao = $request->get('search_descricao');
         $tab = $request->get('tab', 'prontas'); // prontas, pendentes, encerradas, items_expandidos, todas
 
@@ -57,6 +58,17 @@ class OpFechamentoController extends Controller
                 }
             }
 
+            if ($searchCodigo) {
+                $terms = array_filter(array_map('trim', explode(',', $searchCodigo)));
+                if (!empty($terms)) {
+                    $queryItems->where(function ($q) use ($terms) {
+                        foreach ($terms as $term) {
+                            $q->orWhere('codigo_produto', 'like', '%' . $term . '%');
+                        }
+                    });
+                }
+            }
+
             if ($searchDescricao) {
                 $terms = array_filter(array_map('trim', explode(',', $searchDescricao)));
                 if (!empty($terms)) {
@@ -79,6 +91,7 @@ class OpFechamentoController extends Controller
                 'searchOp',
                 'searchPedido',
                 'searchCliente',
+                'searchCodigo',
                 'searchDescricao',
                 'tab'
             ));
@@ -117,6 +130,17 @@ class OpFechamentoController extends Controller
                 $query->where(function ($q) use ($terms) {
                     foreach ($terms as $term) {
                         $q->orWhere('cliente_obs', 'like', '%' . $term . '%');
+                    }
+                });
+            }
+        }
+
+        if ($searchCodigo) {
+            $terms = array_filter(array_map('trim', explode(',', $searchCodigo)));
+            if (!empty($terms)) {
+                $query->where(function ($q) use ($terms) {
+                    foreach ($terms as $term) {
+                        $q->orWhere('codigo_produto', 'like', '%' . $term . '%');
                     }
                 });
             }
@@ -190,7 +214,7 @@ class OpFechamentoController extends Controller
 
         $paginatedItems = null;
 
-        return view('fechamento_op.index', compact('paginatedOps', 'paginatedItems', 'searchOp', 'searchPedido', 'searchCliente', 'searchDescricao', 'tab'));
+        return view('fechamento_op.index', compact('paginatedOps', 'paginatedItems', 'searchOp', 'searchPedido', 'searchCliente', 'searchCodigo', 'searchDescricao', 'tab'));
     }
 
     /**

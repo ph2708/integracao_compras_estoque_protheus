@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="card" style="margin-bottom: 1.5rem; background: linear-gradient(135deg, rgba(30,41,59,0.9), rgba(15,23,42,0.95)); border: 1fr solid rgba(99,102,241,0.2);">
+<div class="card" style="margin-bottom: 1.5rem; background: linear-gradient(135deg, rgba(30,41,59,0.9), rgba(15,23,42,0.95)); border: 1px solid rgba(99,102,241,0.2);">
     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
         <div>
             <h1 style="font-size: 1.6rem; font-weight: 700; margin: 0; color: #f8fafc; display: flex; align-items: center; gap: 0.5rem;">
@@ -202,12 +202,14 @@
 <!-- Script Chart.js -->
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    // Registrar o plugin de rótulos de dados (datalabels)
+    // Registrar o plugin de rótulos de dados (ChartDataLabels)
     if (typeof ChartDataLabels !== 'undefined') {
         Chart.register(ChartDataLabels);
     }
 
-    // Gráfico Top Fornecedores (Primeiro Lugar nos Gráficos)
+    const pluginDataLabels = typeof ChartDataLabels !== 'undefined' ? [ChartDataLabels] : [];
+
+    // 1. Gráfico Top Fornecedores (Barras Horizontais)
     const ctxFornecedores = document.getElementById('chartTopFornecedores').getContext('2d');
     const rawFornecedoresLabels = {!! json_encode($topFornecedoresValores->pluck('codigo_fornecedor')) !!};
     const fornecedoresLabels = rawFornecedoresLabels.map(f => {
@@ -218,6 +220,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const fornecedoresRsValues = {!! json_encode($topFornecedoresValores->pluck('total_valor')->map(fn($v) => (float)$v)) !!};
 
     new Chart(ctxFornecedores, {
+        plugins: pluginDataLabels,
         type: 'bar',
         data: {
             labels: fornecedoresLabels.length ? fornecedoresLabels : ['Sem Dados'],
@@ -234,7 +237,7 @@ document.addEventListener('DOMContentLoaded', () => {
             indexAxis: 'y',
             responsive: true,
             maintainAspectRatio: false,
-            layout: { padding: { right: 270 } },
+            layout: { padding: { right: 300 } },
             plugins: {
                 legend: { display: false },
                 tooltip: {
@@ -259,15 +262,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             },
             scales: {
-                x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' }, beginAtZero: true },
+                x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' }, beginAtZero: true, grace: '25%' },
                 y: { ticks: { color: '#f8fafc', font: { weight: 'bold', size: 11 } }, grid: { color: 'rgba(255,255,255,0.05)' } }
             }
         }
     });
 
-    // Gráfico Status PCP / Estoque (Doughnut)
+    // 2. Gráfico Status PCP / Estoque (Doughnut)
     const ctx1 = document.getElementById('chartStatusEstoque').getContext('2d');
     new Chart(ctx1, {
+        plugins: pluginDataLabels,
         type: 'doughnut',
         data: {
             labels: ['FALTA *', 'SEPARADO', 'RETIRADO', 'FÁBRICA', 'KANBAN'],
@@ -299,8 +303,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     labels: { color: '#cbd5e1', font: { size: 11, weight: 'bold' }, padding: 12 }
                 },
                 datalabels: {
+                    display: true,
                     color: '#ffffff',
-                    font: { weight: 'bold', size: 11 },
+                    font: { weight: 'bold', size: 12 },
                     formatter: function(value) {
                         return value > 0 ? value : '';
                     }
@@ -309,9 +314,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Gráfico Status Compras em R$ (Bar Chart)
+    // 3. Gráfico Status Compras em R$ (Bar Chart Vertical - Velas)
     const ctx2 = document.getElementById('chartStatusCompras').getContext('2d');
     new Chart(ctx2, {
+        plugins: pluginDataLabels,
         type: 'bar',
         data: {
             labels: ['PENDENTE', 'PA (ANTECIPADO)', 'FATURADO', 'PAGO'],
@@ -342,7 +348,7 @@ document.addEventListener('DOMContentLoaded', () => {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            layout: { padding: { top: 25 } },
+            layout: { padding: { top: 40 } },
             plugins: {
                 legend: { display: false },
                 tooltip: {
@@ -357,35 +363,38 @@ document.addEventListener('DOMContentLoaded', () => {
                     display: true,
                     anchor: 'end',
                     align: 'top',
-                    color: '#e2e8f0',
-                    font: { weight: 'bold', size: 10 },
+                    offset: 4,
+                    color: '#f8fafc',
+                    font: { weight: 'bold', size: 12 },
                     formatter: function(value) {
-                        return 'R$ ' + value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                        return value > 0 ? 'R$ ' + value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '';
                     }
                 }
             },
             scales: {
                 x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
                 y: {
+                    grace: '20%',
+                    beginAtZero: true,
                     ticks: {
                         color: '#94a3b8',
                         callback: function(value) {
                             return 'R$ ' + (value / 1000000).toFixed(1) + 'M';
                         }
                     },
-                    grid: { color: 'rgba(255,255,255,0.05)' },
-                    beginAtZero: true
+                    grid: { color: 'rgba(255,255,255,0.05)' }
                 }
             }
         }
     });
 
-    // Gráfico Top Pedidos de Venda em R$
+    // 4. Gráfico Top Pedidos de Venda em R$ (Bar Chart Vertical - Velas)
     const ctx3 = document.getElementById('chartTopPedidos').getContext('2d');
     const pedidosLabels = {!! json_encode($topPedidosValores->pluck('pedido')) !!};
     const pedidosData = {!! json_encode($topPedidosValores->pluck('total_valor')->map(fn($v) => (float)$v)) !!};
 
     new Chart(ctx3, {
+        plugins: pluginDataLabels,
         type: 'bar',
         data: {
             labels: pedidosLabels.length ? pedidosLabels : ['Sem Dados'],
@@ -401,7 +410,7 @@ document.addEventListener('DOMContentLoaded', () => {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            layout: { padding: { top: 35 } },
+            layout: { padding: { top: 40 } },
             plugins: {
                 legend: { display: false },
                 tooltip: {
@@ -416,36 +425,39 @@ document.addEventListener('DOMContentLoaded', () => {
                     display: true,
                     anchor: 'end',
                     align: 'top',
-                    color: '#d8b4fe',
-                    font: { weight: 'bold', size: 10 },
+                    offset: 4,
+                    color: '#e9d5ff',
+                    font: { weight: 'bold', size: 11 },
                     formatter: function(value) {
-                        return 'R$ ' + value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                        return value > 0 ? 'R$ ' + value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '';
                     }
                 }
             },
             scales: {
                 x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
                 y: {
+                    grace: '20%',
+                    beginAtZero: true,
                     ticks: {
                         color: '#94a3b8',
                         callback: function(value) {
                             return 'R$ ' + (value / 1000).toFixed(0) + 'k';
                         }
                     },
-                    grid: { color: 'rgba(255,255,255,0.05)' },
-                    beginAtZero: true
+                    grid: { color: 'rgba(255,255,255,0.05)' }
                 }
             }
         }
     });
 
-    // Gráfico OPs Fechadas por Mês
+    // 5. Gráfico OPs Fechadas por Mês (Bar Chart Vertical - Velas)
     const ctx4 = document.getElementById('chartOpsFechadas').getContext('2d');
     const opsFechadasLabels = {!! json_encode($opsFechadasPorMesLabels) !!};
     const opsFechadasValues = {!! json_encode($opsFechadasPorMesValues) !!};
     const opsFechadasValoresRs = {!! json_encode($opsFechadasPorMesValoresRs) !!};
 
     new Chart(ctx4, {
+        plugins: pluginDataLabels,
         type: 'bar',
         data: {
             labels: opsFechadasLabels.length ? opsFechadasLabels : ['Sem Dados'],
@@ -461,7 +473,7 @@ document.addEventListener('DOMContentLoaded', () => {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            layout: { padding: { top: 35 } },
+            layout: { padding: { top: 40 } },
             plugins: {
                 legend: { display: false },
                 tooltip: {
@@ -477,10 +489,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     display: true,
                     anchor: 'end',
                     align: 'top',
-                    color: '#34d399',
-                    font: { weight: 'bold', size: 11 },
+                    offset: 4,
+                    color: '#6ee7b7',
+                    font: { weight: 'bold', size: 12 },
                     formatter: function(value, context) {
-                        if (value <= 0) return '0';
+                        if (value <= 0) return '';
                         let v = opsFechadasValoresRs[context.dataIndex] || 0;
                         return value + ' OP(s) | R$ ' + v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                     }
@@ -488,7 +501,12 @@ document.addEventListener('DOMContentLoaded', () => {
             },
             scales: {
                 x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
-                y: { ticks: { color: '#94a3b8', stepSize: 1 }, grid: { color: 'rgba(255,255,255,0.05)' }, beginAtZero: true }
+                y: {
+                    grace: '20%',
+                    beginAtZero: true,
+                    ticks: { color: '#94a3b8', stepSize: 1 },
+                    grid: { color: 'rgba(255,255,255,0.05)' }
+                }
             }
         }
     });

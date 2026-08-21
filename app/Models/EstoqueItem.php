@@ -24,6 +24,12 @@ class EstoqueItem extends Model
         'quantidade_estoque',
         'status',
         'observacao_estoque',
+        'fechada_em',
+        'fechada_por',
+    ];
+
+    protected $casts = [
+        'fechada_em' => 'datetime',
     ];
 
     protected $appends = [

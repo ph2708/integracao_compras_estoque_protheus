@@ -108,7 +108,7 @@ class OpFechamentoController extends Controller
                 'qtd_fechado' => $qtdFechado,
                 'is_fechada' => $isFechada,
                 'is_elegivel' => $isElegivel,
-                'fechada_em' => $primeiroItem->fechada_em ? $primeiroItem->fechada_em->format('d/m/Y H:i') : null,
+                'fechada_em' => $primeiroItem->fechada_em ? (\Carbon\Carbon::parse($primeiroItem->fechada_em)->format('d/m/Y H:i')) : null,
                 'itens' => $itensOp,
             ]);
         }

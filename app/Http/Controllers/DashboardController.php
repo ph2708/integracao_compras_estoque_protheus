@@ -57,7 +57,11 @@ class DashboardController extends Controller
             });
         }
         if ($searchStatusPagamento) {
-            $comprasQuery->where('status_pagamento', $searchStatusPagamento);
+            if (in_array($searchStatusPagamento, ['PA', 'PAG. ANTECIPADO', 'PAGAMENTO ANTECIPADO', 'ANTECIPADO'])) {
+                $comprasQuery->whereIn('status_pagamento', ['PA', 'PAG. ANTECIPADO', 'PAGAMENTO ANTECIPADO', 'ANTECIPADO']);
+            } else {
+                $comprasQuery->where('status_pagamento', $searchStatusPagamento);
+            }
         }
         if ($searchDescricao) {
             $terms = array_filter(array_map('trim', explode(',', $searchDescricao)));
@@ -84,7 +88,7 @@ class DashboardController extends Controller
         $valorTotalPendente = floatval((clone $comprasQuery)->where('status_pagamento', 'PENDENTE')->sum('valor_total') ?? 0);
         $valorTotalFaturado = floatval((clone $comprasQuery)->where('status_pagamento', 'FATURADO')->sum('valor_total') ?? 0);
         $valorTotalPago = floatval((clone $comprasQuery)->where('status_pagamento', 'PAGO')->sum('valor_total') ?? 0);
-        $valorTotalAntecipado = floatval((clone $comprasQuery)->where('status_pagamento', 'PAGAMENTO ANTECIPADO')->sum('valor_total') ?? 0);
+        $valorTotalAntecipado = floatval((clone $comprasQuery)->whereIn('status_pagamento', ['PA', 'PAG. ANTECIPADO', 'PAGAMENTO ANTECIPADO', 'ANTECIPADO'])->sum('valor_total') ?? 0);
 
         // Opção B: Valor Bruto Total dos Itens com Status SEPARADO (Qtd OP * Valor Unitário)
         $valorTotalSeparado = floatval(
@@ -106,7 +110,7 @@ class DashboardController extends Controller
         // Status Pagamento breakdown em R$ para Gráfico 2
         $statusComprasValores = [
             'PENDENTE' => $valorTotalPendente,
-            'ANTECIPADO' => $valorTotalAntecipado,
+            'PA' => $valorTotalAntecipado,
             'FATURADO' => $valorTotalFaturado,
             'PAGO' => $valorTotalPago,
         ];
@@ -124,7 +128,11 @@ class DashboardController extends Controller
             $topPedidosQuery->where('estoque_items.status', $searchStatusPcp);
         }
         if ($searchStatusPagamento) {
-            $topPedidosQuery->where('compras_items.status_pagamento', $searchStatusPagamento);
+            if (in_array($searchStatusPagamento, ['PA', 'PAG. ANTECIPADO', 'PAGAMENTO ANTECIPADO', 'ANTECIPADO'])) {
+                $topPedidosQuery->whereIn('compras_items.status_pagamento', ['PA', 'PAG. ANTECIPADO', 'PAGAMENTO ANTECIPADO', 'ANTECIPADO']);
+            } else {
+                $topPedidosQuery->where('compras_items.status_pagamento', $searchStatusPagamento);
+            }
         }
         if ($searchDescricao) {
             $terms = array_filter(array_map('trim', explode(',', $searchDescricao)));
@@ -161,7 +169,11 @@ class DashboardController extends Controller
             $topFornecedoresQuery->where('estoque_items.status', $searchStatusPcp);
         }
         if ($searchStatusPagamento) {
-            $topFornecedoresQuery->where('compras_items.status_pagamento', $searchStatusPagamento);
+            if (in_array($searchStatusPagamento, ['PA', 'PAG. ANTECIPADO', 'PAGAMENTO ANTECIPADO', 'ANTECIPADO'])) {
+                $topFornecedoresQuery->whereIn('compras_items.status_pagamento', ['PA', 'PAG. ANTECIPADO', 'PAGAMENTO ANTECIPADO', 'ANTECIPADO']);
+            } else {
+                $topFornecedoresQuery->where('compras_items.status_pagamento', $searchStatusPagamento);
+            }
         }
         if ($searchDescricao) {
             $terms = array_filter(array_map('trim', explode(',', $searchDescricao)));

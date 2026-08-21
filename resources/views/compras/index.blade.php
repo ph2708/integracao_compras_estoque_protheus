@@ -328,12 +328,12 @@
                         </td>
                         <td class="col-status-pagamento">
                             <select name="items[{{ $estoqueId }}][status_pagamento]" 
-                                     class="form-select" 
-                                     style="padding: 0.2rem 0.3rem; font-size: 0.75rem;">
-                                <option value="PENDENTE" {{ $item['status_pagamento'] == 'PENDENTE' ? 'selected' : '' }}>PENDENTE</option>
-                                <option value="PAGAMENTO ANTECIPADO" {{ $item['status_pagamento'] == 'PAGAMENTO ANTECIPADO' ? 'selected' : '' }}>PAG. ANTECIPADO</option>
-                                <option value="FATURADO" {{ $item['status_pagamento'] == 'FATURADO' ? 'selected' : '' }}>FATURADO</option>
-                                <option value="PAGO" {{ $item['status_pagamento'] == 'PAGO' ? 'selected' : '' }}>PAGO</option>
+                                    class="form-select" 
+                                    style="padding: 0.2rem 0.3rem; font-size: 0.75rem;">
+                                <option value="PENDENTE" {{ in_array($item['status_pagamento'], ['PENDENTE']) ? 'selected' : '' }}>PENDENTE</option>
+                                <option value="PA" {{ in_array($item['status_pagamento'], ['PA', 'PAG. ANTECIPADO', 'PAGAMENTO ANTECIPADO', 'ANTECIPADO']) ? 'selected' : '' }}>PA</option>
+                                <option value="FATURADO" {{ in_array($item['status_pagamento'], ['FATURADO']) ? 'selected' : '' }}>FATURADO</option>
+                                <option value="PAGO" {{ in_array($item['status_pagamento'], ['PAGO']) ? 'selected' : '' }}>PAGO</option>
                             </select>
                         </td>
                         <td class="col-valor-total" style="text-align: right; font-weight: 700; color: #6ee7b7;" id="label_val_total_{{ $estoqueId }}">
@@ -455,8 +455,11 @@ function solicitarSalvarSingleCompra(estoqueId) {
 
     inputs.forEach(input => {
         if (input.name) {
-            const clone = input.cloneNode(true);
-            form.appendChild(clone);
+            const hidden = document.createElement('input');
+            hidden.type = 'hidden';
+            hidden.name = input.name;
+            hidden.value = input.value;
+            form.appendChild(hidden);
         }
     });
 

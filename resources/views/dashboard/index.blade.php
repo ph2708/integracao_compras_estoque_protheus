@@ -59,7 +59,7 @@
             <select name="status_pagamento" class="form-select" onchange="this.form.submit()">
                 <option value="">-- Todos Status Pagamento --</option>
                 <option value="PENDENTE" {{ $searchStatusPagamento == 'PENDENTE' ? 'selected' : '' }}>PENDENTE</option>
-                <option value="PAGAMENTO ANTECIPADO" {{ $searchStatusPagamento == 'PAGAMENTO ANTECIPADO' ? 'selected' : '' }}>PAGAMENTO ANTECIPADO</option>
+                <option value="PA" {{ in_array($searchStatusPagamento, ['PA', 'PAG. ANTECIPADO', 'PAGAMENTO ANTECIPADO', 'ANTECIPADO']) ? 'selected' : '' }}>PA (Pagamento Antecipado)</option>
                 <option value="FATURADO" {{ $searchStatusPagamento == 'FATURADO' ? 'selected' : '' }}>FATURADO</option>
                 <option value="PAGO" {{ $searchStatusPagamento == 'PAGO' ? 'selected' : '' }}>PAGO</option>
             </select>
@@ -250,12 +250,12 @@ document.addEventListener('DOMContentLoaded', () => {
     new Chart(ctx2, {
         type: 'bar',
         data: {
-            labels: ['PENDENTE', 'ANTECIPADO', 'FATURADO', 'PAGO'],
+            labels: ['PENDENTE', 'PA (ANTECIPADO)', 'FATURADO', 'PAGO'],
             datasets: [{
                 label: 'Valor Total (R$)',
                 data: [
                     {{ $statusComprasValores['PENDENTE'] }},
-                    {{ $statusComprasValores['ANTECIPADO'] }},
+                    {{ $statusComprasValores['PA'] }},
                     {{ $statusComprasValores['FATURADO'] }},
                     {{ $statusComprasValores['PAGO'] }}
                 ],

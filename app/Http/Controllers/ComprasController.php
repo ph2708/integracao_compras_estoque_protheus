@@ -250,7 +250,7 @@ class ComprasController extends Controller
             'frete' => 'nullable|numeric',
             'solicitacao_compra' => 'nullable|string',
             'condicao_pagamento' => 'nullable|string',
-            'status_pagamento' => 'required|in:PENDENTE,PAGAMENTO ANTECIPADO,FATURADO,PAGO',
+            'status_pagamento' => 'required|in:PENDENTE,PA,PAG. ANTECIPADO,PAGAMENTO ANTECIPADO,FATURADO,PAGO',
         ]);
 
         $valUnitario = floatval($validated['valor_unitario'] ?? 0);

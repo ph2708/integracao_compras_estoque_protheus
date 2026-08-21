@@ -75,8 +75,9 @@ def list_pedidos(filial=None):
 
 def get_pedido_items(c2_pedido, filial=None):
     """
-    Consulta componentes/matérias-primas requisitados da OP na SD4010 + SC2010
-    EXCLUINDO produtos do tipo PI (Produto Intermediário) e PA (Produto Acabado) na SB1010 (B1_TIPO NOT IN ('PI', 'PA'))
+    Consulta componentes/matérias-primas requisitados da OP na SD4010 + SC2010.
+    Garante vinculo exato de Produto Pai com SC2010 (D4_OP = C2_NUM + C2_ITEM + C2_SEQUEN).
+    EXCLUINDO produtos do tipo PI (Produto Intermediário) e PA (Produto Acabado) na SB1010.
     Deduplicado por Filial, OP e Código de Produto.
     """
     conn = get_connection()
@@ -98,7 +99,7 @@ def get_pedido_items(c2_pedido, filial=None):
         ON RTRIM(D.D4_FILIAL) = RTRIM(S.C2_FILIAL)
        AND (
            RTRIM(D.D4_OP) = RTRIM(S.C2_NUM) + RTRIM(S.C2_ITEM) + RTRIM(S.C2_SEQUEN)
-           OR RTRIM(D.D4_OP) LIKE RTRIM(S.C2_NUM) + '%'
+           OR (LEN(RTRIM(D.D4_OP)) = 6 AND RTRIM(D.D4_OP) = RTRIM(S.C2_NUM))
        )
        AND S.D_E_L_E_T_ = ' '
     LEFT JOIN SB1010 B WITH (NOLOCK) ON RTRIM(D.D4_COD) = RTRIM(B.B1_COD) AND B.D_E_L_E_T_ = ' '

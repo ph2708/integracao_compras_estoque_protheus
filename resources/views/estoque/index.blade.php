@@ -283,7 +283,52 @@
                     </tr>
                     <tr class="filter-row">
                         <th class="col-status-pcp-atual">
-                            <input type="text" name="f_status" value="{{ request('f_status') }}" class="filter-input" placeholder="Multi: FALTA, RETIRADO..." form="formFilterEstoque" onchange="document.getElementById('formFilterEstoque').submit()">
+                            <div class="dropdown" style="position: relative; width: 100%;">
+                                <button type="button" 
+                                        class="btn btn-secondary dropdown-toggle" 
+                                        id="btnFilterStatusEstoque"
+                                        onclick="toggleMenuFilterStatusEstoque()" 
+                                        style="width: 100%; font-size: 0.725rem; padding: 0.25rem 0.4rem; justify-content: space-between; text-align: left; display: flex; align-items: center; background: #0f172a; border-color: #334155; height: 31px;">
+                                    <span id="labelStatusEstoqueSelecionados" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                        @php
+                                            $reqStatus = request('f_status');
+                                            $selStatusArr = $reqStatus ? array_map('trim', explode(',', $reqStatus)) : [];
+                                        @endphp
+                                        @if(empty($selStatusArr))
+                                            Status: Todos
+                                        @elseif(count($selStatusArr) == 1)
+                                            {{ $selStatusArr[0] }}
+                                        @else
+                                            {{ count($selStatusArr) }} Selecionados
+                                        @endif
+                                    </span>
+                                    <span style="font-size: 0.55rem; margin-left: 2px;">▼</span>
+                                </button>
+                                <div id="dropdownMenuFilterStatusEstoque" 
+                                     style="display: none; position: absolute; top: 100%; left: 0; min-width: 210px; background: #1e293b; border: 1px solid #475569; border-radius: 0.5rem; padding: 0.65rem; z-index: 1000; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);">
+                                    <div style="font-size: 0.725rem; font-weight: 700; color: #94a3b8; margin-bottom: 0.4rem; border-bottom: 1px solid #334155; padding-bottom: 0.3rem; display: flex; justify-content: space-between; align-items: center;">
+                                        <span>STATUS PCP ATUAL</span>
+                                        <label style="font-weight: 400; cursor: pointer; color: #6366f1;">
+                                            <input type="checkbox" id="chkFilterStatusEstoqueAll" onchange="toggleSelectAllStatusEstoque(this)" {{ empty($selStatusArr) ? 'checked' : '' }} style="margin-right: 3px;"> Todos
+                                        </label>
+                                    </div>
+                                    @php
+                                        $statusOpcoesEstoque = ['FALTA', 'SEPARADO', 'RETIRADO', 'FABRICA', 'FABRICAR INTERNO KANBAN'];
+                                    @endphp
+                                    @foreach($statusOpcoesEstoque as $stOpt)
+                                        <label style="display: flex; align-items: center; font-size: 0.75rem; margin-bottom: 0.35rem; cursor: pointer; color: #e2e8f0;">
+                                            <input type="checkbox" class="chk-status-estoque-option" value="{{ $stOpt }}" {{ (empty($selStatusArr) || in_array($stOpt, $selStatusArr)) ? 'checked' : '' }} onchange="atualizarStatusEstoqueLabel()" style="margin-right: 6px;">
+                                            {{ $stOpt }}
+                                        </label>
+                                    @endforeach
+                                    <div style="margin-top: 0.5rem; padding-top: 0.4rem; border-top: 1px solid #334155; display: flex; justify-content: flex-end;">
+                                        <button type="button" class="btn btn-primary" style="padding: 0.2rem 0.6rem; font-size: 0.7rem; background-color: #059669; border-color: #059669;" onclick="aplicarFiltroStatusEstoque()">
+                                            ✓ Aplicar
+                                        </button>
+                                    </div>
+                                </div>
+                                <input type="hidden" name="f_status" id="input_f_status" value="{{ request('f_status') }}" form="formFilterEstoque">
+                            </div>
                         </th>
                         <th class="col-pv">
                             <input type="text" name="f_pedido" value="{{ request('f_pedido') }}" class="filter-input" placeholder="Multi: 0066, 0067..." form="formFilterEstoque" onchange="document.getElementById('formFilterEstoque').submit()">
@@ -733,6 +778,53 @@ function toggleMenuColunasEstoque() {
     if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
 }
 
+// Gestor de Seleção Múltipla do Filtro Status PCP Atual no Estoque
+function toggleMenuFilterStatusEstoque() {
+    const el = document.getElementById('dropdownMenuFilterStatusEstoque');
+    if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function toggleSelectAllStatusEstoque(masterChk) {
+    const checkboxes = document.querySelectorAll('.chk-status-estoque-option');
+    checkboxes.forEach(chk => chk.checked = masterChk.checked);
+    atualizarStatusEstoqueLabel();
+}
+
+function atualizarStatusEstoqueLabel() {
+    const checkboxes = document.querySelectorAll('.chk-status-estoque-option:checked');
+    const totalChk = document.querySelectorAll('.chk-status-estoque-option').length;
+    const values = Array.from(checkboxes).map(c => c.value);
+    const label = document.getElementById('labelStatusEstoqueSelecionados');
+    const masterChk = document.getElementById('chkFilterStatusEstoqueAll');
+
+    if (!label) return;
+
+    if (values.length === totalChk || values.length === 0) {
+        label.innerText = 'Status: Todos';
+        if (masterChk) masterChk.checked = (values.length === totalChk);
+    } else {
+        if (masterChk) masterChk.checked = false;
+        if (values.length === 1) label.innerText = values[0];
+        else label.innerText = values.length + ' Selecionados';
+    }
+}
+
+function aplicarFiltroStatusEstoque() {
+    const checkboxes = document.querySelectorAll('.chk-status-estoque-option:checked');
+    const totalChk = document.querySelectorAll('.chk-status-estoque-option').length;
+    const values = Array.from(checkboxes).map(c => c.value);
+    const inputHidden = document.getElementById('input_f_status');
+
+    if (values.length === totalChk || values.length === 0) {
+        inputHidden.value = '';
+    } else {
+        inputHidden.value = values.join(',');
+    }
+    const menu = document.getElementById('dropdownMenuFilterStatusEstoque');
+    if (menu) menu.style.display = 'none';
+    document.getElementById('formFilterEstoque').submit();
+}
+
 document.addEventListener('click', function(e) {
     const menuCol = document.getElementById('dropdownMenuColunasEstoque');
     if (menuCol && !menuCol.contains(e.target) && !e.target.closest('.dropdown')) {
@@ -742,6 +834,11 @@ document.addEventListener('click', function(e) {
     const btnFil = document.getElementById('btnDropdownFiliais');
     if (menuFil && btnFil && !menuFil.contains(e.target) && !btnFil.contains(e.target)) {
         menuFil.style.display = 'none';
+    }
+    const menuSt = document.getElementById('dropdownMenuFilterStatusEstoque');
+    const btnSt = document.getElementById('btnFilterStatusEstoque');
+    if (menuSt && btnSt && !menuSt.contains(e.target) && !btnSt.contains(e.target)) {
+        menuSt.style.display = 'none';
     }
 });
 
@@ -764,6 +861,7 @@ function inicializarColunasEstoque() {
         toggleColunaEstoque(colClass, isChecked);
     });
     atualizarLabelFiliais();
+    atualizarStatusEstoqueLabel();
 }
 
 document.addEventListener('DOMContentLoaded', inicializarColunasEstoque);

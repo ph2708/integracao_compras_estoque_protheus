@@ -184,7 +184,52 @@
                     </tr>
                     <tr class="filter-row">
                         <th class="col-status-pcp">
-                            <input type="text" name="f_status_pcp" value="{{ request('f_status_pcp') }}" class="filter-input" placeholder="Multi: FALTA, RETIRADO..." form="formFilterCompras" onchange="document.getElementById('formFilterCompras').submit()">
+                            <div class="dropdown" style="position: relative; width: 100%;">
+                                <button type="button" 
+                                        class="btn btn-secondary dropdown-toggle" 
+                                        id="btnFilterStatusCompras"
+                                        onclick="toggleMenuFilterStatusCompras()" 
+                                        style="width: 100%; font-size: 0.725rem; padding: 0.25rem 0.4rem; justify-content: space-between; text-align: left; display: flex; align-items: center; background: #0f172a; border-color: #334155; height: 31px;">
+                                    <span id="labelStatusComprasSelecionados" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                        @php
+                                            $reqStatusPcp = request('f_status_pcp');
+                                            $selStatusPcpArr = $reqStatusPcp ? array_map('trim', explode(',', $reqStatusPcp)) : [];
+                                        @endphp
+                                        @if(empty($selStatusPcpArr))
+                                            Status: Todos
+                                        @elseif(count($selStatusPcpArr) == 1)
+                                            {{ $selStatusPcpArr[0] }}
+                                        @else
+                                            {{ count($selStatusPcpArr) }} Selecionados
+                                        @endif
+                                    </span>
+                                    <span style="font-size: 0.55rem; margin-left: 2px;">▼</span>
+                                </button>
+                                <div id="dropdownMenuFilterStatusCompras" 
+                                     style="display: none; position: absolute; top: 100%; left: 0; min-width: 210px; background: #1e293b; border: 1px solid #475569; border-radius: 0.5rem; padding: 0.65rem; z-index: 1000; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);">
+                                    <div style="font-size: 0.725rem; font-weight: 700; color: #94a3b8; margin-bottom: 0.4rem; border-bottom: 1px solid #334155; padding-bottom: 0.3rem; display: flex; justify-content: space-between; align-items: center;">
+                                        <span>STATUS PCP</span>
+                                        <label style="font-weight: 400; cursor: pointer; color: #6366f1;">
+                                            <input type="checkbox" id="chkFilterStatusComprasAll" onchange="toggleSelectAllStatusCompras(this)" {{ empty($selStatusPcpArr) ? 'checked' : '' }} style="margin-right: 3px;"> Todos
+                                        </label>
+                                    </div>
+                                    @php
+                                        $statusOpcoesCompras = ['FALTA', 'SEPARADO', 'RETIRADO', 'FABRICA', 'FABRICAR INTERNO KANBAN'];
+                                    @endphp
+                                    @foreach($statusOpcoesCompras as $stOpt)
+                                        <label style="display: flex; align-items: center; font-size: 0.75rem; margin-bottom: 0.35rem; cursor: pointer; color: #e2e8f0;">
+                                            <input type="checkbox" class="chk-status-compras-option" value="{{ $stOpt }}" {{ (empty($selStatusPcpArr) || in_array($stOpt, $selStatusPcpArr)) ? 'checked' : '' }} onchange="atualizarStatusComprasLabel()" style="margin-right: 6px;">
+                                            {{ $stOpt }}
+                                        </label>
+                                    @endforeach
+                                    <div style="margin-top: 0.5rem; padding-top: 0.4rem; border-top: 1px solid #334155; display: flex; justify-content: flex-end;">
+                                        <button type="button" class="btn btn-primary" style="padding: 0.2rem 0.6rem; font-size: 0.7rem; background-color: #059669; border-color: #059669;" onclick="aplicarFiltroStatusCompras()">
+                                            ✓ Aplicar
+                                        </button>
+                                    </div>
+                                </div>
+                                <input type="hidden" name="f_status_pcp" id="input_f_status_pcp" value="{{ request('f_status_pcp') }}" form="formFilterCompras">
+                            </div>
                         </th>
                         <th class="col-pv">
                             <input type="text" name="f_pv" value="{{ request('f_pv') }}" class="filter-input" placeholder="Multi: 005860..." form="formFilterCompras" onchange="document.getElementById('formFilterCompras').submit()">
@@ -467,6 +512,53 @@ function solicitarSalvarSingleCompra(estoqueId) {
     form.submit();
 }
 
+// Gestor de Seleção Múltipla do Filtro Status PCP em Compras
+function toggleMenuFilterStatusCompras() {
+    const el = document.getElementById('dropdownMenuFilterStatusCompras');
+    if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function toggleSelectAllStatusCompras(masterChk) {
+    const checkboxes = document.querySelectorAll('.chk-status-compras-option');
+    checkboxes.forEach(chk => chk.checked = masterChk.checked);
+    atualizarStatusComprasLabel();
+}
+
+function atualizarStatusComprasLabel() {
+    const checkboxes = document.querySelectorAll('.chk-status-compras-option:checked');
+    const totalChk = document.querySelectorAll('.chk-status-compras-option').length;
+    const values = Array.from(checkboxes).map(c => c.value);
+    const label = document.getElementById('labelStatusComprasSelecionados');
+    const masterChk = document.getElementById('chkFilterStatusComprasAll');
+
+    if (!label) return;
+
+    if (values.length === totalChk || values.length === 0) {
+        label.innerText = 'Status: Todos';
+        if (masterChk) masterChk.checked = (values.length === totalChk);
+    } else {
+        if (masterChk) masterChk.checked = false;
+        if (values.length === 1) label.innerText = values[0];
+        else label.innerText = values.length + ' Selecionados';
+    }
+}
+
+function aplicarFiltroStatusCompras() {
+    const checkboxes = document.querySelectorAll('.chk-status-compras-option:checked');
+    const totalChk = document.querySelectorAll('.chk-status-compras-option').length;
+    const values = Array.from(checkboxes).map(c => c.value);
+    const inputHidden = document.getElementById('input_f_status_pcp');
+
+    if (values.length === totalChk || values.length === 0) {
+        inputHidden.value = '';
+    } else {
+        inputHidden.value = values.join(',');
+    }
+    const menu = document.getElementById('dropdownMenuFilterStatusCompras');
+    if (menu) menu.style.display = 'none';
+    document.getElementById('formFilterCompras').submit();
+}
+
 // Gestor de Visibilidade de Colunas (Excel) para Compras
 const COMPRAS_COLUNAS_PADRAO = {
     'col-status-pcp': true,
@@ -487,9 +579,14 @@ function toggleMenuColunasCompras() {
 }
 
 document.addEventListener('click', function(e) {
-    const menu = document.getElementById('dropdownMenuColunasCompras');
-    if (menu && !menu.contains(e.target) && !e.target.closest('.dropdown')) {
-        menu.style.display = 'none';
+    const menuCol = document.getElementById('dropdownMenuColunasCompras');
+    if (menuCol && !menuCol.contains(e.target) && !e.target.closest('.dropdown')) {
+        menuCol.style.display = 'none';
+    }
+    const menuSt = document.getElementById('dropdownMenuFilterStatusCompras');
+    const btnSt = document.getElementById('btnFilterStatusCompras');
+    if (menuSt && btnSt && !menuSt.contains(e.target) && !btnSt.contains(e.target)) {
+        menuSt.style.display = 'none';
     }
 });
 
@@ -511,6 +608,7 @@ function inicializarColunasCompras() {
         if (chk) chk.checked = isChecked;
         toggleColunaCompras(colClass, isChecked);
     });
+    atualizarStatusComprasLabel();
 }
 
 document.addEventListener('DOMContentLoaded', inicializarColunasCompras);

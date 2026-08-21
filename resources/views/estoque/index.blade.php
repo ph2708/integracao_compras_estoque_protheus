@@ -24,14 +24,34 @@
     </div>
 
     <div style="display: flex; flex-wrap: wrap; gap: 0.85rem; margin-bottom: 1.25rem; align-items: flex-end;">
-        <div class="form-group" style="margin-bottom: 0; min-width: 150px; flex: 1;">
-            <label class="form-label">Filial (C2_FILIAL)</label>
-            <select id="consulta_filial" class="form-select">
-                <option value="">-- Todas Filiais --</option>
-                @foreach($filiaisProtheus as $fil)
-                    <option value="{{ $fil }}" {{ $fil == '22' ? 'selected' : '' }}>Filial {{ $fil }}</option>
-                @endforeach
-            </select>
+        <div class="form-group" style="margin-bottom: 0; min-width: 180px; flex: 1.2; position: relative;">
+            <label class="form-label">Filiais (C2_FILIAL)</label>
+            <div class="dropdown" style="position: relative;">
+                <button type="button" 
+                        class="btn btn-secondary dropdown-toggle" 
+                        id="btnDropdownFiliais"
+                        onclick="toggleMenuFiliaisProtheus()" 
+                        style="width: 100%; text-align: left; justify-content: space-between; font-size: 0.8rem; padding: 0.45rem 0.65rem; display: flex; align-items: center;">
+                    <span id="labelFiliaisSelecionadas">🏢 Todas as Filiais</span>
+                    <span style="font-size: 0.65rem;">▼</span>
+                </button>
+                <div id="dropdownMenuFiliaisProtheus" 
+                     class="dropdown-menu" 
+                     style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: #1e293b; border: 1px solid #475569; border-radius: 0.5rem; padding: 0.75rem; z-index: 100; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5); max-height: 250px; overflow-y: auto; margin-top: 4px;">
+                    <div style="font-size: 0.75rem; font-weight: 700; color: #94a3b8; margin-bottom: 0.5rem; border-bottom: 1px solid #334155; padding-bottom: 0.35rem; display: flex; justify-content: space-between; align-items: center;">
+                        <span>SELECIONAR FILIAIS</span>
+                        <label style="font-weight: 400; cursor: pointer; color: #6366f1;">
+                            <input type="checkbox" id="chkFilialSelectAll" onchange="toggleSelectAllFiliais(this)" checked style="margin-right: 3px;"> Todas
+                        </label>
+                    </div>
+                    @foreach($filiaisProtheus as $fil)
+                        <label style="display: flex; align-items: center; font-size: 0.8rem; margin-bottom: 0.35rem; cursor: pointer; color: #e2e8f0;">
+                            <input type="checkbox" class="chk-filial-option" value="{{ $fil }}" checked onchange="atualizarLabelFiliais()" style="margin-right: 8px;">
+                            Filial {{ $fil }}
+                        </label>
+                    @endforeach
+                </div>
+            </div>
         </div>
 
         <div class="form-group" style="margin-bottom: 0; min-width: 250px; flex: 3;">
@@ -451,7 +471,11 @@ function abrirModalConsultaProtheus() {
 
 function buscarItensProtheus() {
     const pedido = document.getElementById('consulta_pedido').value.trim();
-    const filial = document.getElementById('consulta_filial').value;
+    const selectedFiliaisArr = getFiliaisSelecionadasArray();
+    const totalFiliaisCount = document.querySelectorAll('.chk-filial-option').length;
+    const filialParam = (selectedFiliaisArr.length === 0 || selectedFiliaisArr.length === totalFiliaisCount) 
+        ? null 
+        : selectedFiliaisArr.join(',');
     const statusLabel = document.getElementById('resultado_status_label');
     const tbody = document.getElementById('tbody_protheus_items');
     const formBatch = document.getElementById('formImportBatch');
@@ -472,7 +496,7 @@ function buscarItensProtheus() {
             'Content-Type': 'application/json',
             'X-CSRF-TOKEN': '{{ csrf_token() }}'
         },
-        body: JSON.stringify({ pedido: pedido, filial: filial })
+        body: JSON.stringify({ pedido: pedido, filial: filialParam })
     })
     .then(response => response.json())
     .then(data => {
@@ -646,6 +670,50 @@ document.getElementById('btnConfirmarSaveAction').addEventListener('click', func
     form.submit();
 });
 
+// Gestor de Seleção Múltipla de Filiais Protheus
+function toggleMenuFiliaisProtheus() {
+    const el = document.getElementById('dropdownMenuFiliaisProtheus');
+    if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function toggleSelectAllFiliais(masterChk) {
+    const checkboxes = document.querySelectorAll('.chk-filial-option');
+    checkboxes.forEach(chk => chk.checked = masterChk.checked);
+    atualizarLabelFiliais();
+}
+
+function getFiliaisSelecionadasArray() {
+    const checkboxes = document.querySelectorAll('.chk-filial-option:checked');
+    const values = [];
+    checkboxes.forEach(chk => values.push(chk.value));
+    return values;
+}
+
+function atualizarLabelFiliais() {
+    const totalChk = document.querySelectorAll('.chk-filial-option').length;
+    const selectedChk = document.querySelectorAll('.chk-filial-option:checked');
+    const label = document.getElementById('labelFiliaisSelecionadas');
+    const masterChk = document.getElementById('chkFilialSelectAll');
+
+    if (!label) return;
+
+    if (selectedChk.length === totalChk) {
+        label.innerText = '🏢 Todas as Filiais';
+        if (masterChk) masterChk.checked = true;
+    } else if (selectedChk.length === 0) {
+        label.innerText = '🏢 Nenhum (Todas)';
+        if (masterChk) masterChk.checked = false;
+    } else {
+        if (masterChk) masterChk.checked = false;
+        const vals = Array.from(selectedChk).map(c => c.value);
+        if (vals.length <= 2) {
+            label.innerText = '🏢 Filial ' + vals.join(', ');
+        } else {
+            label.innerText = `🏢 ${vals.length} Filiais Selecionadas`;
+        }
+    }
+}
+
 // Gestor de Visibilidade de Colunas (Excel) para Estoque
 const ESTOQUE_COLUNAS_PADRAO = {
     'col-status-pcp-atual': true,
@@ -666,9 +734,14 @@ function toggleMenuColunasEstoque() {
 }
 
 document.addEventListener('click', function(e) {
-    const menu = document.getElementById('dropdownMenuColunasEstoque');
-    if (menu && !menu.contains(e.target) && !e.target.closest('.dropdown')) {
-        menu.style.display = 'none';
+    const menuCol = document.getElementById('dropdownMenuColunasEstoque');
+    if (menuCol && !menuCol.contains(e.target) && !e.target.closest('.dropdown')) {
+        menuCol.style.display = 'none';
+    }
+    const menuFil = document.getElementById('dropdownMenuFiliaisProtheus');
+    const btnFil = document.getElementById('btnDropdownFiliais');
+    if (menuFil && btnFil && !menuFil.contains(e.target) && !btnFil.contains(e.target)) {
+        menuFil.style.display = 'none';
     }
 });
 
@@ -690,6 +763,7 @@ function inicializarColunasEstoque() {
         if (chk) chk.checked = isChecked;
         toggleColunaEstoque(colClass, isChecked);
     });
+    atualizarLabelFiliais();
 }
 
 document.addEventListener('DOMContentLoaded', inicializarColunasEstoque);

@@ -84,9 +84,15 @@ def get_pedido_items(c2_pedido, filial=None):
     search_obs = f"%{c2_pedido}%"
     params = [c2_pedido, search_obs]
 
-    if filial:
-        sql += " AND RTRIM(S.C2_FILIAL) = %s"
-        params.append(filial)
+    if filial and filial != 'null':
+        filiais_list = [f.strip() for f in filial.split(',') if f and f.strip()]
+        if len(filiais_list) == 1:
+            sql += " AND RTRIM(S.C2_FILIAL) = %s"
+            params.append(filiais_list[0])
+        elif len(filiais_list) > 1:
+            placeholders = ', '.join(['%s'] * len(filiais_list))
+            sql += f" AND RTRIM(S.C2_FILIAL) IN ({placeholders})"
+            params.extend(filiais_list)
 
     sql += " ORDER BY RTRIM(D.D4_OP), RTRIM(D.D4_COD)"
     cursor.execute(sql, params)

@@ -175,16 +175,18 @@ def get_ultimos_precos_batch(codigos_produtos):
     sql = f"""
     WITH RankedSC7 AS (
         SELECT 
-            RTRIM(C7_PRODUTO) AS C7_PRODUTO,
-            C7_PRECO,
-            RTRIM(C7_FORNECE) AS C7_FORNECE,
-            ROW_NUMBER() OVER(PARTITION BY RTRIM(C7_PRODUTO) ORDER BY C7_EMISSAO DESC, R_E_C_N_O_ DESC) as rn
-        FROM SC7010 WITH (NOLOCK)
-        WHERE D_E_L_E_T_ = ' ' 
-          AND RTRIM(C7_PRODUTO) IN ({placeholders})
-          AND C7_PRECO > 0
+            RTRIM(C7.C7_PRODUTO) AS C7_PRODUTO,
+            C7.C7_PRECO,
+            RTRIM(C7.C7_FORNECE) AS C7_FORNECE,
+            RTRIM(A2.A2_NOME) AS A2_NOME,
+            ROW_NUMBER() OVER(PARTITION BY RTRIM(C7.C7_PRODUTO) ORDER BY C7.C7_EMISSAO DESC, C7.R_E_C_N_O_ DESC) as rn
+        FROM SC7010 C7 WITH (NOLOCK)
+        LEFT JOIN SA2010 A2 WITH (NOLOCK) ON RTRIM(C7.C7_FORNECE) = RTRIM(A2.A2_COD) AND A2.D_E_L_E_T_ = ' '
+        WHERE C7.D_E_L_E_T_ = ' ' 
+          AND RTRIM(C7.C7_PRODUTO) IN ({placeholders})
+          AND C7.C7_PRECO > 0
     )
-    SELECT C7_PRODUTO, C7_PRECO, C7_FORNECE
+    SELECT C7_PRODUTO, C7_PRECO, C7_FORNECE, A2_NOME
     FROM RankedSC7
     WHERE rn = 1
     """
@@ -197,16 +199,22 @@ def get_ultimos_precos_batch(codigos_produtos):
     for r in rows:
         cod = (r.get('C7_PRODUTO') or '').strip()
         preco = float(r.get('C7_PRECO') or 0.0)
-        fornece = (r.get('C7_FORNECE') or '').strip()
+        fornece_cod = (r.get('C7_FORNECE') or '').strip()
+        fornece_nome = (r.get('A2_NOME') or '').strip()
+
+        fornece_full = f"{fornece_cod} - {fornece_nome}" if (fornece_cod and fornece_nome) else fornece_cod
+
         result[cod] = {
             'preco': preco,
-            'fornecedor': fornece
+            'valor_unitario': preco,
+            'fornecedor': fornece_full,
+            'codigo_fornecedor': fornece_full
         }
     return result
 
 def get_ultimo_preco_fornecedor(codigo_produto):
     res = get_ultimos_precos_batch([codigo_produto])
-    return res.get(codigo_produto.strip(), {'preco': 0.0, 'fornecedor': ''})
+    return res.get(codigo_produto.strip(), {'preco': 0.0, 'valor_unitario': 0.0, 'fornecedor': '', 'codigo_fornecedor': ''})
 
 if __name__ == '__main__':
     command = sys.argv[1] if len(sys.argv) > 1 else ''

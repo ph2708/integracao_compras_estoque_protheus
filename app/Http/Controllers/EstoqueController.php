@@ -145,13 +145,14 @@ class EstoqueController extends Controller
             // Pré-popula os dados financeiros de compras mantendo o Pedido de Compra EM BRANCO por padrão
             $prevCompra = $precosBatch[$itemData['codigo_produto']] ?? null;
             $valQtdComprar = max(0, $qtdOp - $qtdEstoque);
-            $valUnitario = floatval($prevCompra['valor_unitario'] ?? 0);
+            $valUnitario = floatval($prevCompra['valor_unitario'] ?? ($prevCompra['preco'] ?? 0));
+            $codFornecedor = $prevCompra['codigo_fornecedor'] ?? ($prevCompra['fornecedor'] ?? null);
 
             CompraItem::firstOrCreate(
                 ['estoque_item_id' => $estoqueItem->id],
                 [
                     'pedido_compra' => null, // Mantem em branco conforme solicitado
-                    'codigo_fornecedor' => $prevCompra['codigo_fornecedor'] ?? null,
+                    'codigo_fornecedor' => $codFornecedor,
                     'valor_unitario' => $valUnitario,
                     'ipi' => 0,
                     'frete' => 0,
@@ -193,12 +194,13 @@ class EstoqueController extends Controller
         // Busca prévia de valor unitário e fornecedor na SC7010
         $prevCompra = $this->protheusService->getUltimoPrecoFornecedor($validated['codigo_produto']);
         $valQtdComprar = max(0, $qtdOp - $qtdEstoque);
-        $valUnitario = floatval($prevCompra['valor_unitario'] ?? 0);
+        $valUnitario = floatval($prevCompra['valor_unitario'] ?? ($prevCompra['preco'] ?? 0));
+        $codFornecedor = $prevCompra['codigo_fornecedor'] ?? ($prevCompra['fornecedor'] ?? null);
 
         CompraItem::create([
             'estoque_item_id' => $estoqueItem->id,
             'pedido_compra' => null,
-            'codigo_fornecedor' => $prevCompra['codigo_fornecedor'] ?? null,
+            'codigo_fornecedor' => $codFornecedor,
             'valor_unitario' => $valUnitario,
             'ipi' => 0,
             'frete' => 0,

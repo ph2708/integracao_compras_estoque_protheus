@@ -154,6 +154,7 @@
             border-collapse: collapse;
             text-align: left;
             font-size: 0.8rem;
+            table-layout: auto;
         }
 
         th {
@@ -169,6 +170,12 @@
             padding: 0.7rem 0.85rem;
             border-bottom: 1px solid var(--border-color);
             vertical-align: middle;
+            white-space: nowrap;
+        }
+
+        /* Auto-fit flexível para colunas de texto longo */
+        td.col-descricao, td.col-cliente, td.col-desc-longa, td.col-produto-pai, td.col-obs-estoque {
+            white-space: normal;
         }
 
         tr:hover td {

@@ -189,6 +189,9 @@
                         <th class="col-pv">
                             <input type="text" name="f_pv" value="{{ request('f_pv') }}" class="filter-input" placeholder="Multi: 005860..." form="formFilterCompras" onchange="document.getElementById('formFilterCompras').submit()">
                         </th>
+                        <th class="col-op">
+                            <input type="text" name="f_op" value="{{ request('f_op') }}" class="filter-input" placeholder="Multi: 018662..." form="formFilterCompras" onchange="document.getElementById('formFilterCompras').submit()">
+                        </th>
                         <th class="col-cliente">
                             <input type="text" name="f_cliente" value="{{ request('f_cliente') }}" class="filter-input" placeholder="Multi: A, B..." form="formFilterCompras" onchange="document.getElementById('formFilterCompras').submit()">
                         </th>

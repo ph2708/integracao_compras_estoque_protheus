@@ -3,6 +3,21 @@ import json
 import pymssql
 import os
 
+def load_env_file():
+    env_path = os.path.join(os.path.dirname(__file__), '../../.env')
+    if os.path.exists(env_path):
+        with open(env_path, 'r', encoding='utf-8', errors='ignore') as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith('#') and '=' in line:
+                    k, v = line.split('=', 1)
+                    k = k.strip()
+                    v = v.strip().strip("'\"")
+                    if k not in os.environ:
+                        os.environ[k] = v
+
+load_env_file()
+
 DB_HOST = os.getenv('DB_PROTHEUS_HOST', '177.221.240.40')
 DB_PORT = int(os.getenv('DB_PROTHEUS_PORT', 14333))
 DB_NAME = os.getenv('DB_PROTHEUS_DATABASE', 'MP_12')
@@ -62,7 +77,7 @@ def get_pedido_items(c2_pedido, filial=None):
     """
     Consulta componentes/matérias-primas requisitados da OP na SD4010 + SC2010
     EXCLUINDO produtos do tipo PI (Produto Intermediário) e PA (Produto Acabado) na SB1010 (B1_TIPO NOT IN ('PI', 'PA'))
-    Retorna B1_DESC (Descrição Curta), B5_CEME (Descrição Longa SB5010) e PRODUTO_PAI concatenado
+    Deduplicado por Filial, OP e Código de Produto.
     """
     conn = get_connection()
     cursor = conn.cursor(as_dict=True)
@@ -78,11 +93,17 @@ def get_pedido_items(c2_pedido, filial=None):
         RTRIM(B.B1_TIPO) AS B1_TIPO,
         D.D4_QTDEORI AS QUANTIDADE,
         RTRIM(S.C2_PRODUTO) + ' - ' + RTRIM(ISNULL(B_PAI.B1_DESC, '')) AS PRODUTO_PAI
-    FROM SD4010 D
-    INNER JOIN SC2010 S ON RTRIM(D.D4_OP) LIKE RTRIM(S.C2_NUM) + '%' AND S.D_E_L_E_T_ = ' '
-    LEFT JOIN SB1010 B ON RTRIM(D.D4_COD) = RTRIM(B.B1_COD) AND B.D_E_L_E_T_ = ' '
-    LEFT JOIN SB5010 B5 ON RTRIM(D.D4_COD) = RTRIM(B5.B5_COD) AND B5.D_E_L_E_T_ = ' '
-    LEFT JOIN SB1010 B_PAI ON RTRIM(S.C2_PRODUTO) = RTRIM(B_PAI.B1_COD) AND B_PAI.D_E_L_E_T_ = ' '
+    FROM SD4010 D WITH (NOLOCK)
+    INNER JOIN SC2010 S WITH (NOLOCK) 
+        ON RTRIM(D.D4_FILIAL) = RTRIM(S.C2_FILIAL)
+       AND (
+           RTRIM(D.D4_OP) = RTRIM(S.C2_NUM) + RTRIM(S.C2_ITEM) + RTRIM(S.C2_SEQUEN)
+           OR RTRIM(D.D4_OP) LIKE RTRIM(S.C2_NUM) + '%'
+       )
+       AND S.D_E_L_E_T_ = ' '
+    LEFT JOIN SB1010 B WITH (NOLOCK) ON RTRIM(D.D4_COD) = RTRIM(B.B1_COD) AND B.D_E_L_E_T_ = ' '
+    LEFT JOIN SB5010 B5 WITH (NOLOCK) ON RTRIM(D.D4_COD) = RTRIM(B5.B5_COD) AND B5.D_E_L_E_T_ = ' '
+    LEFT JOIN SB1010 B_PAI WITH (NOLOCK) ON RTRIM(S.C2_PRODUTO) = RTRIM(B_PAI.B1_COD) AND B_PAI.D_E_L_E_T_ = ' '
     WHERE D.D_E_L_E_T_ = ' ' 
       AND (RTRIM(S.C2_PEDIDO) = %s OR RTRIM(S.C2_OBS) LIKE %s)
       AND (B.B1_TIPO IS NULL OR RTRIM(B.B1_TIPO) NOT IN ('PI', 'PA'))
@@ -105,28 +126,38 @@ def get_pedido_items(c2_pedido, filial=None):
     rows = cursor.fetchall()
     conn.close()
 
-    formatted_rows = []
+    unique_items = {}
     for r in rows:
         b1_tipo = (r.get('B1_TIPO') or '').strip().upper()
         if b1_tipo in ['PI', 'PA']:
             continue
 
+        filial_val = (r.get('C2_FILIAL') or '').strip()
+        op_val = (r.get('D4_OP') or '').strip()
+        cod_val = (r.get('C2_PRODUTO') or '').strip()
+
+        if not cod_val:
+            continue
+
         descCurta = (r.get('B1_DESC') or '').strip()
         descLonga = (r.get('B5_CEME') or descCurta).strip()
 
-        formatted_rows.append({
-            'filial': (r.get('C2_FILIAL') or '').strip(),
-            'pedido': (r.get('C2_PEDIDO') or '').strip(),
-            'op': (r.get('D4_OP') or '').strip(),
-            'codigo_produto': (r.get('C2_PRODUTO') or '').strip(),
-            'descricao': descCurta,
-            'descricao_longa': descLonga,
-            'produto_pai': (r.get('PRODUTO_PAI') or '').strip(),
-            'cliente_obs': (r.get('C2_OBS') or '').strip(),
-            'quantidade': float(r.get('QUANTIDADE') or 1.0)
-        })
+        key = (filial_val, op_val, cod_val)
 
-    return formatted_rows
+        if key not in unique_items:
+            unique_items[key] = {
+                'filial': filial_val,
+                'pedido': (r.get('C2_PEDIDO') or '').strip(),
+                'op': op_val,
+                'codigo_produto': cod_val,
+                'descricao': descCurta,
+                'descricao_longa': descLonga,
+                'produto_pai': (r.get('PRODUTO_PAI') or '').strip(),
+                'cliente_obs': (r.get('C2_OBS') or '').strip(),
+                'quantidade': float(r.get('QUANTIDADE') or 1.0)
+            }
+
+    return list(unique_items.values())
 
 def get_ultimos_precos_batch(codigos_produtos):
     if not codigos_produtos:

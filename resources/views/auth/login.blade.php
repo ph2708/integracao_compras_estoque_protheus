@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - PCP & Compras | TOTVS Protheus</title>
+    <title>PlanFacto - PCP & Compras | Login</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -56,7 +56,7 @@
         }
 
         .brand-title {
-            font-size: 1.4rem;
+            font-size: 1.6rem;
             font-weight: 700;
             color: var(--text-main);
         }
@@ -140,8 +140,8 @@
     <div class="login-card">
         <div class="brand-header">
             <div class="brand-logo">⚡</div>
-            <div class="brand-title">PCP & Compras</div>
-            <div class="brand-subtitle">TOTVS Protheus - Portal de Acesso Corporativo</div>
+            <div class="brand-title">PlanFacto</div>
+            <div class="brand-subtitle">PCP & Compras - Portal de Acesso Corporativo</div>
         </div>
 
         @if($errors->any())

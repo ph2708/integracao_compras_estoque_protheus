@@ -19,16 +19,13 @@ class DashboardController extends Controller
         $searchStatusPagamento = $request->get('status_pagamento');
         $searchCliente = $request->get('search_cliente');
 
-        // Query Base Estoque
-        $estoqueQuery = EstoqueItem::query();
+        // Query Base Estoque (Sem filtro de status PCP para permitir exibição correta dos cards de distribuição)
+        $estoqueQueryBase = EstoqueItem::query();
         if ($searchPedido) {
-            $estoqueQuery->where('pedido', 'like', '%' . $searchPedido . '%');
-        }
-        if ($searchStatusPcp) {
-            $estoqueQuery->where('status', $searchStatusPcp);
+            $estoqueQueryBase->where('pedido', 'like', '%' . $searchPedido . '%');
         }
         if ($searchStatusPagamento) {
-            $estoqueQuery->whereHas('compraItem', function ($q) use ($searchStatusPagamento) {
+            $estoqueQueryBase->whereHas('compraItem', function ($q) use ($searchStatusPagamento) {
                 if (in_array($searchStatusPagamento, ['PA', 'PAG. ANTECIPADO', 'PAGAMENTO ANTECIPADO', 'ANTECIPADO'])) {
                     $q->whereIn('status_pagamento', ['PA', 'PAG. ANTECIPADO', 'PAGAMENTO ANTECIPADO', 'ANTECIPADO']);
                 } else {
@@ -39,12 +36,18 @@ class DashboardController extends Controller
         if ($searchCliente) {
             $terms = array_filter(array_map('trim', explode(',', $searchCliente)));
             if (!empty($terms)) {
-                $estoqueQuery->where(function ($q) use ($terms) {
+                $estoqueQueryBase->where(function ($q) use ($terms) {
                     foreach ($terms as $term) {
                         $q->orWhere('cliente_obs', 'like', '%' . $term . '%');
                     }
                 });
             }
+        }
+
+        // Query Estoque Filtrada (Inclui filtro de status PCP se fornecido pelo usuário)
+        $estoqueQuery = (clone $estoqueQueryBase);
+        if ($searchStatusPcp) {
+            $estoqueQuery->where('status', $searchStatusPcp);
         }
 
         // Query Base Compras
@@ -81,9 +84,9 @@ class DashboardController extends Controller
 
         // Métricas quantitativas de estoque
         $totalEstoque = (clone $estoqueQuery)->count();
-        $totalFalta = (clone $estoqueQuery)->where('status', 'FALTA')->count();
-        $totalFabrica = (clone $estoqueQuery)->whereIn('status', ['FABRICA', 'FABRICAR INTERNO KANBAN'])->count();
-        $totalSeparado = (clone $estoqueQuery)->where('status', 'SEPARADO')->count();
+        $totalFalta = (clone $estoqueQueryBase)->where('status', 'FALTA')->count();
+        $totalFabrica = (clone $estoqueQueryBase)->whereIn('status', ['FABRICA', 'FABRICAR INTERNO KANBAN'])->count();
+        $totalSeparado = (clone $estoqueQueryBase)->where('status', 'SEPARADO')->count();
 
         // Métricas financeiras (R$)
         $valorTotalGeral = floatval((clone $comprasQuery)->sum('valor_total') ?? 0);
@@ -92,21 +95,20 @@ class DashboardController extends Controller
         $valorTotalPago = floatval((clone $comprasQuery)->where('status_pagamento', 'PAGO')->sum('valor_total') ?? 0);
         $valorTotalAntecipado = floatval((clone $comprasQuery)->whereIn('status_pagamento', ['PA', 'PAG. ANTECIPADO', 'PAGAMENTO ANTECIPADO', 'ANTECIPADO'])->sum('valor_total') ?? 0);
 
-        // Opção B: Valor Bruto Total dos Itens com Status SEPARADO (Qtd OP * Valor Unitário)
+        // Valor Total dos Itens com Status SEPARADO
         $valorTotalSeparado = floatval(
-            (clone $estoqueQuery)->where('status', 'SEPARADO')
+            (clone $estoqueQueryBase)->where('status', 'SEPARADO')
                 ->join('compras_items', 'estoque_items.id', '=', 'compras_items.estoque_item_id')
-                ->select(DB::raw('SUM(estoque_items.quantidade * compras_items.valor_unitario) as total'))
-                ->value('total') ?? 0
+                ->sum('compras_items.valor_total') ?? 0
         );
 
         // Status PCP breakdown para Gráfico 1
         $statusEstoqueCounts = [
-            'FALTA' => (clone $estoqueQuery)->where('status', 'FALTA')->count(),
-            'SEPARADO' => (clone $estoqueQuery)->where('status', 'SEPARADO')->count(),
-            'RETIRADO' => (clone $estoqueQuery)->where('status', 'RETIRADO')->count(),
-            'FABRICA' => (clone $estoqueQuery)->where('status', 'FABRICA')->count(),
-            'KANBAN' => (clone $estoqueQuery)->where('status', 'FABRICAR INTERNO KANBAN')->count(),
+            'FALTA' => (clone $estoqueQueryBase)->where('status', 'FALTA')->count(),
+            'SEPARADO' => (clone $estoqueQueryBase)->where('status', 'SEPARADO')->count(),
+            'RETIRADO' => (clone $estoqueQueryBase)->where('status', 'RETIRADO')->count(),
+            'FABRICA' => (clone $estoqueQueryBase)->where('status', 'FABRICA')->count(),
+            'KANBAN' => (clone $estoqueQueryBase)->where('status', 'FABRICAR INTERNO KANBAN')->count(),
         ];
 
         // Status Pagamento breakdown em R$ para Gráfico 2

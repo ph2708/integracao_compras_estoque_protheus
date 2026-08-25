@@ -212,6 +212,25 @@ class ComprasController extends Controller
             $combinedItems = $combinedItems->filter(fn($i) => $this->matchMultiFilter($i['status_pagamento'], $request->f_status_pagamento, true));
         }
 
+        // Filtro por Intervalo de Valor Total (De / Até)
+        $fValorMin = $request->get('f_valor_min');
+        $fValorMax = $request->get('f_valor_max');
+
+        if ($fValorMin !== null && $fValorMin !== '') {
+            $minVal = floatval(str_replace(['R$', ' ', '.'], '', $fValorMin));
+            $minVal = floatval(str_replace(',', '.', $minVal));
+            $combinedItems = $combinedItems->filter(fn($i) => floatval($i['valor_total']) >= $minVal);
+        }
+        if ($fValorMax !== null && $fValorMax !== '') {
+            $maxVal = floatval(str_replace(['R$', ' ', '.'], '', $fValorMax));
+            $maxVal = floatval(str_replace(',', '.', $maxVal));
+            $combinedItems = $combinedItems->filter(fn($i) => floatval($i['valor_total']) <= $maxVal);
+        }
+
+        // Opções Únicas para Seletores Estilo Excel
+        $opcoesDescricao = EstoqueItem::whereNotNull('descricao')->where('descricao', '!=', '')->distinct()->pluck('descricao')->sort()->values();
+        $opcoesFornecedor = CompraItem::whereNotNull('codigo_fornecedor')->where('codigo_fornecedor', '!=', '')->distinct()->pluck('codigo_fornecedor')->sort()->values();
+
         // Subtotais e Métricas Dinâmicas do Filtro Atual (Calculado sobre Quantidade a Comprar + IPI + Frete)
         $totalItensFiltro = $combinedItems->count();
         $subtotalValorFiltro = $combinedItems->sum(fn($i) => floatval($i['valor_total']));
@@ -230,7 +249,19 @@ class ComprasController extends Controller
 
         $filiaisProtheus = $this->protheusService->getFiliais();
 
-        return view('compras.index', compact('paginatedItems', 'filiaisProtheus', 'searchPv', 'searchFilial', 'totalItensFiltro', 'subtotalValorFiltro', 'subtotalQtdComprar'));
+        return view('compras.index', compact(
+            'paginatedItems',
+            'filiaisProtheus',
+            'searchPv',
+            'searchFilial',
+            'totalItensFiltro',
+            'subtotalValorFiltro',
+            'subtotalQtdComprar',
+            'opcoesDescricao',
+            'opcoesFornecedor',
+            'fValorMin',
+            'fValorMax'
+        ));
     }
 
     /**

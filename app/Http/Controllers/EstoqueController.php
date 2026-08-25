@@ -72,7 +72,10 @@ class EstoqueController extends Controller
             $filiaisProtheus = ['01', '02', '03', '04', '05', '10', '15', '20', '22', '25', '30'];
         }
 
-        return view('estoque.index', compact('items', 'filiaisProtheus'));
+        $opcoesDescricao = EstoqueItem::whereNotNull('descricao')->where('descricao', '!=', '')->distinct()->pluck('descricao')->sort()->values();
+        $fDescricao = $request->f_descricao;
+
+        return view('estoque.index', compact('items', 'filiaisProtheus', 'opcoesDescricao', 'fDescricao'));
     }
 
     /**

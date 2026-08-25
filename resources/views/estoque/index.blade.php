@@ -344,7 +344,45 @@
                             <input type="text" name="f_produto" value="{{ request('f_produto') }}" class="filter-input" placeholder="Multi: 6164, 1050..." form="formFilterEstoque" onchange="document.getElementById('formFilterEstoque').submit()">
                         </th>
                         <th class="col-descricao">
-                            <input type="text" name="f_descricao" value="{{ request('f_descricao') }}" class="filter-input" placeholder="Multi: CABO, CHAVE..." form="formFilterEstoque" onchange="document.getElementById('formFilterEstoque').submit()">
+                            <div class="dropdown" style="position: relative; width: 100%;">
+                                <button type="button" 
+                                        class="btn btn-secondary dropdown-toggle" 
+                                        id="btnFilterDescricaoEstoque"
+                                        onclick="toggleMenuFilterDescricaoEstoque()" 
+                                        style="width: 100%; font-size: 0.725rem; padding: 0.25rem 0.4rem; justify-content: space-between; text-align: left; display: flex; align-items: center; background: #0f172a; border-color: #334155; height: 31px;">
+                                    <span id="labelDescricaoEstoqueSelecionadas" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                        @if(request('f_descricao'))
+                                            ✏️ {{ request('f_descricao') }}
+                                        @else
+                                            🔍 Todas as Descrições
+                                        @endif
+                                    </span>
+                                    <span style="font-size: 0.65rem;">▼</span>
+                                </button>
+
+                                <div id="dropdownMenuFilterDescricaoEstoque" 
+                                     style="display: none; position: absolute; top: 100%; left: 0; min-width: 260px; max-width: 320px; background: #0f172a; border: 1px solid #334155; border-radius: 0.5rem; padding: 0.75rem; z-index: 1000; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.7);">
+                                    <div style="margin-bottom: 0.5rem;">
+                                        <input type="text" id="searchDescricaoEstoqueInput" placeholder="🔍 Digite para buscar..." onkeyup="filtrarListaDescricaoEstoque()" style="width: 100%; font-size: 0.75rem; padding: 0.3rem 0.5rem; background: #1e293b; border: 1px solid #475569; color: #f8fafc; border-radius: 0.25rem;">
+                                    </div>
+                                    <div style="font-size: 0.75rem; font-weight: 700; color: #94a3b8; margin-bottom: 0.4rem; border-bottom: 1px solid #334155; padding-bottom: 0.3rem; display: flex; justify-content: space-between; align-items: center;">
+                                        <span>SELECIONAR DESCRIÇÃO</span>
+                                        <button type="button" onclick="limparDescricaoEstoqueFiltro()" style="background: none; border: none; color: #f87171; font-size: 0.7rem; cursor: pointer;">Limpar</button>
+                                    </div>
+                                    <div id="listaDescricaoEstoqueItems" style="max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.35rem;">
+                                        @foreach($opcoesDescricao as $descOpt)
+                                            @php $isChk = in_array(strtolower($descOpt), array_map('strtolower', array_map('trim', explode(',', request('f_descricao', ''))))); @endphp
+                                            <label class="desc-item-label" style="display: flex; align-items: center; font-size: 0.78rem; cursor: pointer; color: #e2e8f0;">
+                                                <input type="checkbox" value="{{ $descOpt }}" class="chk-desc-option" onchange="aplicarFiltroDescricaoEstoque()" {{ $isChk ? 'checked' : '' }} style="margin-right: 6px;">
+                                                <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ $descOpt }}</span>
+                                            </label>
+                                        @endforeach
+                                    </div>
+                                    <div style="margin-top: 0.6rem; border-top: 1px solid #334155; padding-top: 0.4rem;">
+                                        <input type="text" name="f_descricao" id="inputManualFDescricao" value="{{ request('f_descricao') }}" class="filter-input" placeholder="Ou digite livre: CABO, CHAVE..." form="formFilterEstoque" onchange="document.getElementById('formFilterEstoque').submit()" style="font-size: 0.725rem;">
+                                    </div>
+                                </div>
+                            </div>
                         </th>
                         <th class="col-desc-longa" style="display: none;">
                             <input type="text" name="f_desc_longa" value="{{ request('f_desc_longa') }}" class="filter-input" placeholder="Multi: FLEXIVEL, ISOLADO..." form="formFilterEstoque" onchange="document.getElementById('formFilterEstoque').submit()">
@@ -840,20 +878,59 @@ function aplicarFiltroStatusEstoque() {
 
 document.addEventListener('click', function(e) {
     const menuCol = document.getElementById('dropdownMenuColunasEstoque');
-    if (menuCol && !menuCol.contains(e.target) && !e.target.closest('.dropdown')) {
-        menuCol.style.display = 'none';
-    }
+    const btnCol = document.getElementById('btnDropdownColunas');
     const menuFil = document.getElementById('dropdownMenuFiliaisProtheus');
     const btnFil = document.getElementById('btnDropdownFiliais');
+    const menuSt = document.getElementById('dropdownMenuFilterStatusEstoque');
+    const btnSt = document.getElementById('btnFilterStatusEstoque');
+    const menuDesc = document.getElementById('dropdownMenuFilterDescricaoEstoque');
+    const btnDesc = document.getElementById('btnFilterDescricaoEstoque');
+
+    if (menuCol && btnCol && !menuCol.contains(e.target) && !btnCol.contains(e.target)) {
+        menuCol.style.display = 'none';
+    }
     if (menuFil && btnFil && !menuFil.contains(e.target) && !btnFil.contains(e.target)) {
         menuFil.style.display = 'none';
     }
-    const menuSt = document.getElementById('dropdownMenuFilterStatusEstoque');
-    const btnSt = document.getElementById('btnFilterStatusEstoque');
     if (menuSt && btnSt && !menuSt.contains(e.target) && !btnSt.contains(e.target)) {
         menuSt.style.display = 'none';
     }
+    if (menuDesc && btnDesc && !menuDesc.contains(e.target) && !btnDesc.contains(e.target)) {
+        menuDesc.style.display = 'none';
+    }
 });
+
+function toggleMenuFilterDescricaoEstoque() {
+    const el = document.getElementById('dropdownMenuFilterDescricaoEstoque');
+    if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function filtrarListaDescricaoEstoque() {
+    const term = document.getElementById('searchDescricaoEstoqueInput').value.toLowerCase();
+    const items = document.querySelectorAll('#listaDescricaoEstoqueItems .desc-item-label');
+    items.forEach(it => {
+        const txt = it.innerText.toLowerCase();
+        it.style.display = txt.includes(term) ? 'flex' : 'none';
+    });
+}
+
+function aplicarFiltroDescricaoEstoque() {
+    const chks = document.querySelectorAll('.chk-desc-option:checked');
+    const vals = Array.from(chks).map(c => c.value);
+    const inputManual = document.getElementById('inputManualFDescricao');
+    if (inputManual) {
+        inputManual.value = vals.join(',');
+    }
+    document.getElementById('formFilterEstoque').submit();
+}
+
+function limparDescricaoEstoqueFiltro() {
+    const chks = document.querySelectorAll('.chk-desc-option');
+    chks.forEach(c => c.checked = false);
+    const inputManual = document.getElementById('inputManualFDescricao');
+    if (inputManual) inputManual.value = '';
+    document.getElementById('formFilterEstoque').submit();
+}
 
 function toggleColunaEstoque(colClass, isChecked) {
     const elements = document.querySelectorAll('.' + colClass);

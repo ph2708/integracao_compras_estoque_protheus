@@ -244,7 +244,45 @@
                             <input type="text" name="f_produto" value="{{ request('f_produto') }}" class="filter-input" placeholder="Multi: 6164, 1050..." form="formFilterCompras" onchange="document.getElementById('formFilterCompras').submit()">
                         </th>
                         <th class="col-descricao">
-                            <input type="text" name="f_descricao" value="{{ request('f_descricao') }}" class="filter-input" placeholder="Multi: CABO, CHAVE..." form="formFilterCompras" onchange="document.getElementById('formFilterCompras').submit()">
+                            <div class="dropdown" style="position: relative; width: 100%;">
+                                <button type="button" 
+                                        class="btn btn-secondary dropdown-toggle" 
+                                        id="btnFilterDescricaoCompras"
+                                        onclick="toggleMenuFilterDescricaoCompras()" 
+                                        style="width: 100%; font-size: 0.725rem; padding: 0.25rem 0.4rem; justify-content: space-between; text-align: left; display: flex; align-items: center; background: #0f172a; border-color: #334155; height: 31px;">
+                                    <span id="labelDescricaoComprasSelecionadas" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                        @if(request('f_descricao'))
+                                            ✏️ {{ request('f_descricao') }}
+                                        @else
+                                            🔍 Descrição
+                                        @endif
+                                    </span>
+                                    <span style="font-size: 0.65rem;">▼</span>
+                                </button>
+
+                                <div id="dropdownMenuFilterDescricaoCompras" 
+                                     style="display: none; position: absolute; top: 100%; left: 0; min-width: 260px; max-width: 320px; background: #0f172a; border: 1px solid #334155; border-radius: 0.5rem; padding: 0.75rem; z-index: 1000; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.7);">
+                                    <div style="margin-bottom: 0.5rem;">
+                                        <input type="text" id="searchDescricaoComprasInput" placeholder="🔍 Digite para buscar..." onkeyup="filtrarListaDescricaoCompras()" style="width: 100%; font-size: 0.75rem; padding: 0.3rem 0.5rem; background: #1e293b; border: 1px solid #475569; color: #f8fafc; border-radius: 0.25rem;">
+                                    </div>
+                                    <div style="font-size: 0.75rem; font-weight: 700; color: #94a3b8; margin-bottom: 0.4rem; border-bottom: 1px solid #334155; padding-bottom: 0.3rem; display: flex; justify-content: space-between; align-items: center;">
+                                        <span>SELECIONAR DESCRIÇÃO</span>
+                                        <button type="button" onclick="limparDescricaoComprasFiltro()" style="background: none; border: none; color: #f87171; font-size: 0.7rem; cursor: pointer;">Limpar</button>
+                                    </div>
+                                    <div id="listaDescricaoComprasItems" style="max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.35rem;">
+                                        @foreach($opcoesDescricao as $descOpt)
+                                            @php $isChk = in_array(strtolower($descOpt), array_map('strtolower', array_map('trim', explode(',', request('f_descricao', ''))))); @endphp
+                                            <label class="desc-item-label-compras" style="display: flex; align-items: center; font-size: 0.78rem; cursor: pointer; color: #e2e8f0;">
+                                                <input type="checkbox" value="{{ $descOpt }}" class="chk-desc-compras-option" onchange="aplicarFiltroDescricaoCompras()" {{ $isChk ? 'checked' : '' }} style="margin-right: 6px;">
+                                                <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ $descOpt }}</span>
+                                            </label>
+                                        @endforeach
+                                    </div>
+                                    <div style="margin-top: 0.6rem; border-top: 1px solid #334155; padding-top: 0.4rem;">
+                                        <input type="text" name="f_descricao" id="inputManualFDescricaoCompras" value="{{ request('f_descricao') }}" class="filter-input" placeholder="Ou digite livre..." form="formFilterCompras" onchange="document.getElementById('formFilterCompras').submit()" style="font-size: 0.725rem;">
+                                    </div>
+                                </div>
+                            </div>
                         </th>
                         <th class="col-desc-longa" style="display: none;">
                             <input type="text" name="f_desc_longa" value="{{ request('f_desc_longa') }}" class="filter-input" placeholder="Multi: FLEXIVEL..." form="formFilterCompras" onchange="document.getElementById('formFilterCompras').submit()">
@@ -257,7 +295,45 @@
                             <input type="text" name="f_pedido_compra" value="{{ request('f_pedido_compra') }}" class="filter-input" placeholder="Multi: PC1, PC2..." form="formFilterCompras" onchange="document.getElementById('formFilterCompras').submit()">
                         </th>
                         <th class="col-fornecedor">
-                            <input type="text" name="f_fornecedor" value="{{ request('f_fornecedor') }}" class="filter-input" placeholder="Multi: FORN A, FORN B..." form="formFilterCompras" onchange="document.getElementById('formFilterCompras').submit()">
+                            <div class="dropdown" style="position: relative; width: 100%;">
+                                <button type="button" 
+                                        class="btn btn-secondary dropdown-toggle" 
+                                        id="btnFilterFornecedorCompras"
+                                        onclick="toggleMenuFilterFornecedorCompras()" 
+                                        style="width: 100%; font-size: 0.725rem; padding: 0.25rem 0.4rem; justify-content: space-between; text-align: left; display: flex; align-items: center; background: #0f172a; border-color: #334155; height: 31px;">
+                                    <span id="labelFornecedorComprasSelecionadas" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                        @if(request('f_fornecedor'))
+                                            ✏️ {{ request('f_fornecedor') }}
+                                        @else
+                                            🔍 Fornecedor
+                                        @endif
+                                    </span>
+                                    <span style="font-size: 0.65rem;">▼</span>
+                                </button>
+
+                                <div id="dropdownMenuFilterFornecedorCompras" 
+                                     style="display: none; position: absolute; top: 100%; left: 0; min-width: 250px; max-width: 320px; background: #0f172a; border: 1px solid #334155; border-radius: 0.5rem; padding: 0.75rem; z-index: 1000; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.7);">
+                                    <div style="margin-bottom: 0.5rem;">
+                                        <input type="text" id="searchFornecedorComprasInput" placeholder="🔍 Digite para buscar..." onkeyup="filtrarListaFornecedorCompras()" style="width: 100%; font-size: 0.75rem; padding: 0.3rem 0.5rem; background: #1e293b; border: 1px solid #475569; color: #f8fafc; border-radius: 0.25rem;">
+                                    </div>
+                                    <div style="font-size: 0.75rem; font-weight: 700; color: #94a3b8; margin-bottom: 0.4rem; border-bottom: 1px solid #334155; padding-bottom: 0.3rem; display: flex; justify-content: space-between; align-items: center;">
+                                        <span>SELECIONAR FORNECEDOR</span>
+                                        <button type="button" onclick="limparFornecedorComprasFiltro()" style="background: none; border: none; color: #f87171; font-size: 0.7rem; cursor: pointer;">Limpar</button>
+                                    </div>
+                                    <div id="listaFornecedorComprasItems" style="max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.35rem;">
+                                        @foreach($opcoesFornecedor as $fornOpt)
+                                            @php $isFornChk = in_array(strtolower($fornOpt), array_map('strtolower', array_map('trim', explode(',', request('f_fornecedor', ''))))); @endphp
+                                            <label class="forn-item-label-compras" style="display: flex; align-items: center; font-size: 0.78rem; cursor: pointer; color: #e2e8f0;">
+                                                <input type="checkbox" value="{{ $fornOpt }}" class="chk-forn-compras-option" onchange="aplicarFiltroFornecedorCompras()" {{ $isFornChk ? 'checked' : '' }} style="margin-right: 6px;">
+                                                <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ $fornOpt }}</span>
+                                            </label>
+                                        @endforeach
+                                    </div>
+                                    <div style="margin-top: 0.6rem; border-top: 1px solid #334155; padding-top: 0.4rem;">
+                                        <input type="text" name="f_fornecedor" id="inputManualFFornecedorCompras" value="{{ request('f_fornecedor') }}" class="filter-input" placeholder="Ou digite livre..." form="formFilterCompras" onchange="document.getElementById('formFilterCompras').submit()" style="font-size: 0.725rem;">
+                                    </div>
+                                </div>
+                            </div>
                         </th>
                         <th class="col-valor-unitario"></th>
                         <th class="col-ipi"></th>
@@ -266,9 +342,15 @@
                         <th class="col-data-pagamento"></th>
                         <th class="col-solicitacao-compra"></th>
                         <th class="col-status-pagamento">
-                            <input type="text" name="f_status_pagamento" value="{{ request('f_status_pagamento') }}" class="filter-input" placeholder="Multi: PAGO, FATURADO..." form="formFilterCompras" onchange="document.getElementById('formFilterCompras').submit()">
+                            <input type="text" name="f_status_pagamento" value="{{ request('f_status_pagamento') }}" class="filter-input" placeholder="Multi: PAGO..." form="formFilterCompras" onchange="document.getElementById('formFilterCompras').submit()">
                         </th>
-                        <th class="col-valor-total"></th>
+                        <th class="col-valor-total" style="padding: 0.2rem 0.3rem;">
+                            <div style="display: flex; gap: 0.2rem;">
+                                <input type="text" name="f_valor_min" value="{{ request('f_valor_min') }}" form="formFilterCompras" class="filter-input" placeholder="Min R$" style="font-size: 0.65rem; padding: 0.15rem 0.2rem; text-align: center; height: 26px;" onchange="document.getElementById('formFilterCompras').submit()">
+                                <input type="text" name="f_valor_max" value="{{ request('f_valor_max') }}" form="formFilterCompras" class="filter-input" placeholder="Max R$" style="font-size: 0.65rem; padding: 0.15rem 0.2rem; text-align: center; height: 26px;" onchange="document.getElementById('formFilterCompras').submit()">
+                            </div>
+                        </th>
+                        <th class="col-acoes"></th>
                         <th class="col-acoes"></th>
                     </tr>
                 </thead>
@@ -580,15 +662,93 @@ function toggleMenuColunasCompras() {
 
 document.addEventListener('click', function(e) {
     const menuCol = document.getElementById('dropdownMenuColunasCompras');
-    if (menuCol && !menuCol.contains(e.target) && !e.target.closest('.dropdown')) {
-        menuCol.style.display = 'none';
-    }
+    const btnCol = document.getElementById('btnDropdownColunasCompras');
     const menuSt = document.getElementById('dropdownMenuFilterStatusCompras');
     const btnSt = document.getElementById('btnFilterStatusCompras');
+    const menuDesc = document.getElementById('dropdownMenuFilterDescricaoCompras');
+    const btnDesc = document.getElementById('btnFilterDescricaoCompras');
+    const menuForn = document.getElementById('dropdownMenuFilterFornecedorCompras');
+    const btnForn = document.getElementById('btnFilterFornecedorCompras');
+
+    if (menuCol && btnCol && !menuCol.contains(e.target) && !btnCol.contains(e.target)) {
+        menuCol.style.display = 'none';
+    }
     if (menuSt && btnSt && !menuSt.contains(e.target) && !btnSt.contains(e.target)) {
         menuSt.style.display = 'none';
     }
+    if (menuDesc && btnDesc && !menuDesc.contains(e.target) && !btnDesc.contains(e.target)) {
+        menuDesc.style.display = 'none';
+    }
+    if (menuForn && btnForn && !menuForn.contains(e.target) && !btnForn.contains(e.target)) {
+        menuForn.style.display = 'none';
+    }
 });
+
+// Gestor de Seleção Múltipla da Descrição em Compras
+function toggleMenuFilterDescricaoCompras() {
+    const el = document.getElementById('dropdownMenuFilterDescricaoCompras');
+    if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function filtrarListaDescricaoCompras() {
+    const term = document.getElementById('searchDescricaoComprasInput').value.toLowerCase();
+    const items = document.querySelectorAll('#listaDescricaoComprasItems .desc-item-label-compras');
+    items.forEach(it => {
+        const txt = it.innerText.toLowerCase();
+        it.style.display = txt.includes(term) ? 'flex' : 'none';
+    });
+}
+
+function aplicarFiltroDescricaoCompras() {
+    const chks = document.querySelectorAll('.chk-desc-compras-option:checked');
+    const vals = Array.from(chks).map(c => c.value);
+    const inputManual = document.getElementById('inputManualFDescricaoCompras');
+    if (inputManual) {
+        inputManual.value = vals.join(',');
+    }
+    document.getElementById('formFilterCompras').submit();
+}
+
+function limparDescricaoComprasFiltro() {
+    const chks = document.querySelectorAll('.chk-desc-compras-option');
+    chks.forEach(c => c.checked = false);
+    const inputManual = document.getElementById('inputManualFDescricaoCompras');
+    if (inputManual) inputManual.value = '';
+    document.getElementById('formFilterCompras').submit();
+}
+
+// Gestor de Seleção Múltipla do Fornecedor em Compras
+function toggleMenuFilterFornecedorCompras() {
+    const el = document.getElementById('dropdownMenuFilterFornecedorCompras');
+    if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function filtrarListaFornecedorCompras() {
+    const term = document.getElementById('searchFornecedorComprasInput').value.toLowerCase();
+    const items = document.querySelectorAll('#listaFornecedorComprasItems .forn-item-label-compras');
+    items.forEach(it => {
+        const txt = it.innerText.toLowerCase();
+        it.style.display = txt.includes(term) ? 'flex' : 'none';
+    });
+}
+
+function aplicarFiltroFornecedorCompras() {
+    const chks = document.querySelectorAll('.chk-forn-compras-option:checked');
+    const vals = Array.from(chks).map(c => c.value);
+    const inputManual = document.getElementById('inputManualFFornecedorCompras');
+    if (inputManual) {
+        inputManual.value = vals.join(',');
+    }
+    document.getElementById('formFilterCompras').submit();
+}
+
+function limparFornecedorComprasFiltro() {
+    const chks = document.querySelectorAll('.chk-forn-compras-option');
+    chks.forEach(c => c.checked = false);
+    const inputManual = document.getElementById('inputManualFFornecedorCompras');
+    if (inputManual) inputManual.value = '';
+    document.getElementById('formFilterCompras').submit();
+}
 
 function toggleColunaCompras(colClass, isChecked) {
     const elements = document.querySelectorAll('.' + colClass);

@@ -126,6 +126,14 @@ class PcpPainelController extends Controller
             $valStatusPv = $meta ? ($meta->status_pv ?? '') : '';
             $valFabrica = $meta ? ($meta->fabrica ?? '') : '';
             $valMarca = $meta ? ($meta->marca ?? '') : '';
+            $valQtd = $meta ? ($meta->qtd ?? 1) : 1;
+            $valTimeProd = $meta ? ($meta->time_prod ?? '0') : '0';
+            $valDataEmissao = $meta ? ($meta->data_emissao ?? '-') : '-';
+            $valDataContratual = $meta ? ($meta->data_contratual ?? '-') : '-';
+            $valDataPaPg = $meta ? ($meta->data_pa_pg ?? '-') : '-';
+            $valDataPronto = $meta ? ($meta->data_pronto ?? '-') : '-';
+            $valDataBoom = $meta ? ($meta->data_boom ?? '-') : '-';
+            $valDataLiberacaoEstoque = $meta ? ($meta->data_liberacao_estoque ?? '-') : '-';
 
             // Tentar inferir Marca se não cadastrado
             if (empty($valMarca)) {
@@ -182,6 +190,37 @@ class PcpPainelController extends Controller
             $semPrecoCount = 0;
             $investimentoPendente = 0;
             $valorBruto = 0;
+            $valorPa = 0;
+            $valorFaturado = 0;
+            $valorPago = 0;
+
+            // Componentes Críticos
+            $motorStatus = 'OK';
+            $alternadorStatus = 'OK';
+            $baseStatus = 'OK';
+            $carenagemStatus = 'OK';
+
+            $hasMotor = false;
+            $hasAlternador = false;
+            $hasBase = false;
+            $hasCarenagem = false;
+
+            foreach ($items as $it) {
+                $cItem = $it->compraItem;
+                $valUnit = $cItem ? floatval($cItem->valor_unitario) : 0;
+                $valTotal = $cItem ? floatval($cItem->valor_total) : 0;
+                $valorBruto += $valTotal;
+
+                if ($cItem) {
+                    $stPag = strtoupper(trim($cItem->status_pagamento ?? ''));
+                    if (in_array($stPag, ['PA', 'PAG. ANTECIPADO', 'PAGAMENTO ANTECIPADO', 'ANTECIPADO'])) {
+                        $valorPa += $valTotal;
+                    } elseif ($stPag === 'FATURADO') {
+                        $valorFaturado += $valTotal;
+                    } elseif ($stPag === 'PAGO') {
+                        $valorPago += $valTotal;
+                    }
+                }
 
             // Componentes Críticos
             $motorStatus = 'OK';
@@ -332,6 +371,14 @@ class PcpPainelController extends Controller
                 'status_pv' => $valStatusPv,
                 'fabrica' => $valFabrica,
                 'marca' => $valMarca,
+                'qtd' => $valQtd,
+                'time_prod' => $valTimeProd,
+                'data_emissao' => $valDataEmissao,
+                'data_contratual' => $valDataContratual,
+                'data_pa_pg' => $valDataPaPg,
+                'data_pronto' => $valDataPronto,
+                'data_boom' => $valDataBoom,
+                'data_liberacao_estoque' => $valDataLiberacaoEstoque,
                 'total_componentes' => $totalComponentes,
                 'total_falta' => $totalFalta,
                 'total_separado' => $totalSeparado,
@@ -342,6 +389,9 @@ class PcpPainelController extends Controller
                 'sem_preco_count' => $semPrecoCount,
                 'valor_bruto' => $valorBruto,
                 'investimento_pendente' => $investimentoPendente,
+                'valor_pa' => $valorPa,
+                'valor_faturado' => $valorFaturado,
+                'valor_pago' => $valorPago,
                 'motor_status' => $motorStatus,
                 'alternador_status' => $alternadorStatus,
                 'base_status' => $baseStatus,
@@ -614,6 +664,14 @@ class PcpPainelController extends Controller
         $statusPv = trim($request->input('status_pv', ''));
         $fabrica = trim($request->input('fabrica', ''));
         $marca = trim($request->input('marca', ''));
+        $qtd = $request->input('qtd');
+        $timeProd = $request->input('time_prod');
+        $dataEmissao = $request->input('data_emissao');
+        $dataContratual = $request->input('data_contratual');
+        $dataPaPg = $request->input('data_pa_pg');
+        $dataPronto = $request->input('data_pronto');
+        $dataBoom = $request->input('data_boom');
+        $dataLiberacaoEstoque = $request->input('data_liberacao_estoque');
 
         // Atualizar Metadados do PV
         PvMetadado::updateOrCreate(
@@ -623,6 +681,14 @@ class PcpPainelController extends Controller
                 'status_pv' => $statusPv ?: null,
                 'fabrica' => $fabrica ?: null,
                 'marca' => $marca ?: null,
+                'qtd' => is_numeric($qtd) ? intval($qtd) : 1,
+                'time_prod' => $timeProd !== null ? trim($timeProd) : null,
+                'data_emissao' => $dataEmissao !== null ? trim($dataEmissao) : null,
+                'data_contratual' => $dataContratual !== null ? trim($dataContratual) : null,
+                'data_pa_pg' => $dataPaPg !== null ? trim($dataPaPg) : null,
+                'data_pronto' => $dataPronto !== null ? trim($dataPronto) : null,
+                'data_boom' => $dataBoom !== null ? trim($dataBoom) : null,
+                'data_liberacao_estoque' => $dataLiberacaoEstoque !== null ? trim($dataLiberacaoEstoque) : null,
             ]
         );
 
@@ -639,7 +705,7 @@ class PcpPainelController extends Controller
     }
 
     /**
-     * Atualização em Lote dos Metadados do Pedido de Venda (INFO, STATUS, FÁBRICA, MARCA)
+     * Atualização em Lote dos Metadados do Pedido de Venda
      */
     public function updateBatch(Request $request)
     {
@@ -649,14 +715,25 @@ class PcpPainelController extends Controller
             foreach ($pvsData as $pvNum => $data) {
                 if (empty($pvNum)) continue;
 
+                $updatePayload = [
+                    'info' => isset($data['info']) ? trim($data['info']) : null,
+                    'status_pv' => isset($data['status_pv']) ? trim($data['status_pv']) : null,
+                    'fabrica' => isset($data['fabrica']) ? trim($data['fabrica']) : null,
+                    'marca' => isset($data['marca']) ? trim($data['marca']) : null,
+                ];
+
+                if (isset($data['qtd'])) $updatePayload['qtd'] = is_numeric($data['qtd']) ? intval($data['qtd']) : 1;
+                if (isset($data['time_prod'])) $updatePayload['time_prod'] = trim($data['time_prod']);
+                if (isset($data['data_emissao'])) $updatePayload['data_emissao'] = trim($data['data_emissao']);
+                if (isset($data['data_contratual'])) $updatePayload['data_contratual'] = trim($data['data_contratual']);
+                if (isset($data['data_pa_pg'])) $updatePayload['data_pa_pg'] = trim($data['data_pa_pg']);
+                if (isset($data['data_pronto'])) $updatePayload['data_pronto'] = trim($data['data_pronto']);
+                if (isset($data['data_boom'])) $updatePayload['data_boom'] = trim($data['data_boom']);
+                if (isset($data['data_liberacao_estoque'])) $updatePayload['data_liberacao_estoque'] = trim($data['data_liberacao_estoque']);
+
                 PvMetadado::updateOrCreate(
                     ['pedido' => trim($pvNum)],
-                    [
-                        'info' => isset($data['info']) ? trim($data['info']) : null,
-                        'status_pv' => isset($data['status_pv']) ? trim($data['status_pv']) : null,
-                        'fabrica' => isset($data['fabrica']) ? trim($data['fabrica']) : null,
-                        'marca' => isset($data['marca']) ? trim($data['marca']) : null,
-                    ]
+                    $updatePayload
                 );
             }
         }

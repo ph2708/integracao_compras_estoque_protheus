@@ -162,6 +162,17 @@
                     <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;"><input type="checkbox" id="chk_col-alertas" onchange="toggleColunaPainelPcp('col-alertas', this.checked)"> Alertas Compras</label>
                     <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: #38bdf8;"><input type="checkbox" id="chk_col-valor-bruto" onchange="toggleColunaPainelPcp('col-valor-bruto', this.checked)"> VALOR BRUTO</label>
                     <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;"><input type="checkbox" id="chk_col-investimento" onchange="toggleColunaPainelPcp('col-investimento', this.checked)"> Investimento Pendente</label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: #34d399;"><input type="checkbox" id="chk_col-valor-pago" onchange="toggleColunaPainelPcp('col-valor-pago', this.checked)"> INVESTIMENTO (PAGO)</label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: #fbbf24;"><input type="checkbox" id="chk_col-valor-pa" onchange="toggleColunaPainelPcp('col-valor-pa', this.checked)"> PA (R$)</label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: #60a5fa;"><input type="checkbox" id="chk_col-valor-faturado" onchange="toggleColunaPainelPcp('col-valor-faturado', this.checked)"> FATURADO (R$)</label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;"><input type="checkbox" id="chk_col-qtd" onchange="toggleColunaPainelPcp('col-qtd', this.checked)"> QTD ✏️</label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;"><input type="checkbox" id="chk_col-time-prod" onchange="toggleColunaPainelPcp('col-time-prod', this.checked)"> TIME PROD ✏️</label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;"><input type="checkbox" id="chk_col-data-pa-pg" onchange="toggleColunaPainelPcp('col-data-pa-pg', this.checked)"> PA (PG) ✏️</label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;"><input type="checkbox" id="chk_col-data-pronto" onchange="toggleColunaPainelPcp('col-data-pronto', this.checked)"> PRONTO ✏️</label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;"><input type="checkbox" id="chk_col-data-contratual" onchange="toggleColunaPainelPcp('col-data-contratual', this.checked)"> DATA CONTRATUAL ✏️</label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;"><input type="checkbox" id="chk_col-data-emissao" onchange="toggleColunaPainelPcp('col-data-emissao', this.checked)"> DATA EMISSÃO ✏️</label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;"><input type="checkbox" id="chk_col-data-boom" onchange="toggleColunaPainelPcp('col-data-boom', this.checked)"> DATA BOOM ✏️</label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;"><input type="checkbox" id="chk_col-data-liberacao-estoque" onchange="toggleColunaPainelPcp('col-data-liberacao-estoque', this.checked)"> LIBERAÇÃO ESTOQUE ✏️</label>
                 </div>
             </div>
         </div>
@@ -245,19 +256,30 @@
                     <tr style="background-color: #0f172a; border-bottom: 1px solid var(--border-color); color: #94a3b8; text-align: left;">
                         <th class="col-info" style="padding: 0.65rem 0.75rem; min-width: 130px;">INFO ✏️</th>
                         <th class="col-status-pv" style="padding: 0.65rem 0.75rem; min-width: 130px;">STATUS (PV) ✏️</th>
-                        <th class="col-fabrica" style="padding: 0.65rem 0.75rem; min-width: 100px; color: #38bdf8;" title="Ordenado em sequência numérica crescente">FÁBRICA ✏️ ⬆️</th>
+                        <th class="col-fabrica" style="padding: 0.65rem 0.75rem; min-width: 90px; color: #38bdf8;" title="Ordenado em sequência numérica crescente">FÁBRICA ✏️ ⬆️</th>
                         <th class="col-pv" style="padding: 0.65rem 0.75rem;">PV / Pedido</th>
                         <th class="col-cliente" style="padding: 0.65rem 0.75rem;">Cliente (C2_OBS)</th>
-                        <th class="col-produto-pai" style="padding: 0.65rem 0.75rem; min-width: 320px; color: #c084fc;">Equipamento / Produto Pai</th>
+                        <th class="col-produto-pai" style="padding: 0.65rem 0.75rem; min-width: 300px; color: #c084fc;">Equipamento / Produto Pai</th>
+                        <th class="col-qtd" style="padding: 0.65rem 0.75rem; text-align: center; width: 60px;">QTD ✏️</th>
                         <th class="col-marca" style="padding: 0.65rem 0.75rem; min-width: 100px;">MARCA ✏️</th>
-                        <th class="col-avanco" style="padding: 0.65rem 0.75rem; text-align: center;">Avanço Separação</th>
                         <th class="col-motor" style="padding: 0.65rem 0.75rem; text-align: center;">Motor</th>
                         <th class="col-alternador" style="padding: 0.65rem 0.75rem; text-align: center;">Alternador</th>
                         <th class="col-base" style="padding: 0.65rem 0.75rem; text-align: center;">Base</th>
                         <th class="col-carenagem" style="padding: 0.65rem 0.75rem; text-align: center;">Carenagem</th>
                         <th class="col-alertas" style="padding: 0.65rem 0.75rem; text-align: center;">Alertas Compras</th>
+                        <th class="col-avanco" style="padding: 0.65rem 0.75rem; text-align: center;">Avanço Separação</th>
+                        <th class="col-valor-pa" style="padding: 0.65rem 0.75rem; text-align: right; color: #fbbf24;">PA (R$)</th>
+                        <th class="col-valor-faturado" style="padding: 0.65rem 0.75rem; text-align: right; color: #60a5fa;">FATURADO (R$)</th>
+                        <th class="col-valor-pago" style="padding: 0.65rem 0.75rem; text-align: right; color: #34d399;">INVEST. (PAGO)</th>
                         <th class="col-valor-bruto" style="padding: 0.65rem 0.75rem; text-align: right; color: #38bdf8;">VALOR BRUTO</th>
-                        <th class="col-investimento" style="padding: 0.65rem 0.75rem; text-align: right;">Investimento Pend.</th>
+                        <th class="col-investimento" style="padding: 0.65rem 0.75rem; text-align: right; color: #f87171;">INVEST. (FALTA)</th>
+                        <th class="col-time-prod" style="padding: 0.65rem 0.75rem; text-align: center; width: 70px;">TIME PROD ✏️</th>
+                        <th class="col-data-pa-pg" style="padding: 0.65rem 0.75rem; text-align: center;">PA (PG) ✏️</th>
+                        <th class="col-data-pronto" style="padding: 0.65rem 0.75rem; text-align: center;">PRONTO ✏️</th>
+                        <th class="col-data-contratual" style="padding: 0.65rem 0.75rem; text-align: center;">DATA CONTRATUAL ✏️</th>
+                        <th class="col-data-emissao" style="padding: 0.65rem 0.75rem; text-align: center;">DATA EMISSÃO ✏️</th>
+                        <th class="col-data-boom" style="padding: 0.65rem 0.75rem; text-align: center;">DATA BOOM ✏️</th>
+                        <th class="col-data-liberacao-estoque" style="padding: 0.65rem 0.75rem; text-align: center;">LIBERAÇÃO ESTQ. ✏️</th>
                         <th class="col-acoes" style="padding: 0.65rem 0.75rem; text-align: center;">Ações</th>
                     </tr>
 
@@ -395,14 +417,25 @@
                             </div>
                         </th>
 
-                        <th class="col-avanco"></th>
+                        <th class="col-qtd"></th>
                         <th class="col-motor"></th>
                         <th class="col-alternador"></th>
                         <th class="col-base"></th>
                         <th class="col-carenagem"></th>
                         <th class="col-alertas"></th>
+                        <th class="col-avanco"></th>
+                        <th class="col-valor-pa"></th>
+                        <th class="col-valor-faturado"></th>
+                        <th class="col-valor-pago"></th>
                         <th class="col-valor-bruto"></th>
                         <th class="col-investimento"></th>
+                        <th class="col-time-prod"></th>
+                        <th class="col-data-pa-pg"></th>
+                        <th class="col-data-pronto"></th>
+                        <th class="col-data-contratual"></th>
+                        <th class="col-data-emissao"></th>
+                        <th class="col-data-boom"></th>
+                        <th class="col-data-liberacao-estoque"></th>
                         <th class="col-acoes"></th>
                     </tr>
                 </thead>
@@ -445,28 +478,18 @@
                         </td>
 
                         <!-- Equipamento / Produto Pai -->
-                        <td class="col-produto-pai" style="padding: 0.65rem 0.75rem; min-width: 320px; color: #c084fc; font-weight: 500; word-break: break-word;" title="{{ $pvItem['produto_pai'] }}">
+                        <td class="col-produto-pai" style="padding: 0.65rem 0.75rem; min-width: 300px; color: #c084fc; font-weight: 500; word-break: break-word;" title="{{ $pvItem['produto_pai'] }}">
                             {{ $pvItem['produto_pai'] }}
+                        </td>
+
+                        <!-- QTD -->
+                        <td class="col-qtd" style="padding: 0.5rem 0.6rem; text-align: center;">
+                            <input type="number" name="pvs[{{ $pvKey }}][qtd]" value="{{ $pvItem['qtd'] }}" class="editable-cell-input" style="width: 50px; text-align: center;" {{ !($canEditPcp ?? true) ? 'disabled style=opacity:0.6;cursor:not-allowed;' : '' }}>
                         </td>
 
                         <!-- Célula Editável MARCA -->
                         <td class="col-marca" style="padding: 0.5rem 0.6rem;">
                             <input type="text" name="pvs[{{ $pvKey }}][marca]" value="{{ $pvItem['marca'] }}" class="editable-cell-input" placeholder="Ex: PERKINS, SCANIA..." {{ !($canEditPcp ?? true) ? 'disabled style=opacity:0.6;cursor:not-allowed;' : '' }}>
-                        </td>
-
-                        <!-- Avanço Separação -->
-                        <td class="col-avanco" style="padding: 0.65rem 0.75rem; min-width: 135px;">
-                            <div style="display: flex; justify-content: space-between; font-size: 0.725rem; margin-bottom: 0.15rem;">
-                                <span style="font-weight: 700; color: {{ $pvItem['percent_separado'] == 100 ? '#34d399' : '#f8fafc' }};">
-                                    {{ $pvItem['percent_separado'] }}%
-                                </span>
-                                <span style="color: var(--text-muted);">
-                                    {{ $pvItem['total_separado'] }}/{{ $pvItem['total_componentes'] }} it
-                                </span>
-                            </div>
-                            <div class="progress-bar-bg">
-                                <div class="progress-bar-fill" style="width: {{ $pvItem['percent_separado'] }}%;"></div>
-                            </div>
                         </td>
 
                         <!-- Componentes Críticos -->
@@ -512,21 +535,86 @@
                             @endif
                         </td>
 
+                        <!-- Avanço Separação -->
+                        <td class="col-avanco" style="padding: 0.65rem 0.75rem; min-width: 135px;">
+                            <div style="display: flex; justify-content: space-between; font-size: 0.725rem; margin-bottom: 0.15rem;">
+                                <span style="font-weight: 700; color: {{ $pvItem['percent_separado'] == 100 ? '#34d399' : '#f8fafc' }};">
+                                    {{ $pvItem['percent_separado'] }}%
+                                </span>
+                                <span style="color: var(--text-muted);">
+                                    {{ $pvItem['total_separado'] }}/{{ $pvItem['total_componentes'] }} it
+                                </span>
+                            </div>
+                            <div class="progress-bar-bg">
+                                <div class="progress-bar-fill" style="width: {{ $pvItem['percent_separado'] }}%;"></div>
+                            </div>
+                        </td>
+
+                        <!-- PA (R$) -->
+                        <td class="col-valor-pa" style="padding: 0.65rem 0.75rem; text-align: right; font-weight: 600; color: #fbbf24;">
+                            R$ {{ number_format($pvItem['valor_pa'], 2, ',', '.') }}
+                        </td>
+
+                        <!-- FATURADO (R$) -->
+                        <td class="col-valor-faturado" style="padding: 0.65rem 0.75rem; text-align: right; font-weight: 600; color: #60a5fa;">
+                            R$ {{ number_format($pvItem['valor_faturado'], 2, ',', '.') }}
+                        </td>
+
+                        <!-- INVESTIMENTO PAGO (R$) -->
+                        <td class="col-valor-pago" style="padding: 0.65rem 0.75rem; text-align: right; font-weight: 700; color: #34d399;">
+                            R$ {{ number_format($pvItem['valor_pago'], 2, ',', '.') }}
+                        </td>
+
                         <!-- Valor Bruto -->
                         <td class="col-valor-bruto" style="padding: 0.65rem 0.75rem; text-align: right; font-weight: 700; color: #f8fafc;">
                             R$ {{ number_format($pvItem['valor_bruto'], 2, ',', '.') }}
                         </td>
 
-                        <!-- Investimento Pendente -->
-                        <td class="col-investimento" style="padding: 0.65rem 0.75rem; text-align: right; font-weight: 700; color: {{ $pvItem['investimento_pendente'] > 0 ? '#fbbf24' : '#34d399' }};">
+                        <!-- Investimento Pendente (Falta) -->
+                        <td class="col-investimento" style="padding: 0.65rem 0.75rem; text-align: right; font-weight: 700; color: {{ $pvItem['investimento_pendente'] > 0 ? '#f87171' : '#34d399' }};">
                             R$ {{ number_format($pvItem['investimento_pendente'], 2, ',', '.') }}
+                        </td>
+
+                        <!-- TIME PROD -->
+                        <td class="col-time-prod" style="padding: 0.5rem 0.6rem; text-align: center;">
+                            <input type="text" name="pvs[{{ $pvKey }}][time_prod]" value="{{ $pvItem['time_prod'] }}" class="editable-cell-input" placeholder="Ex: 5" style="width: 50px; text-align: center;" {{ !($canEditPcp ?? true) ? 'disabled style=opacity:0.6;cursor:not-allowed;' : '' }}>
+                        </td>
+
+                        <!-- PA (PG) -->
+                        <td class="col-data-pa-pg" style="padding: 0.5rem 0.6rem; text-align: center;">
+                            <input type="text" name="pvs[{{ $pvKey }}][data_pa_pg]" value="{{ $pvItem['data_pa_pg'] }}" class="editable-cell-input" placeholder="Ex: 01/abr" style="width: 70px; text-align: center;" {{ !($canEditPcp ?? true) ? 'disabled style=opacity:0.6;cursor:not-allowed;' : '' }}>
+                        </td>
+
+                        <!-- PRONTO -->
+                        <td class="col-data-pronto" style="padding: 0.5rem 0.6rem; text-align: center;">
+                            <input type="text" name="pvs[{{ $pvKey }}][data_pronto]" value="{{ $pvItem['data_pronto'] }}" class="editable-cell-input" placeholder="Ex: 31/jul" style="width: 70px; text-align: center;" {{ !($canEditPcp ?? true) ? 'disabled style=opacity:0.6;cursor:not-allowed;' : '' }}>
+                        </td>
+
+                        <!-- DATA CONTRATUAL -->
+                        <td class="col-data-contratual" style="padding: 0.5rem 0.6rem; text-align: center;">
+                            <input type="text" name="pvs[{{ $pvKey }}][data_contratual]" value="{{ $pvItem['data_contratual'] }}" class="editable-cell-input" placeholder="DD/MM/AAAA" style="width: 90px; text-align: center;" {{ !($canEditPcp ?? true) ? 'disabled style=opacity:0.6;cursor:not-allowed;' : '' }}>
+                        </td>
+
+                        <!-- DATA EMISSÃO -->
+                        <td class="col-data-emissao" style="padding: 0.5rem 0.6rem; text-align: center;">
+                            <input type="text" name="pvs[{{ $pvKey }}][data_emissao]" value="{{ $pvItem['data_emissao'] }}" class="editable-cell-input" placeholder="DD/MM/AAAA" style="width: 90px; text-align: center;" {{ !($canEditPcp ?? true) ? 'disabled style=opacity:0.6;cursor:not-allowed;' : '' }}>
+                        </td>
+
+                        <!-- DATA BOOM -->
+                        <td class="col-data-boom" style="padding: 0.5rem 0.6rem; text-align: center;">
+                            <input type="text" name="pvs[{{ $pvKey }}][data_boom]" value="{{ $pvItem['data_boom'] }}" class="editable-cell-input" placeholder="DD/MM/AAAA" style="width: 90px; text-align: center;" {{ !($canEditPcp ?? true) ? 'disabled style=opacity:0.6;cursor:not-allowed;' : '' }}>
+                        </td>
+
+                        <!-- LIBERAÇÃO ESTOQUE -->
+                        <td class="col-data-liberacao-estoque" style="padding: 0.5rem 0.6rem; text-align: center;">
+                            <input type="text" name="pvs[{{ $pvKey }}][data_liberacao_estoque]" value="{{ $pvItem['data_liberacao_estoque'] }}" class="editable-cell-input" placeholder="DD/MM/AAAA" style="width: 90px; text-align: center;" {{ !($canEditPcp ?? true) ? 'disabled style=opacity:0.6;cursor:not-allowed;' : '' }}>
                         </td>
 
                         <!-- Ações -->
                         <td class="col-acoes" style="padding: 0.65rem 0.75rem; text-align: center;">
                             <div style="display: flex; gap: 0.25rem; justify-content: center;">
                                 @if($canEditPcp ?? true)
-                                <button type="button" class="btn btn-secondary" onclick="abrirModalEditarPv('{{ $pvItem['pv'] }}', '{{ addslashes($pvItem['cliente']) }}', '{{ addslashes($pvItem['produto_pai']) }}', '{{ addslashes($pvItem['info']) }}', '{{ addslashes($pvItem['status_pv']) }}', '{{ addslashes($pvItem['fabrica']) }}', '{{ addslashes($pvItem['marca']) }}')" style="padding: 0.2rem 0.4rem; font-size: 0.7rem;" title="Editar dados deste PV">
+                                <button type="button" class="btn btn-secondary" onclick="abrirModalEditarPv('{{ $pvItem['pv'] }}', '{{ addslashes($pvItem['cliente']) }}', '{{ addslashes($pvItem['produto_pai']) }}', '{{ addslashes($pvItem['info']) }}', '{{ addslashes($pvItem['status_pv']) }}', '{{ addslashes($pvItem['fabrica']) }}', '{{ addslashes($pvItem['marca']) }}', '{{ $pvItem['qtd'] }}', '{{ addslashes($pvItem['time_prod']) }}', '{{ addslashes($pvItem['data_emissao']) }}', '{{ addslashes($pvItem['data_contratual']) }}', '{{ addslashes($pvItem['data_pa_pg']) }}', '{{ addslashes($pvItem['data_pronto']) }}', '{{ addslashes($pvItem['data_boom']) }}', '{{ addslashes($pvItem['data_liberacao_estoque']) }}')" style="padding: 0.2rem 0.4rem; font-size: 0.7rem;" title="Editar dados deste PV">
                                     ✏️
                                 </button>
                                 @endif
@@ -786,9 +874,53 @@
                         <input type="text" name="marca" id="modal_edit_marca_input" class="form-control" style="padding: 0.45rem; font-size: 0.85rem;">
                     </div>
                 </div>
+
+                <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                    <div style="flex: 1;">
+                        <label style="font-size: 0.75rem; font-weight: 600; color: #94a3b8; margin-bottom: 0.25rem; display: block;">QTD</label>
+                        <input type="number" name="qtd" id="modal_edit_qtd_input" class="form-control" style="padding: 0.45rem; font-size: 0.85rem;">
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="font-size: 0.75rem; font-weight: 600; color: #94a3b8; margin-bottom: 0.25rem; display: block;">TIME PROD</label>
+                        <input type="text" name="time_prod" id="modal_edit_time_prod_input" class="form-control" style="padding: 0.45rem; font-size: 0.85rem;">
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                    <div style="flex: 1;">
+                        <label style="font-size: 0.75rem; font-weight: 600; color: #94a3b8; margin-bottom: 0.25rem; display: block;">PA (PG)</label>
+                        <input type="text" name="data_pa_pg" id="modal_edit_data_pa_pg_input" class="form-control" style="padding: 0.45rem; font-size: 0.85rem;">
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="font-size: 0.75rem; font-weight: 600; color: #94a3b8; margin-bottom: 0.25rem; display: block;">PRONTO</label>
+                        <input type="text" name="data_pronto" id="modal_edit_data_pronto_input" class="form-control" style="padding: 0.45rem; font-size: 0.85rem;">
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                    <div style="flex: 1;">
+                        <label style="font-size: 0.75rem; font-weight: 600; color: #94a3b8; margin-bottom: 0.25rem; display: block;">DATA CONTRATUAL</label>
+                        <input type="text" name="data_contratual" id="modal_edit_data_contratual_input" class="form-control" style="padding: 0.45rem; font-size: 0.85rem;">
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="font-size: 0.75rem; font-weight: 600; color: #94a3b8; margin-bottom: 0.25rem; display: block;">DATA EMISSÃO</label>
+                        <input type="text" name="data_emissao" id="modal_edit_data_emissao_input" class="form-control" style="padding: 0.45rem; font-size: 0.85rem;">
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                    <div style="flex: 1;">
+                        <label style="font-size: 0.75rem; font-weight: 600; color: #94a3b8; margin-bottom: 0.25rem; display: block;">DATA BOOM</label>
+                        <input type="text" name="data_boom" id="modal_edit_data_boom_input" class="form-control" style="padding: 0.45rem; font-size: 0.85rem;">
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="font-size: 0.75rem; font-weight: 600; color: #94a3b8; margin-bottom: 0.25rem; display: block;">LIBERAÇÃO ESTOQUE</label>
+                        <input type="text" name="data_liberacao_estoque" id="modal_edit_data_liberacao_estoque_input" class="form-control" style="padding: 0.45rem; font-size: 0.85rem;">
+                    </div>
+                </div>
             </div>
 
-            <div style="display: flex; justify-content: flex-end; gap: 0.5rem; border-top: 1px solid #334155; padding-top: 0.75rem;">
+            <div style="display: flex; justify-content: flex-end; gap: 0.5rem; border-top: 1px solid #334155; padding-top: 0.75rem; margin-top: 1rem;">
                 <button type="button" class="btn btn-secondary" onclick="fecharModalEditarPv()">Cancelar</button>
                 <button type="submit" class="btn btn-primary" style="background-color: #059669; border-color: #059669;">
                     💾 Salvar Alterações do PV
@@ -831,7 +963,7 @@
         document.getElementById('modalCriarPvManual').style.display = 'none';
     }
 
-    function abrirModalEditarPv(pv, cliente, prodPai, info, statusPv, fabrica, marca) {
+    function abrirModalEditarPv(pv, cliente, prodPai, info, statusPv, fabrica, marca, qtd, timeProd, dataEmissao, dataContratual, dataPaPg, dataPronto, dataBoom, dataLiberacaoEstoque) {
         document.getElementById('modal_edit_pv_title').innerText = pv;
         document.getElementById('modal_edit_pedido_input').value = pv;
         document.getElementById('modal_edit_cliente_input').value = cliente;
@@ -840,6 +972,14 @@
         document.getElementById('modal_edit_status_pv_input').value = statusPv;
         document.getElementById('modal_edit_fabrica_input').value = fabrica;
         document.getElementById('modal_edit_marca_input').value = marca;
+        document.getElementById('modal_edit_qtd_input').value = qtd || 1;
+        document.getElementById('modal_edit_time_prod_input').value = timeProd || '0';
+        document.getElementById('modal_edit_data_emissao_input').value = dataEmissao || '-';
+        document.getElementById('modal_edit_data_contratual_input').value = dataContratual || '-';
+        document.getElementById('modal_edit_data_pa_pg_input').value = dataPaPg || '-';
+        document.getElementById('modal_edit_data_pronto_input').value = dataPronto || '-';
+        document.getElementById('modal_edit_data_boom_input').value = dataBoom || '-';
+        document.getElementById('modal_edit_data_liberacao_estoque_input').value = dataLiberacaoEstoque || '-';
         document.getElementById('modalEditarPv').style.display = 'flex';
     }
     function fecharModalEditarPv() {
@@ -937,15 +1077,26 @@
         'col-pv': true,
         'col-cliente': true,
         'col-produto-pai': true,
+        'col-qtd': true,
         'col-marca': true,
-        'col-avanco': true,
         'col-motor': true,
         'col-alternador': true,
         'col-base': true,
         'col-carenagem': true,
         'col-alertas': true,
+        'col-avanco': true,
+        'col-valor-pa': true,
+        'col-valor-faturado': true,
+        'col-valor-pago': true,
         'col-valor-bruto': true,
-        'col-investimento': true
+        'col-investimento': true,
+        'col-time-prod': true,
+        'col-data-pa-pg': true,
+        'col-data-pronto': true,
+        'col-data-contratual': true,
+        'col-data-emissao': true,
+        'col-data-boom': true,
+        'col-data-liberacao-estoque': true
     };
 
     function toggleMenuColunasPainelPcp() {

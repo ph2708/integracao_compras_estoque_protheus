@@ -67,12 +67,25 @@ class EstoqueController extends Controller
             ->paginate(30)
             ->withQueryString();
 
-        $filiaisProtheus = $this->protheusService->getFiliais();
-        if (empty($filiaisProtheus)) {
-            $filiaisProtheus = ['01', '02', '03', '04', '05', '10', '15', '20', '22', '25', '30'];
+        // Extrair Opções Reduzidas Dinâmicas para Descrição no Estoque (respeitando cliente, pv, produto, op, etc.)
+        $queryDesc = EstoqueItem::leftJoin('pv_metadados', 'estoque_items.pedido', '=', 'pv_metadados.pedido');
+        $this->applyMultiFilter($queryDesc, 'estoque_items.pedido', $request->f_pedido);
+        $this->applyMultiFilter($queryDesc, 'codigo_produto', $request->f_produto);
+        $this->applyMultiFilter($queryDesc, 'descricao_longa', $request->f_desc_longa);
+        $this->applyMultiFilter($queryDesc, 'estoque_items.pedido', $request->f_pv);
+        $this->applyMultiFilter($queryDesc, 'produto_pai', $request->f_prod_pai);
+        $this->applyMultiFilter($queryDesc, 'op', $request->f_op);
+        if ($request->filled('f_fabrica')) {
+            $this->applyMultiFilter($queryDesc, 'pv_metadados.fabrica', $request->f_fabrica);
         }
+        if ($request->filled('f_status')) {
+            $this->applyMultiFilter($queryDesc, 'estoque_items.status', $request->f_status);
+        } else {
+            $queryDesc->where('estoque_items.status', '!=', 'FECHADO');
+        }
+        $this->applyMultiFilter($queryDesc, 'cliente_obs', $request->f_cliente);
 
-        $opcoesDescricao = EstoqueItem::whereNotNull('descricao')->where('descricao', '!=', '')->distinct()->pluck('descricao')->sort()->values();
+        $opcoesDescricao = $queryDesc->whereNotNull('descricao')->where('descricao', '!=', '')->distinct()->pluck('descricao')->sort()->values();
         $fDescricao = $request->f_descricao;
 
         return view('estoque.index', compact('items', 'filiaisProtheus', 'opcoesDescricao', 'fDescricao'));

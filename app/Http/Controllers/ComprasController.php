@@ -176,40 +176,37 @@ class ComprasController extends Controller
             }
         }
 
+        // APLICAR FILTROS BASE (exceto f_descricao e f_fornecedor para manter opções de cascata)
+        $baseFiltered = $combinedItems;
+
         if ($request->filled('f_pv')) {
-            $combinedItems = $combinedItems->filter(fn($i) => $this->matchMultiFilter($i['pedido_venda'], $request->f_pv));
+            $baseFiltered = $baseFiltered->filter(fn($i) => $this->matchMultiFilter($i['pedido_venda'], $request->f_pv));
         }
         if ($request->filled('f_produto')) {
-            $combinedItems = $combinedItems->filter(fn($i) => $this->matchMultiFilter($i['codigo_produto'], $request->f_produto));
-        }
-        if ($request->filled('f_descricao')) {
-            $combinedItems = $combinedItems->filter(fn($i) => $this->matchMultiFilter($i['descricao'], $request->f_descricao));
+            $baseFiltered = $baseFiltered->filter(fn($i) => $this->matchMultiFilter($i['codigo_produto'], $request->f_produto));
         }
         if ($request->filled('f_desc_longa')) {
-            $combinedItems = $combinedItems->filter(fn($i) => $this->matchMultiFilter($i['descricao_longa'], $request->f_desc_longa));
+            $baseFiltered = $baseFiltered->filter(fn($i) => $this->matchMultiFilter($i['descricao_longa'], $request->f_desc_longa));
         }
         if ($request->filled('f_prod_pai')) {
-            $combinedItems = $combinedItems->filter(fn($i) => $this->matchMultiFilter($i['produto_pai'], $request->f_prod_pai));
+            $baseFiltered = $baseFiltered->filter(fn($i) => $this->matchMultiFilter($i['produto_pai'], $request->f_prod_pai));
         }
         if ($request->filled('f_op')) {
-            $combinedItems = $combinedItems->filter(fn($i) => $this->matchMultiFilter($i['op'], $request->f_op));
+            $baseFiltered = $baseFiltered->filter(fn($i) => $this->matchMultiFilter($i['op'], $request->f_op));
         }
         if ($request->filled('f_cliente')) {
-            $combinedItems = $combinedItems->filter(fn($i) => $this->matchMultiFilter($i['cliente_obs'], $request->f_cliente));
+            $baseFiltered = $baseFiltered->filter(fn($i) => $this->matchMultiFilter($i['cliente_obs'], $request->f_cliente));
         }
         if ($request->filled('f_status_pcp')) {
-            $combinedItems = $combinedItems->filter(fn($i) => $this->matchMultiFilter($i['status_pcp'], $request->f_status_pcp, true));
+            $baseFiltered = $baseFiltered->filter(fn($i) => $this->matchMultiFilter($i['status_pcp'], $request->f_status_pcp, true));
         } else {
-            $combinedItems = $combinedItems->filter(fn($i) => $i['status_pcp'] !== 'FECHADO');
+            $baseFiltered = $baseFiltered->filter(fn($i) => $i['status_pcp'] !== 'FECHADO');
         }
         if ($request->filled('f_pedido_compra')) {
-            $combinedItems = $combinedItems->filter(fn($i) => $this->matchMultiFilter($i['pedido_compra'], $request->f_pedido_compra));
-        }
-        if ($request->filled('f_fornecedor')) {
-            $combinedItems = $combinedItems->filter(fn($i) => $this->matchMultiFilter($i['codigo_fornecedor'], $request->f_fornecedor));
+            $baseFiltered = $baseFiltered->filter(fn($i) => $this->matchMultiFilter($i['pedido_compra'], $request->f_pedido_compra));
         }
         if ($request->filled('f_status_pagamento')) {
-            $combinedItems = $combinedItems->filter(fn($i) => $this->matchMultiFilter($i['status_pagamento'], $request->f_status_pagamento, true));
+            $baseFiltered = $baseFiltered->filter(fn($i) => $this->matchMultiFilter($i['status_pagamento'], $request->f_status_pagamento, true));
         }
 
         // Filtro por Intervalo de Valor Total (De / Até)
@@ -219,17 +216,36 @@ class ComprasController extends Controller
         if ($fValorMin !== null && $fValorMin !== '') {
             $minVal = floatval(str_replace(['R$', ' ', '.'], '', $fValorMin));
             $minVal = floatval(str_replace(',', '.', $minVal));
-            $combinedItems = $combinedItems->filter(fn($i) => floatval($i['valor_total']) >= $minVal);
+            $baseFiltered = $baseFiltered->filter(fn($i) => floatval($i['valor_total']) >= $minVal);
         }
         if ($fValorMax !== null && $fValorMax !== '') {
             $maxVal = floatval(str_replace(['R$', ' ', '.'], '', $fValorMax));
             $maxVal = floatval(str_replace(',', '.', $maxVal));
-            $combinedItems = $combinedItems->filter(fn($i) => floatval($i['valor_total']) <= $maxVal);
+            $baseFiltered = $baseFiltered->filter(fn($i) => floatval($i['valor_total']) <= $maxVal);
         }
 
-        // Opções Únicas para Seletores Estilo Excel
-        $opcoesDescricao = EstoqueItem::whereNotNull('descricao')->where('descricao', '!=', '')->distinct()->pluck('descricao')->sort()->values();
-        $opcoesFornecedor = CompraItem::whereNotNull('codigo_fornecedor')->where('codigo_fornecedor', '!=', '')->distinct()->pluck('codigo_fornecedor')->sort()->values();
+        // Opções Reduzidas Dinâmicas para Descrição (filtrado por Cliente, PV, OP, etc, sem f_descricao)
+        $forDesc = $baseFiltered;
+        if ($request->filled('f_fornecedor')) {
+            $forDesc = $forDesc->filter(fn($i) => $this->matchMultiFilter($i['codigo_fornecedor'], $request->f_fornecedor));
+        }
+        $opcoesDescricao = $forDesc->pluck('descricao')->filter(fn($v) => !empty($v) && $v !== '-')->unique()->sort()->values();
+
+        // Opções Reduzidas Dinâmicas para Fornecedor (filtrado por Cliente, PV, OP, etc, sem f_fornecedor)
+        $forForn = $baseFiltered;
+        if ($request->filled('f_descricao')) {
+            $forForn = $forForn->filter(fn($i) => $this->matchMultiFilter($i['descricao'], $request->f_descricao));
+        }
+        $opcoesFornecedor = $forForn->pluck('codigo_fornecedor')->filter(fn($v) => !empty($v))->unique()->sort()->values();
+
+        // Agora aplicar f_descricao e f_fornecedor no resultado final
+        $combinedItems = $baseFiltered;
+        if ($request->filled('f_descricao')) {
+            $combinedItems = $combinedItems->filter(fn($i) => $this->matchMultiFilter($i['descricao'], $request->f_descricao));
+        }
+        if ($request->filled('f_fornecedor')) {
+            $combinedItems = $combinedItems->filter(fn($i) => $this->matchMultiFilter($i['codigo_fornecedor'], $request->f_fornecedor));
+        }
 
         // Subtotais e Métricas Dinâmicas do Filtro Atual (Calculado sobre Quantidade a Comprar + IPI + Frete)
         $totalItensFiltro = $combinedItems->count();

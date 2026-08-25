@@ -21,6 +21,9 @@ class User extends Authenticatable
         'password',
         'role',
         'permissao_fechamento_op',
+        'permissao_painel_pcp',
+        'permissao_painel_pcp_edicao',
+        'permissao_painel_montagem',
     ];
 
     /**
@@ -44,12 +47,30 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'permissao_fechamento_op' => 'boolean',
+            'permissao_painel_pcp' => 'boolean',
+            'permissao_painel_pcp_edicao' => 'boolean',
+            'permissao_painel_montagem' => 'boolean',
         ];
     }
 
     public function canCloseOp(): bool
     {
         return $this->role === 'ADMIN' || (bool) $this->permissao_fechamento_op;
+    }
+
+    public function canAccessPcp(): bool
+    {
+        return $this->role === 'ADMIN' || (bool) $this->permissao_painel_pcp;
+    }
+
+    public function canEditPcp(): bool
+    {
+        return $this->role === 'ADMIN' || ((bool) $this->permissao_painel_pcp && (bool) $this->permissao_painel_pcp_edicao);
+    }
+
+    public function canAccessMontagem(): bool
+    {
+        return $this->role === 'ADMIN' || (bool) $this->permissao_painel_montagem;
     }
 
     public function isAdmin(): bool

@@ -399,12 +399,16 @@
             <a href="{{ route('dashboard') }}" class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
                 📊 Dashboard
             </a>
+            @if(auth()->user()->canAccessPcp())
             <a href="{{ route('pcp-painel.index') }}" class="nav-link {{ request()->routeIs('pcp-painel.*') ? 'active' : '' }}" style="color: #818cf8; font-weight: 600;">
                 🏭 Painel PCP
             </a>
+            @endif
+            @if(auth()->user()->canAccessMontagem())
             <a href="{{ route('pcp-montagem.index') }}" class="nav-link {{ request()->routeIs('pcp-montagem.*') ? 'active' : '' }}" style="color: #38bdf8; font-weight: 600;">
                 ⏱️ Montagem & Horas
             </a>
+            @endif
             <a href="{{ route('estoque.index') }}" class="nav-link {{ request()->routeIs('estoque.*') ? 'active' : '' }}">
                 📦 Estoque PCP
             </a>

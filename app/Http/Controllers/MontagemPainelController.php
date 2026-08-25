@@ -18,6 +18,10 @@ class MontagemPainelController extends Controller
 
     public function index(Request $request)
     {
+        if (!auth()->user()->canAccessMontagem()) {
+            abort(403, 'Acesso não autorizado ao Painel de Montagem.');
+        }
+
         $filialSel = $request->input('filial');
         $dataDe = $request->input('data_de');
         $dataAte = $request->input('data_ate');

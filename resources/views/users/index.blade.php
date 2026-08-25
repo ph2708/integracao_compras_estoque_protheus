@@ -33,18 +33,37 @@
         </div>
 
         <div class="form-group">
-            <label class="form-label">Perfil / Pergunta de Acesso *</label>
+            <label class="form-label">Perfil de Acesso *</label>
             <select name="role" class="form-select" required>
                 <option value="ADMIN">ADMIN (Acesso Total + Gestão de Usuários)</option>
-                <option value="COMPRAS">COMPRAS (Dashboard + Painel de Compras)</option>
-                <option value="ESTOQUE">ESTOQUE (Dashboard + Painel de Estoque/PCP)</option>
+                <option value="COMPRAS">COMPRAS (Dashboard + Compras + Estoque)</option>
+                <option value="ESTOQUE">ESTOQUE (Dashboard + Estoque PCP)</option>
+                <option value="PCP">PCP (Painel PCP + Montagem & Horas)</option>
+                <option value="VISUALIZACAO">VISUALIZAÇÃO (Apenas Leitura nos Painéis Autorizados)</option>
             </select>
         </div>
 
-        <div class="form-group">
-            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: #a5b4fc; font-size: 0.8rem;">
+        <div class="form-group" style="background: rgba(15, 23, 42, 0.6); padding: 0.75rem; border-radius: 6px; border: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 0.4rem;">
+            <label style="font-size: 0.75rem; font-weight: 700; color: #a5b4fc; margin-bottom: 0.2rem;">Permissões Específicas de Módulos</label>
+            
+            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: var(--text-main); font-size: 0.8rem;">
+                <input type="checkbox" name="permissao_painel_pcp" value="1" checked>
+                🏭 Acessar Painel PCP GMGs
+            </label>
+
+            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: var(--text-main); font-size: 0.8rem;">
+                <input type="checkbox" name="permissao_painel_pcp_edicao" value="1" checked>
+                ✏️ Editar Células e PVs no Painel PCP (Se desmarcado: Apenas Leitura)
+            </label>
+
+            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: var(--text-main); font-size: 0.8rem;">
+                <input type="checkbox" name="permissao_painel_montagem" value="1" checked>
+                ⏱️ Acessar Painel Montagem & Coleta de Horas
+            </label>
+
+            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: var(--text-main); font-size: 0.8rem;">
                 <input type="checkbox" name="permissao_fechamento_op" value="1">
-                🔒 Permissão de Fechamento de OP (Encerrar Ordens de Produção)
+                🔒 Fechamento de OP (Encerrar Ordens de Produção)
             </label>
         </div>
 
@@ -61,9 +80,9 @@
 </div>
 
 <!-- Modal 2: Editar Usuário / Resetar Senha -->
-<div class="card" id="modalEditUser" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10000; width: 90%; max-width: 500px; border-color: rgba(99, 102, 241, 0.8); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.85);">
+<div class="card" id="modalEditUser" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10000; width: 90%; max-width: 520px; border-color: rgba(99, 102, 241, 0.8); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.85);">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
-        <h3 style="font-size: 1rem; color: #a5b4fc;">✏️ Editar Usuário</h3>
+        <h3 style="font-size: 1rem; color: #a5b4fc;">✏️ Editar Usuário & Permissões</h3>
         <button type="button" class="btn btn-secondary" style="padding: 0.2rem 0.5rem;" onclick="fecharModalEditUser()">✕</button>
     </div>
 
@@ -84,15 +103,34 @@
             <label class="form-label">Perfil de Acesso *</label>
             <select name="role" id="edit_role" class="form-select" required>
                 <option value="ADMIN">ADMIN (Acesso Total + Gestão de Usuários)</option>
-                <option value="COMPRAS">COMPRAS (Dashboard + Painel de Compras)</option>
-                <option value="ESTOQUE">ESTOQUE (Dashboard + Painel de Estoque/PCP)</option>
+                <option value="COMPRAS">COMPRAS (Dashboard + Compras + Estoque)</option>
+                <option value="ESTOQUE">ESTOQUE (Dashboard + Estoque PCP)</option>
+                <option value="PCP">PCP (Painel PCP + Montagem & Horas)</option>
+                <option value="VISUALIZACAO">VISUALIZAÇÃO (Apenas Leitura nos Painéis Autorizados)</option>
             </select>
         </div>
 
-        <div class="form-group">
-            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: #a5b4fc; font-size: 0.8rem;">
+        <div class="form-group" style="background: rgba(15, 23, 42, 0.6); padding: 0.75rem; border-radius: 6px; border: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 0.4rem;">
+            <label style="font-size: 0.75rem; font-weight: 700; color: #a5b4fc; margin-bottom: 0.2rem;">Permissões Específicas de Módulos</label>
+            
+            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: var(--text-main); font-size: 0.8rem;">
+                <input type="checkbox" name="permissao_painel_pcp" id="edit_permissao_painel_pcp" value="1">
+                🏭 Acessar Painel PCP GMGs
+            </label>
+
+            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: var(--text-main); font-size: 0.8rem;">
+                <input type="checkbox" name="permissao_painel_pcp_edicao" id="edit_permissao_painel_pcp_edicao" value="1">
+                ✏️ Editar Células e PVs no Painel PCP (Se desmarcado: Apenas Leitura)
+            </label>
+
+            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: var(--text-main); font-size: 0.8rem;">
+                <input type="checkbox" name="permissao_painel_montagem" id="edit_permissao_painel_montagem" value="1">
+                ⏱️ Acessar Painel Montagem & Coleta de Horas
+            </label>
+
+            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: var(--text-main); font-size: 0.8rem;">
                 <input type="checkbox" name="permissao_fechamento_op" id="edit_permissao_fechamento_op" value="1">
-                🔒 Permissão de Fechamento de OP (Encerrar Ordens de Produção)
+                🔒 Fechamento de OP (Encerrar Ordens de Produção)
             </label>
         </div>
 
@@ -118,8 +156,9 @@
                     <th>Nome</th>
                     <th>E-mail</th>
                     <th>Perfil de Acesso</th>
+                    <th>Painel PCP</th>
+                    <th>Montagem & Horas</th>
                     <th>Fechamento OP</th>
-                    <th>Data de Cadastro</th>
                     <th style="text-align: center;">Ações</th>
                 </tr>
             </thead>
@@ -134,18 +173,31 @@
                                 'ADMIN' => 'badge-faturado',
                                 'COMPRAS' => 'badge-antecipado',
                                 'ESTOQUE' => 'badge-separado',
+                                'PCP' => 'badge-fechado',
+                                'VISUALIZACAO' => 'badge-pendente',
                                 default => 'badge-pendente'
                             };
                         @endphp
                         <span class="badge {{ $roleBadge }}">{{ $u->role }}</span>
                     </td>
                     <td>
+                        @if($u->canAccessPcp())
+                            <span class="badge {{ $u->canEditPcp() ? 'badge-separado' : 'badge-antecipado' }}" style="font-size: 0.7rem;">
+                                {{ $u->canEditPcp() ? '✏️ Acesso + Edição' : '👁️ Apenas Leitura' }}
+                            </span>
+                        @else
+                            <span class="badge badge-falta" style="font-size: 0.7rem;">🚫 Bloqueado</span>
+                        @endif
+                    </td>
+                    <td>
+                        <span class="badge {{ $u->canAccessMontagem() ? 'badge-separado' : 'badge-falta' }}" style="font-size: 0.7rem;">
+                            {{ $u->canAccessMontagem() ? '⏱️ Acesso Liberado' : '🚫 Bloqueado' }}
+                        </span>
+                    </td>
+                    <td>
                         <span class="badge {{ $u->canCloseOp() ? 'badge-separado' : 'badge-falta' }}" style="font-size: 0.7rem;">
                             {{ $u->canCloseOp() ? '🔒 Pode Fechar OP' : '🚫 Sem Permissão' }}
                         </span>
-                    </td>
-                    <td style="font-size: 0.75rem; color: var(--text-muted);">
-                        {{ $u->created_at ? $u->created_at->format('d/m/Y H:i') : '-' }}
                     </td>
                     <td style="text-align: center;">
                         <div style="display: flex; gap: 0.3rem; justify-content: center;">
@@ -187,6 +239,9 @@ function abrirModalEditUser(user) {
     document.getElementById('edit_email').value = user.email;
     document.getElementById('edit_role').value = user.role;
     document.getElementById('edit_permissao_fechamento_op').checked = !!user.permissao_fechamento_op;
+    document.getElementById('edit_permissao_painel_pcp').checked = (user.role === 'ADMIN') || (user.permissao_painel_pcp === undefined ? true : !!user.permissao_painel_pcp);
+    document.getElementById('edit_permissao_painel_pcp_edicao').checked = (user.role === 'ADMIN') || (user.permissao_painel_pcp_edicao === undefined ? true : !!user.permissao_painel_pcp_edicao);
+    document.getElementById('edit_permissao_painel_montagem').checked = (user.role === 'ADMIN') || (user.permissao_painel_montagem === undefined ? true : !!user.permissao_painel_montagem);
 
     document.getElementById('modalEditUser').style.display = 'block';
     document.getElementById('modalOverlayUser').style.display = 'block';

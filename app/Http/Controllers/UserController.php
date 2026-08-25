@@ -27,12 +27,18 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:6',
-            'role' => 'required|in:ADMIN,COMPRAS,ESTOQUE',
+            'role' => 'required|in:ADMIN,COMPRAS,ESTOQUE,PCP,VISUALIZACAO',
             'permissao_fechamento_op' => 'nullable|boolean',
+            'permissao_painel_pcp' => 'nullable|boolean',
+            'permissao_painel_pcp_edicao' => 'nullable|boolean',
+            'permissao_painel_montagem' => 'nullable|boolean',
         ]);
 
         $validated['password'] = Hash::make($validated['password']);
         $validated['permissao_fechamento_op'] = $request->has('permissao_fechamento_op');
+        $validated['permissao_painel_pcp'] = $request->has('permissao_painel_pcp');
+        $validated['permissao_painel_pcp_edicao'] = $request->has('permissao_painel_pcp_edicao');
+        $validated['permissao_painel_montagem'] = $request->has('permissao_painel_montagem');
 
         User::create($validated);
 
@@ -47,9 +53,12 @@ class UserController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
-            'role' => 'required|in:ADMIN,COMPRAS,ESTOQUE',
+            'role' => 'required|in:ADMIN,COMPRAS,ESTOQUE,PCP,VISUALIZACAO',
             'password' => 'nullable|string|min:6',
             'permissao_fechamento_op' => 'nullable|boolean',
+            'permissao_painel_pcp' => 'nullable|boolean',
+            'permissao_painel_pcp_edicao' => 'nullable|boolean',
+            'permissao_painel_montagem' => 'nullable|boolean',
         ]);
 
         if (!empty($validated['password'])) {
@@ -59,6 +68,9 @@ class UserController extends Controller
         }
 
         $validated['permissao_fechamento_op'] = $request->has('permissao_fechamento_op');
+        $validated['permissao_painel_pcp'] = $request->has('permissao_painel_pcp');
+        $validated['permissao_painel_pcp_edicao'] = $request->has('permissao_painel_pcp_edicao');
+        $validated['permissao_painel_montagem'] = $request->has('permissao_painel_montagem');
 
         $user->update($validated);
 

@@ -120,6 +120,7 @@
         </p>
     </div>
     <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+        @if($canEditPcp ?? true)
         <!-- Botão Consultar PVs Protheus -->
         <button type="button" class="btn btn-primary" onclick="abrirModalConsultarProtheus()" style="padding: 0.45rem 0.85rem; font-size: 0.8rem; background-color: #6366f1;">
             ➕ Consultar/Incluir PVs Protheus
@@ -129,6 +130,11 @@
         <button type="button" class="btn btn-secondary" onclick="abrirModalCriarPvManual()" style="padding: 0.45rem 0.85rem; font-size: 0.8rem;">
             ✏️ Criar PV Manual
         </button>
+        @else
+        <span class="badge" style="background-color: rgba(99, 102, 241, 0.2); color: #a5b4fc; border: 1px solid rgba(99, 102, 241, 0.4); padding: 0.35rem 0.65rem; font-size: 0.75rem;">
+            👁️ Modo Visualização (Apenas Leitura)
+        </span>
+        @endif
 
         <!-- Botão Gestor de Colunas Visíveis (Excel) -->
         <div class="dropdown" style="position: relative; display: inline-block;">
@@ -218,6 +224,11 @@
                 <a href="{{ route('pcp-painel.index') }}" class="btn btn-secondary" style="padding: 0.4rem 0.75rem; font-size: 0.8rem;">
                     ✕ Limpar Filtros
                 </a>
+            @endif
+            @if($canEditPcp ?? true)
+                <button type="submit" form="formBatchPainelPcp" class="btn btn-primary" style="padding: 0.4rem 0.85rem; font-size: 0.8rem; background-color: #059669; border-color: #059669;">
+                    💾 Salvar Lote
+                </button>
             @endif
         </div>
     </div>
@@ -398,12 +409,12 @@
                     <tr class="pv-row" style="border-bottom: 1px solid var(--border-color); transition: background 0.15s;">
                         <!-- Célula Editável INFO -->
                         <td class="col-info" style="padding: 0.5rem 0.6rem;">
-                            <input type="text" name="pvs[{{ $pvKey }}][info]" value="{{ $pvItem['info'] }}" class="editable-cell-input" placeholder="Ex: CAR 55 KVA...">
+                            <input type="text" name="pvs[{{ $pvKey }}][info]" value="{{ $pvItem['info'] }}" class="editable-cell-input" placeholder="Ex: CAR 55 KVA..." {{ !($canEditPcp ?? true) ? 'disabled style=opacity:0.6;cursor:not-allowed;' : '' }}>
                         </td>
 
                         <!-- Célula Editável STATUS PV -->
                         <td class="col-status-pv" style="padding: 0.5rem 0.6rem;">
-                            <select name="pvs[{{ $pvKey }}][status_pv]" class="editable-cell-input" style="background-color: #0f172a; color: #f8fafc;">
+                            <select name="pvs[{{ $pvKey }}][status_pv]" class="editable-cell-input" style="background-color: #0f172a; color: #f8fafc; {{ !($canEditPcp ?? true) ? 'opacity:0.6;cursor:not-allowed;' : '' }}" {{ !($canEditPcp ?? true) ? 'disabled' : '' }}>
                                 <option value="">-- Selecione --</option>
                                 <option value="FATURADO" {{ $pvItem['status_pv'] === 'FATURADO' ? 'selected' : '' }}>FATURADO</option>
                                 <option value="COMPRAS" {{ $pvItem['status_pv'] === 'COMPRAS' ? 'selected' : '' }}>COMPRAS</option>
@@ -417,7 +428,7 @@
 
                         <!-- Célula Editável FÁBRICA -->
                         <td class="col-fabrica" style="padding: 0.5rem 0.6rem;">
-                            <input type="text" name="pvs[{{ $pvKey }}][fabrica]" value="{{ $pvItem['fabrica'] }}" class="editable-cell-input" placeholder="Ex: 99, 18...">
+                            <input type="text" name="pvs[{{ $pvKey }}][fabrica]" value="{{ $pvItem['fabrica'] }}" class="editable-cell-input" placeholder="Ex: 99, 18..." {{ !($canEditPcp ?? true) ? 'disabled style=opacity:0.6;cursor:not-allowed;' : '' }}>
                         </td>
 
                         <!-- PV / Pedido -->
@@ -437,7 +448,7 @@
 
                         <!-- Célula Editável MARCA -->
                         <td class="col-marca" style="padding: 0.5rem 0.6rem;">
-                            <input type="text" name="pvs[{{ $pvKey }}][marca]" value="{{ $pvItem['marca'] }}" class="editable-cell-input" placeholder="Ex: PERKINS, SCANIA...">
+                            <input type="text" name="pvs[{{ $pvKey }}][marca]" value="{{ $pvItem['marca'] }}" class="editable-cell-input" placeholder="Ex: PERKINS, SCANIA..." {{ !($canEditPcp ?? true) ? 'disabled style=opacity:0.6;cursor:not-allowed;' : '' }}>
                         </td>
 
                         <!-- Avanço Separação -->
@@ -506,9 +517,11 @@
                         <!-- Ações -->
                         <td class="col-acoes" style="padding: 0.65rem 0.75rem; text-align: center;">
                             <div style="display: flex; gap: 0.25rem; justify-content: center;">
+                                @if($canEditPcp ?? true)
                                 <button type="button" class="btn btn-secondary" onclick="abrirModalEditarPv('{{ $pvItem['pv'] }}', '{{ addslashes($pvItem['cliente']) }}', '{{ addslashes($pvItem['produto_pai']) }}', '{{ addslashes($pvItem['info']) }}', '{{ addslashes($pvItem['status_pv']) }}', '{{ addslashes($pvItem['fabrica']) }}', '{{ addslashes($pvItem['marca']) }}')" style="padding: 0.2rem 0.4rem; font-size: 0.7rem;" title="Editar dados deste PV">
                                     ✏️
                                 </button>
+                                @endif
                                 <button type="button" class="btn btn-secondary" onclick="toggleDetails('pv_details_{{ $pvItem['pv'] }}')" style="padding: 0.2rem 0.4rem; font-size: 0.7rem;" title="Expandir componentes">
                                     👁️
                                 </button>
@@ -518,9 +531,11 @@
                                 <a href="{{ route('compras.index', ['f_pv' => $pvItem['pv']]) }}" class="btn btn-primary" style="padding: 0.2rem 0.4rem; font-size: 0.7rem; background-color: #6366f1;" title="Filtrar em Compras">
                                     🛒
                                 </a>
+                                @if($canEditPcp ?? true)
                                 <button type="button" class="btn btn-danger" onclick="confirmarExclusaoPv('{{ $pvItem['pv'] }}')" style="padding: 0.2rem 0.4rem; font-size: 0.7rem; background-color: #ef4444; border-color: #ef4444;" title="Excluir PV e componentes da base">
                                     🗑️
                                 </button>
+                                @endif
                             </div>
                         </td>
                     </tr>

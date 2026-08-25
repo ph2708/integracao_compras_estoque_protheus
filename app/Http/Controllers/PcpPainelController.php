@@ -44,6 +44,11 @@ class PcpPainelController extends Controller
      */
     public function index(Request $request)
     {
+        if (!auth()->user()->canAccessPcp()) {
+            abort(403, 'Acesso não autorizado ao Painel PCP.');
+        }
+        $canEditPcp = auth()->user()->canEditPcp();
+
         $searchPv = $request->get('search_pv');
         $searchCliente = $request->get('search_cliente');
         $searchStatusPcp = $request->get('search_status_pcp');
@@ -301,8 +306,7 @@ class PcpPainelController extends Controller
                     str_starts_with($descClean, 'CAR ') || 
                     str_starts_with($descClean, 'CAR-') || 
                     str_starts_with($codClean, 'CAR') || 
-                    str_contains($descClean, 'CARENAGEM') || 
-                    str_contains($descClean, 'SILENCIOSO')
+                    str_contains($descClean, 'CARENAGEM')
                 );
 
                 if ($isCarenagem) {
@@ -386,7 +390,8 @@ class PcpPainelController extends Controller
             'kpiMediaSeparacao',
             'kpiInvestimentoTotal',
             'kpiPvsComFalta',
-            'filiaisProtheus'
+            'filiaisProtheus',
+            'canEditPcp'
         ));
     }
 

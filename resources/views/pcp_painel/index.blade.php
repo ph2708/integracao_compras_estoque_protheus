@@ -705,6 +705,18 @@
     </div>
 </form>
 
+<!-- Paginação Customizada Dark Mode -->
+@if($painelData->hasPages())
+    <div style="margin-top: 1rem; display: flex; justify-content: space-between; align-items: center; background: #0f172a; padding: 0.75rem 1rem; border-radius: 0.5rem; border: 1px solid #334155; flex-wrap: wrap; gap: 0.5rem;">
+        <div style="font-size: 0.8rem; color: #94a3b8;">
+            Exibindo de <strong>{{ $painelData->firstItem() }}</strong> a <strong>{{ $painelData->lastItem() }}</strong> de <strong>{{ $painelData->total() }}</strong> Pedidos de Venda
+        </div>
+        <div>
+            {{ $painelData->links() }}
+        </div>
+    </div>
+@endif
+
 <!-- Modal 1: Consultar Protheus e Selecionar PVs via Checkboxes -->
 <div id="modalConsultarProtheus" class="modal-overlay">
     <div class="modal-box">

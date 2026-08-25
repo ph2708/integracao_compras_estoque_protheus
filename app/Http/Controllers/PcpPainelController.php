@@ -8,6 +8,7 @@ use App\Models\PvMetadado;
 use App\Services\ProtheusService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class PcpPainelController extends Controller
 {
@@ -384,7 +385,7 @@ class PcpPainelController extends Controller
         }
 
         // Ordenar a coleção do painel em sequência numérica pela coluna FÁBRICA (18, 19, 20... 99)
-        $painelData = $painelData->sortBy(function ($item) {
+        $painelDataSorted = $painelData->sortBy(function ($item) {
             $fab = trim($item['fabrica'] ?? '');
             $numFab = (is_numeric($fab) && intval($fab) > 0) ? intval($fab) : 999999;
             return sprintf('%08d_%s', $numFab, $item['pv']);
@@ -396,11 +397,28 @@ class PcpPainelController extends Controller
         $opcoesFabrica = $opcoesFabrica->unique()->sort()->values();
         $opcoesMarca = $opcoesMarca->unique()->sort()->values();
 
-        // Métricas Globais dos KPIs Superiores
-        $kpiTotalPv = $painelData->count();
-        $kpiMediaSeparacao = $painelData->avg('percent_separado') ?? 0;
-        $kpiInvestimentoTotal = $painelData->sum('investimento_pendente');
-        $kpiPvsComFalta = $painelData->where('total_falta', '>', 0)->count();
+        // Métricas Globais dos KPIs Superiores (calculadas sobre todos os PVs)
+        $kpiTotalPv = $painelDataSorted->count();
+        $kpiMediaSeparacao = $painelDataSorted->avg('percent_separado') ?? 0;
+        $kpiInvestimentoTotal = $painelDataSorted->sum('investimento_pendente');
+        $kpiPvsComFalta = $painelDataSorted->where('total_falta', '>', 0)->count();
+
+        // Paginação de 15 Pedidos de Venda por página para manter o painel ultra-rápido e leve
+        $perPage = 15;
+        $page = LengthAwarePaginator::resolveCurrentPage('page') ?: 1;
+        $currentPageItems = $painelDataSorted->slice(($page - 1) * $perPage, $perPage)->values();
+
+        $painelData = new LengthAwarePaginator(
+            $currentPageItems,
+            $painelDataSorted->count(),
+            $perPage,
+            $page,
+            [
+                'path' => LengthAwarePaginator::resolveCurrentPath(),
+                'pageName' => 'page',
+                'query' => $request->query(),
+            ]
+        );
 
         // Lista de Filiais do Protheus
         $filiaisProtheus = $this->protheusService->listarFiliais();

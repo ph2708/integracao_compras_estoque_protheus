@@ -284,7 +284,28 @@ class PcpPainelController extends Controller
                         $baseStatus = $valTotal > 0 ? 'R$ ' . number_format($valTotal, 2, ',', '.') : 'PEN';
                     }
                 }
-                if (str_contains($desc, 'CARENAGEM') || str_contains($desc, 'SILENCIOSO') || str_contains($desc, 'CHASSIS')) {
+                $isIgnoredCarenagem = str_contains($descClean, 'BOTAO') || 
+                                      str_contains($descClean, 'BOTÃO') || 
+                                      str_contains($descClean, 'CHAVE') || 
+                                      str_contains($descClean, 'FECHO') || 
+                                      str_contains($descClean, 'EXTENSAO') || 
+                                      str_contains($descClean, 'EXTENSÃO') || 
+                                      str_contains($descClean, 'ADESIVO') || 
+                                      str_contains($descClean, 'PLACA');
+
+                $isCarenagem = !$isIgnoredCarenagem && (
+                    str_starts_with($descClean, 'CARENAGEM') || 
+                    str_starts_with($descClean, 'CRN ') || 
+                    str_starts_with($descClean, 'CRN-') || 
+                    str_starts_with($codClean, 'CRN') || 
+                    str_starts_with($descClean, 'CAR ') || 
+                    str_starts_with($descClean, 'CAR-') || 
+                    str_starts_with($codClean, 'CAR') || 
+                    str_contains($descClean, 'CARENAGEM') || 
+                    str_contains($descClean, 'SILENCIOSO')
+                );
+
+                if ($isCarenagem) {
                     $hasCarenagem = true;
                     if ($it->status === 'FALTA') {
                         $carenagemStatus = $valTotal > 0 ? 'R$ ' . number_format($valTotal, 2, ',', '.') : 'PEN';

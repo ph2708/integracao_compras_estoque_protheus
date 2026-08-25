@@ -19,12 +19,14 @@ class MontagemPainelController extends Controller
     public function index(Request $request)
     {
         $filialSel = $request->input('filial');
+        $dataDe = $request->input('data_de');
+        $dataAte = $request->input('data_ate');
         $searchPv = trim($request->input('search_pv', ''));
         $searchCliente = trim($request->input('search_cliente', ''));
         $searchStatusEstacao = $request->input('search_status_estacao');
 
         // Busca apontamentos brutos do Protheus (SH6010 / SH1010)
-        $apontamentosRaw = $this->protheusService->getApontamentosMontagem($filialSel);
+        $apontamentosRaw = $this->protheusService->getApontamentosMontagem($filialSel, $dataDe, $dataAte);
 
         // Agrupar apontamentos por OP / Pedido
         $opGroups = [];
@@ -172,6 +174,8 @@ class MontagemPainelController extends Controller
             'searchPv',
             'searchCliente',
             'filialSel',
+            'dataDe',
+            'dataAte',
             'filiaisProtheus',
             'kpiTotalOps',
             'kpiTotalHorasFmt',

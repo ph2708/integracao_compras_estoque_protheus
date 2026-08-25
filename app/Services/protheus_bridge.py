@@ -217,18 +217,33 @@ def get_ultimo_preco_fornecedor(codigo_produto):
     res = get_ultimos_precos_batch([codigo_produto])
     return res.get(codigo_produto.strip(), {'preco': 0.0, 'valor_unitario': 0.0, 'fornecedor': '', 'codigo_fornecedor': ''})
 
-def get_apontamentos_montagem(filial=None):
+def get_apontamentos_montagem(filial=None, data_de=None, data_ate=None):
     conn = get_connection()
     cursor = conn.cursor(as_dict=True)
     
-    where_filial = ""
+    where_clauses = ["H6.D_E_L_E_T_ = ' '"]
     params = []
+
     if filial and filial != 'null':
-        where_filial = " AND H6.H6_FILIAL = %s "
+        where_clauses.append("H6.H6_FILIAL = %s")
         params.append(str(filial).strip())
 
+    if data_de and data_de != 'null':
+        dt_de = str(data_de).replace('-', '').strip()
+        if len(dt_de) == 8:
+            where_clauses.append("H6.H6_DATAINI >= %s")
+            params.append(dt_de)
+
+    if data_ate and data_ate != 'null':
+        dt_ate = str(data_ate).replace('-', '').strip()
+        if len(dt_ate) == 8:
+            where_clauses.append("H6.H6_DATAINI <= %s")
+            params.append(dt_ate)
+
+    where_sql = " AND ".join(where_clauses)
+
     sql = f"""
-    SELECT TOP 500
+    SELECT TOP 1500
         RTRIM(H6.H6_FILIAL) AS FILIAL,
         RTRIM(H6.H6_OP) AS OP,
         RTRIM(C2.C2_PEDIDO) AS PEDIDO,
@@ -246,7 +261,7 @@ def get_apontamentos_montagem(filial=None):
     FROM SH6010 H6 WITH (NOLOCK)
     LEFT JOIN SH1010 H1 WITH (NOLOCK) ON H1.H1_FILIAL = H6.H6_FILIAL AND H1.H1_CODIGO = H6.H6_RECURSO AND H1.D_E_L_E_T_ = ' '
     LEFT JOIN SC2010 C2 WITH (NOLOCK) ON C2.C2_FILIAL = H6.H6_FILIAL AND C2.C2_NUM = SUBSTRING(H6.H6_OP, 1, 6) AND C2.D_E_L_E_T_ = ' '
-    WHERE H6.D_E_L_E_T_ = ' ' {where_filial}
+    WHERE {where_sql}
     ORDER BY H6.H6_DATAINI DESC, H6.H6_HORAINI DESC
     """
     cursor.execute(sql, tuple(params))
@@ -294,7 +309,9 @@ if __name__ == '__main__':
             print(json.dumps({'success': True, 'data': get_ultimos_precos_batch(cods)}))
         elif command in ['get_apontamentos_montagem', 'apontamentos_montagem']:
             fil = sys.argv[2] if len(sys.argv) > 2 and sys.argv[2] != 'null' else None
-            print(json.dumps({'success': True, 'data': get_apontamentos_montagem(fil)}))
+            dt_de = sys.argv[3] if len(sys.argv) > 3 and sys.argv[3] != 'null' else None
+            dt_ate = sys.argv[4] if len(sys.argv) > 4 and sys.argv[4] != 'null' else None
+            print(json.dumps({'success': True, 'data': get_apontamentos_montagem(fil, dt_de, dt_ate)}))
         else:
             print(json.dumps({'success': False, 'message': f'Comando desconhecido: {command}'}))
     except Exception as e:

@@ -169,11 +169,14 @@ class ProtheusService
     /**
      * Busca todos os apontamentos de montagem e coleta de horas na SH6010 / SH1010 no Protheus
      */
-    public function getApontamentosMontagem(?string $filial = null): array
+    public function getApontamentosMontagem(?string $filial = null, ?string $dataDe = null, ?string $dataAte = null): array
     {
         try {
             $filialArg = $filial ? escapeshellarg($filial) : 'null';
-            $command = "python3 " . escapeshellarg($this->scriptPath) . " get_apontamentos_montagem " . $filialArg;
+            $deArg = $dataDe ? escapeshellarg($dataDe) : 'null';
+            $ateArg = $dataAte ? escapeshellarg($dataAte) : 'null';
+
+            $command = "python3 " . escapeshellarg($this->scriptPath) . " get_apontamentos_montagem " . $filialArg . " " . $deArg . " " . $ateArg;
             $output = shell_exec($command);
             
             $json = json_decode($output, true);

@@ -54,7 +54,7 @@
                 <input type="text" name="search_cliente" value="{{ $searchCliente }}" class="form-control" placeholder="Nome do cliente..." style="padding: 0.45rem 0.6rem; font-size: 0.85rem;">
             </div>
 
-            <div style="width: 140px;">
+            <div style="width: 130px;">
                 <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.25rem; display: block;">Filial Protheus</label>
                 <select name="filial" class="form-control" style="padding: 0.45rem 0.6rem; font-size: 0.85rem;">
                     <option value="">Todas</option>
@@ -62,6 +62,16 @@
                         <option value="{{ $f }}" {{ $filialSel == $f ? 'selected' : '' }}>Filial {{ $f }}</option>
                     @endforeach
                 </select>
+            </div>
+
+            <div style="width: 145px;">
+                <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.25rem; display: block;">📅 Apontado De</label>
+                <input type="date" name="data_de" value="{{ $dataDe }}" class="form-control" style="padding: 0.45rem 0.6rem; font-size: 0.85rem;">
+            </div>
+
+            <div style="width: 145px;">
+                <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.25rem; display: block;">📅 Apontado Até</label>
+                <input type="date" name="data_ate" value="{{ $dataAte }}" class="form-control" style="padding: 0.45rem 0.6rem; font-size: 0.85rem;">
             </div>
 
             <div style="display: flex; gap: 0.5rem;">

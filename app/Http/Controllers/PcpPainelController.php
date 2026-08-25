@@ -4,11 +4,32 @@ namespace App\Http\Controllers;
 
 use App\Models\EstoqueItem;
 use App\Models\CompraItem;
+use App\Models\PvMetadado;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class PcpPainelController extends Controller
 {
+    /**
+     * Auxiliar para filtro de múltipla seleção (separado por vírgula)
+     */
+    private function matchMultiFilter(?string $itemValue, ?string $filterValue, bool $isExact = false): bool
+    {
+        if (empty($filterValue)) return true;
+        $tokens = array_filter(array_map('trim', explode(',', $filterValue)));
+        if (empty($tokens)) return true;
+
+        $valLower = strtolower($itemValue ?? '');
+        foreach ($tokens as $token) {
+            $tokLower = strtolower($token);
+            if ($isExact) {
+                if ($valLower === $tokLower) return true;
+            } else {
+                if (str_contains($valLower, $tokLower)) return true;
+            }
+        }
+        return false;
+    }
+
     /**
      * Exibe o Painel Gerencial PCP GMGs agrupado por Pedido de Venda (PV)
      */
@@ -18,6 +39,15 @@ class PcpPainelController extends Controller
         $searchCliente = $request->get('search_cliente');
         $searchStatusPcp = $request->get('search_status_pcp');
         $searchStatusPagamento = $request->get('search_status_pagamento');
+
+        // Filtros Multi-Seleção Estilo Excel
+        $fInfo = $request->get('f_info');
+        $fStatusPv = $request->get('f_status_pv');
+        $fFabrica = $request->get('f_fabrica');
+        $fMarca = $request->get('f_marca');
+
+        // Carregar Metadados de PVs cadastrados no banco
+        $pvMetadados = PvMetadado::all()->keyBy('pedido');
 
         // Query base trazendo itens do Estoque com relacionamento de Compras
         $query = EstoqueItem::with('compraItem');
@@ -53,6 +83,10 @@ class PcpPainelController extends Controller
         });
 
         $painelData = collect();
+        $opcoesInfo = collect();
+        $opcoesStatusPv = collect();
+        $opcoesFabrica = collect();
+        $opcoesMarca = collect();
 
         foreach ($grouped as $pvNum => $items) {
             if ($pvNum === 'SEM_PEDIDO' && $items->isEmpty()) continue;
@@ -60,17 +94,45 @@ class PcpPainelController extends Controller
             $clienteObs = $items->pluck('cliente_obs')->filter()->first() ?? '-';
             $produtoPai = $items->pluck('produto_pai')->filter()->first() ?? '-';
 
+            // Buscar metadados salvos do PV
+            $meta = $pvMetadados->get($pvNum);
+            $valInfo = $meta ? ($meta->info ?? '') : '';
+            $valStatusPv = $meta ? ($meta->status_pv ?? '') : '';
+            $valFabrica = $meta ? ($meta->fabrica ?? '') : '';
+            $valMarca = $meta ? ($meta->marca ?? '') : '';
+
+            // Tentar inferir Marca se não cadastrado
+            if (empty($valMarca)) {
+                foreach ($items as $it) {
+                    $d = strtoupper($it->descricao . ' ' . $it->descricao_longa);
+                    if (str_contains($d, 'SCANIA')) { $valMarca = 'SCANIA'; break; }
+                    if (str_contains($d, 'PERKINS')) { $valMarca = 'PERKINS'; break; }
+                    if (str_contains($d, 'FPT')) { $valMarca = 'FPT'; break; }
+                    if (str_contains($d, 'VOLVO')) { $valMarca = 'VOLVO'; break; }
+                }
+            }
+
+            if (!empty($valInfo)) $opcoesInfo->push($valInfo);
+            if (!empty($valStatusPv)) $opcoesStatusPv->push($valStatusPv);
+            if (!empty($valFabrica)) $opcoesFabrica->push($valFabrica);
+            if (!empty($valMarca)) $opcoesMarca->push($valMarca);
+
+            // Aplicar filtros multi-seleção
+            if ($fInfo && !$this->matchMultiFilter($valInfo, $fInfo)) continue;
+            if ($fStatusPv && !$this->matchMultiFilter($valStatusPv, $fStatusPv, true)) continue;
+            if ($fFabrica && !$this->matchMultiFilter($valFabrica, $fFabrica, true)) continue;
+            if ($fMarca && !$this->matchMultiFilter($valMarca, $fMarca)) continue;
+
             $totalComponentes = $items->count();
             $totalFalta = $items->where('status', 'FALTA')->count();
             $totalSeparado = $items->where('status', 'SEPARADO')->count();
             $totalRetirado = $items->where('status', 'RETIRADO')->count();
             $totalFabrica = $items->whereIn('status', ['FABRICA', 'FABRICAR INTERNO KANBAN'])->count();
-            $totalFechado = $items->where('status', 'FECHADO')->count();
 
-            // Porcentagens de Separação / Atendimento
+            // Porcentagem de Separação
             $percentSeparado = $totalComponentes > 0 ? round(($totalSeparado / $totalComponentes) * 100, 1) : 0;
 
-            // Status PCP Geral do Pedido de Venda
+            // Status PCP Geral dos Componentes
             if ($totalFalta > 0) {
                 $statusPcpGeral = 'FALTA';
                 $statusBadgeClass = 'badge-falta';
@@ -85,7 +147,6 @@ class PcpPainelController extends Controller
                 $statusBadgeClass = 'badge-kanban';
             }
 
-            // Aplicar filtro de Status PCP caso fornecido
             if ($searchStatusPcp && $statusPcpGeral !== $searchStatusPcp) {
                 continue;
             }
@@ -94,11 +155,8 @@ class PcpPainelController extends Controller
             $semPedidoCompraCount = 0;
             $semPrecoCount = 0;
             $investimentoPendente = 0;
-            $valorPa = 0;
-            $valorFaturado = 0;
-            $valorPago = 0;
 
-            // Status de Componentes Críticos
+            // Componentes Críticos
             $motorStatus = 'OK';
             $alternadorStatus = 'OK';
             $baseStatus = 'OK';
@@ -113,7 +171,6 @@ class PcpPainelController extends Controller
                 $cItem = $it->compraItem;
                 $valUnit = $cItem ? floatval($cItem->valor_unitario) : 0;
                 $valTotal = $cItem ? floatval($cItem->valor_total) : 0;
-                $stPag = $cItem ? strtoupper(trim($cItem->status_pagamento ?? '')) : 'PENDENTE';
 
                 if ($it->status === 'FALTA') {
                     if (!$cItem || empty(trim($cItem->pedido_compra ?? ''))) {
@@ -122,21 +179,10 @@ class PcpPainelController extends Controller
                     if ($valUnit <= 0) {
                         $semPrecoCount++;
                     }
-
                     $investimentoPendente += $valTotal;
-
-                    if (in_array($stPag, ['PA', 'PAG. ANTECIPADO', 'PAGAMENTO ANTECIPADO', 'ANTECIPADO'])) {
-                        $valorPa += $valTotal;
-                    } elseif ($stPag === 'FATURADO') {
-                        $valorFaturado += $valTotal;
-                    } elseif ($stPag === 'PAGO') {
-                        $valorPago += $valTotal;
-                    }
                 }
 
-                // Verificação de Componentes Especiais
                 $desc = strtoupper($it->descricao . ' ' . $it->descricao_longa . ' ' . $it->codigo_produto);
-                
                 if (str_contains($desc, 'MOTOR')) {
                     $hasMotor = true;
                     if ($it->status === 'FALTA') {
@@ -172,19 +218,19 @@ class PcpPainelController extends Controller
                 'pv' => $pvNum,
                 'cliente' => $clienteObs,
                 'produto_pai' => $produtoPai,
+                'info' => $valInfo,
+                'status_pv' => $valStatusPv,
+                'fabrica' => $valFabrica,
+                'marca' => $valMarca,
                 'total_componentes' => $totalComponentes,
                 'total_falta' => $totalFalta,
                 'total_separado' => $totalSeparado,
-                'total_fabrica' => $totalFabrica,
                 'percent_separado' => $percentSeparado,
                 'status_pcp_geral' => $statusPcpGeral,
                 'status_badge_class' => $statusBadgeClass,
                 'sem_pedido_compra_count' => $semPedidoCompraCount,
                 'sem_preco_count' => $semPrecoCount,
                 'investimento_pendente' => $investimentoPendente,
-                'valor_pa' => $valorPa,
-                'valor_faturado' => $valorFaturado,
-                'valor_pago' => $valorPago,
                 'motor_status' => $motorStatus,
                 'alternador_status' => $alternadorStatus,
                 'base_status' => $baseStatus,
@@ -192,6 +238,12 @@ class PcpPainelController extends Controller
                 'items' => $items,
             ]);
         }
+
+        // Opções de Filtro Únicas
+        $opcoesInfo = $opcoesInfo->unique()->sort()->values();
+        $opcoesStatusPv = collect(['FATURADO', 'COMPRAS', 'ENGENHARIA', 'ESTOQUE', 'ENTREGUE', 'FINANCEIRO', 'CANCELADO'])->merge($opcoesStatusPv)->unique()->values();
+        $opcoesFabrica = $opcoesFabrica->unique()->sort()->values();
+        $opcoesMarca = $opcoesMarca->unique()->sort()->values();
 
         // Métricas Globais dos KPIs Superiores
         $kpiTotalPv = $painelData->count();
@@ -205,10 +257,44 @@ class PcpPainelController extends Controller
             'searchCliente',
             'searchStatusPcp',
             'searchStatusPagamento',
+            'fInfo',
+            'fStatusPv',
+            'fFabrica',
+            'fMarca',
+            'opcoesInfo',
+            'opcoesStatusPv',
+            'opcoesFabrica',
+            'opcoesMarca',
             'kpiTotalPv',
             'kpiMediaSeparacao',
             'kpiInvestimentoTotal',
             'kpiPvsComFalta'
         ));
+    }
+
+    /**
+     * Atualização em Lote dos Metadados do Pedido de Venda (INFO, STATUS, FÁBRICA, MARCA)
+     */
+    public function updateBatch(Request $request)
+    {
+        $pvsData = $request->input('pvs', []);
+
+        if (is_array($pvsData) && !empty($pvsData)) {
+            foreach ($pvsData as $pvNum => $data) {
+                if (empty($pvNum)) continue;
+
+                PvMetadado::updateOrCreate(
+                    ['pedido' => trim($pvNum)],
+                    [
+                        'info' => isset($data['info']) ? trim($data['info']) : null,
+                        'status_pv' => isset($data['status_pv']) ? trim($data['status_pv']) : null,
+                        'fabrica' => isset($data['fabrica']) ? trim($data['fabrica']) : null,
+                        'marca' => isset($data['marca']) ? trim($data['marca']) : null,
+                    ]
+                );
+            }
+        }
+
+        return redirect()->back()->with('success', 'Alterações do Painel PCP salvas com sucesso!');
     }
 }

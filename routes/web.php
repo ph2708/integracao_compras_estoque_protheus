@@ -28,6 +28,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Painel PCP GMGs (Visão Gerencial por PV)
     Route::get('/painel-pcp', [PcpPainelController::class, 'index'])->name('pcp-painel.index');
+    Route::post('/painel-pcp/update-batch', [PcpPainelController::class, 'updateBatch'])->name('pcp-painel.update-batch');
 
     // Painel de Estoque (PCP)
     Route::get('/estoque', [EstoqueController::class, 'index'])->name('estoque.index');

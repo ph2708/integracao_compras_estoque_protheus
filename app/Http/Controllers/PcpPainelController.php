@@ -5,10 +5,19 @@ namespace App\Http\Controllers;
 use App\Models\EstoqueItem;
 use App\Models\CompraItem;
 use App\Models\PvMetadado;
+use App\Services\ProtheusService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class PcpPainelController extends Controller
 {
+    protected ProtheusService $protheusService;
+
+    public function __construct(ProtheusService $protheusService)
+    {
+        $this->protheusService = $protheusService;
+    }
+
     /**
      * Auxiliar para filtro de múltipla seleção (separado por vírgula)
      */
@@ -270,6 +279,12 @@ class PcpPainelController extends Controller
         $kpiInvestimentoTotal = $painelData->sum('investimento_pendente');
         $kpiPvsComFalta = $painelData->where('total_falta', '>', 0)->count();
 
+        // Lista de Filiais do Protheus
+        $filiaisProtheus = $this->protheusService->listarFiliais();
+        if (empty($filiaisProtheus)) {
+            $filiaisProtheus = ['01', '02', '03', '04', '05', '10', '15', '20', '22', '25', '30'];
+        }
+
         return view('pcp_painel.index', compact(
             'painelData',
             'searchPv',
@@ -287,8 +302,209 @@ class PcpPainelController extends Controller
             'kpiTotalPv',
             'kpiMediaSeparacao',
             'kpiInvestimentoTotal',
-            'kpiPvsComFalta'
+            'kpiPvsComFalta',
+            'filiaisProtheus'
         ));
+    }
+
+    /**
+     * Consulta itens no Protheus e agrupa por PV com suporte a seleção por checkboxes
+     */
+    public function consultarProtheus(Request $request)
+    {
+        $pedido = $request->input('pedido');
+        $filiais = $request->input('filiais');
+
+        if (empty($pedido)) {
+            return response()->json(['success' => false, 'message' => 'Informe o número do pedido para consultar.']);
+        }
+
+        $items = $this->protheusService->getItensPorPedido($pedido, $filiais);
+
+        if (empty($items)) {
+            return response()->json(['success' => false, 'message' => 'Nenhum item ou PV encontrado no Protheus para a consulta.']);
+        }
+
+        // Agrupar por PV (C2_PEDIDO)
+        $grouped = collect($items)->groupBy(function ($it) {
+            return isset($it['pedido']) ? trim($it['pedido']) : 'SEM_PEDIDO';
+        });
+
+        $pvsResult = [];
+        foreach ($grouped as $pvNum => $pvItems) {
+            $clienteObs = $pvItems->pluck('cliente_obs')->filter()->first() ?? '-';
+            $produtoPai = $pvItems->pluck('produto_pai')->filter()->first() ?? '-';
+
+            $pvsResult[] = [
+                'pv' => $pvNum,
+                'cliente' => $clienteObs,
+                'produto_pai' => $produtoPai,
+                'count' => $pvItems->count(),
+                'items' => $pvItems->values()->all(),
+            ];
+        }
+
+        return response()->json([
+            'success' => true,
+            'count_pvs' => count($pvsResult),
+            'total_items' => count($items),
+            'pvs' => $pvsResult,
+        ]);
+    }
+
+    /**
+     * Importação dos PVs e itens selecionados via Checkboxes
+     */
+    public function importarPvsSelecionados(Request $request)
+    {
+        $itemsJson = $request->input('items_json');
+        $itemsData = json_decode($itemsJson, true) ?? [];
+
+        if (empty($itemsData)) {
+            return redirect()->back()->with('error', 'Nenhum item/PV selecionado para importação.');
+        }
+
+        // Prévia em lote de preços e fornecedores do último PC do Protheus
+        $codigosProdutos = array_filter(array_column($itemsData, 'codigo_produto'));
+        $precosBatch = $this->protheusService->getUltimosPrecosBatch($codigosProdutos);
+
+        $importedCount = 0;
+        $pvsImportados = [];
+
+        DB::transaction(function () use ($itemsData, $precosBatch, &$importedCount, &$pvsImportados) {
+            foreach ($itemsData as $row) {
+                if (empty($row['codigo_produto']) || empty($row['op'])) continue;
+
+                $pvNum = trim($row['pedido'] ?? '');
+                if ($pvNum) $pvsImportados[$pvNum] = true;
+
+                $qtdOp = floatval($row['quantidade'] ?? 0);
+                $qtdEstoque = floatval($row['quantidade_estoque'] ?? 0);
+                $qtdComprar = max(0, $qtdOp - $qtdEstoque);
+
+                $statusDefault = ($qtdEstoque >= $qtdOp && $qtdOp > 0) ? 'SEPARADO' : 'FALTA';
+
+                $estoqueItem = EstoqueItem::updateOrCreate(
+                    [
+                        'codigo_produto' => $row['codigo_produto'],
+                        'op'             => $row['op'],
+                    ],
+                    [
+                        'descricao'          => $row['descricao'] ?? '',
+                        'descricao_longa'    => $row['descricao_longa'] ?? null,
+                        'produto_pai'        => $row['produto_pai'] ?? null,
+                        'pedido'             => $pvNum ?: null,
+                        'cliente_obs'        => $row['cliente_obs'] ?? null,
+                        'quantidade'         => $qtdOp,
+                        'quantidade_estoque' => $qtdEstoque,
+                        'status'             => $statusDefault,
+                    ]
+                );
+
+                $codProd = $row['codigo_produto'];
+                $sugestao = $precosBatch[$codProd] ?? null;
+
+                $compraItem = CompraItem::where('estoque_item_id', $estoqueItem->id)->first();
+                if (!$compraItem) {
+                    $fornecedorSug = $sugestao ? ($sugestao['codigo_fornecedor'] ?? null) : null;
+                    $valUnitSug    = $sugestao ? floatval($sugestao['valor_unitario'] ?? 0) : 0;
+                    $valTotalSug   = $qtdComprar * $valUnitSug;
+
+                    CompraItem::create([
+                        'estoque_item_id'   => $estoqueItem->id,
+                        'codigo_fornecedor' => $fornecedorSug,
+                        'valor_unitario'    => $valUnitSug,
+                        'valor_total'       => $valTotalSug,
+                    ]);
+                }
+
+                $importedCount++;
+            }
+
+            // Criar entrada em pv_metadados para cada PV importado se não existir
+            foreach (array_keys($pvsImportados) as $pvNum) {
+                PvMetadado::firstOrCreate(
+                    ['pedido' => $pvNum],
+                    ['status_pv' => 'COMPRAS', 'fabrica' => '99']
+                );
+            }
+        });
+
+        return redirect()->route('pcp-painel.index')->with('success', "Importados {$importedCount} componentes de " . count($pvsImportados) . " Pedidos de Venda com sucesso!");
+    }
+
+    /**
+     * Criação Manual de um Pedido de Venda (PV)
+     */
+    public function storeManual(Request $request)
+    {
+        $request->validate([
+            'pedido' => 'required|string',
+            'cliente_obs' => 'nullable|string',
+            'produto_pai' => 'nullable|string',
+        ]);
+
+        $pvNum = trim($request->input('pedido'));
+        $cliente = trim($request->input('cliente_obs', ''));
+        $prodPai = trim($request->input('produto_pai', ''));
+
+        // Salvar Metadados do PV
+        PvMetadado::updateOrCreate(
+            ['pedido' => $pvNum],
+            [
+                'info' => trim($request->input('info', '')),
+                'status_pv' => trim($request->input('status_pv', 'COMPRAS')),
+                'fabrica' => trim($request->input('fabrica', '99')),
+                'marca' => trim($request->input('marca', '')),
+            ]
+        );
+
+        // Criar registro base em estoque_items caso o PV não possua itens cadastrados
+        $exists = EstoqueItem::where('pedido', $pvNum)->exists();
+        if (!$exists) {
+            $eItem = EstoqueItem::create([
+                'codigo_produto' => 'GMG-MANUAL-' . strtoupper(substr(md5(time()), 0, 5)),
+                'op' => 'OP-' . $pvNum . '-01',
+                'pedido' => $pvNum,
+                'cliente_obs' => $cliente ?: $pvNum,
+                'produto_pai' => $prodPai ?: 'GERADOR GMG MANUAL',
+                'descricao' => 'EQUIPAMENTO GERADOR GMG (PV MANUAL)',
+                'quantidade' => 1,
+                'quantidade_estoque' => 0,
+                'status' => 'FALTA',
+            ]);
+
+            CompraItem::create([
+                'estoque_item_id' => $eItem->id,
+                'valor_unitario' => 0,
+                'valor_total' => 0,
+            ]);
+        }
+
+        return redirect()->route('pcp-painel.index')->with('success', "Pedido de Venda {$pvNum} cadastrado manualmente com sucesso!");
+    }
+
+    /**
+     * Exclusão de um Pedido de Venda e todas as suas matérias-primas da base
+     */
+    public function destroyPv(Request $request)
+    {
+        $pvNum = trim($request->input('pedido'));
+
+        if (empty($pvNum)) {
+            return redirect()->back()->with('error', 'Pedido de Venda inválido para exclusão.');
+        }
+
+        DB::transaction(function () use ($pvNum) {
+            $itemIds = EstoqueItem::where('pedido', $pvNum)->pluck('id');
+            if ($itemIds->isNotEmpty()) {
+                CompraItem::whereIn('estoque_item_id', $itemIds)->delete();
+                EstoqueItem::whereIn('id', $itemIds)->delete();
+            }
+            PvMetadado::where('pedido', $pvNum)->delete();
+        });
+
+        return redirect()->route('pcp-painel.index')->with('success', "Pedido de Venda {$pvNum} e seus componentes foram excluídos com sucesso!");
     }
 
     /**

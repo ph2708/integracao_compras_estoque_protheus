@@ -78,6 +78,27 @@
         border-color: #6366f1;
         outline: none;
     }
+    .modal-overlay {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0, 0, 0, 0.75);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 2000;
+        backdrop-filter: blur(4px);
+    }
+    .modal-box {
+        background: #0f172a;
+        border: 1px solid #334155;
+        border-radius: 0.75rem;
+        width: 90%;
+        max-width: 750px;
+        padding: 1.25rem;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.8);
+    }
 </style>
 
 <!-- Formulário de Filtro Superior -->
@@ -99,6 +120,16 @@
         </p>
     </div>
     <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+        <!-- Botão Consultar PVs Protheus -->
+        <button type="button" class="btn btn-primary" onclick="abrirModalConsultarProtheus()" style="padding: 0.45rem 0.85rem; font-size: 0.8rem; background-color: #6366f1;">
+            ➕ Consultar/Incluir PVs Protheus
+        </button>
+
+        <!-- Botão Criar PV Manual -->
+        <button type="button" class="btn btn-secondary" onclick="abrirModalCriarPvManual()" style="padding: 0.45rem 0.85rem; font-size: 0.8rem;">
+            ✏️ Criar PV Manual
+        </button>
+
         <!-- Botão Gestor de Colunas Visíveis (Excel) -->
         <div class="dropdown" style="position: relative; display: inline-block;">
             <button type="button" class="btn btn-secondary" onclick="toggleMenuColunasPainelPcp()" style="padding: 0.45rem 0.75rem; font-size: 0.8rem; border-color: rgba(99, 102, 241, 0.5); font-weight: 500;">
@@ -110,48 +141,20 @@
                     <span style="font-size: 0.7rem; color: #94a3b8; font-weight: normal;">(Salvo Auto)</span>
                 </div>
                 <div style="max-height: 290px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.45rem;">
-                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                        <input type="checkbox" id="chk_col-info" onchange="toggleColunaPainelPcp('col-info', this.checked)"> INFO ✏️
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                        <input type="checkbox" id="chk_col-status-pv" onchange="toggleColunaPainelPcp('col-status-pv', this.checked)"> STATUS (PV) ✏️
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: #38bdf8;">
-                        <input type="checkbox" id="chk_col-fabrica" onchange="toggleColunaPainelPcp('col-fabrica', this.checked)"> FÁBRICA ✏️ ⬆️
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                        <input type="checkbox" id="chk_col-pv" onchange="toggleColunaPainelPcp('col-pv', this.checked)"> PV / Pedido
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                        <input type="checkbox" id="chk_col-cliente" onchange="toggleColunaPainelPcp('col-cliente', this.checked)"> Cliente (C2_OBS)
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: #c084fc;">
-                        <input type="checkbox" id="chk_col-produto-pai" onchange="toggleColunaPainelPcp('col-produto-pai', this.checked)"> Equipamento / Produto Pai
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                        <input type="checkbox" id="chk_col-marca" onchange="toggleColunaPainelPcp('col-marca', this.checked)"> MARCA ✏️
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                        <input type="checkbox" id="chk_col-avanco" onchange="toggleColunaPainelPcp('col-avanco', this.checked)"> Avanço Separação
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                        <input type="checkbox" id="chk_col-motor" onchange="toggleColunaPainelPcp('col-motor', this.checked)"> Motor
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                        <input type="checkbox" id="chk_col-alternador" onchange="toggleColunaPainelPcp('col-alternador', this.checked)"> Alternador
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                        <input type="checkbox" id="chk_col-base" onchange="toggleColunaPainelPcp('col-base', this.checked)"> Base
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                        <input type="checkbox" id="chk_col-carenagem" onchange="toggleColunaPainelPcp('col-carenagem', this.checked)"> Carenagem
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                        <input type="checkbox" id="chk_col-alertas" onchange="toggleColunaPainelPcp('col-alertas', this.checked)"> Alertas Compras
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                        <input type="checkbox" id="chk_col-investimento" onchange="toggleColunaPainelPcp('col-investimento', this.checked)"> Investimento Pendente
-                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;"><input type="checkbox" id="chk_col-info" onchange="toggleColunaPainelPcp('col-info', this.checked)"> INFO ✏️</label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;"><input type="checkbox" id="chk_col-status-pv" onchange="toggleColunaPainelPcp('col-status-pv', this.checked)"> STATUS (PV) ✏️</label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: #38bdf8;"><input type="checkbox" id="chk_col-fabrica" onchange="toggleColunaPainelPcp('col-fabrica', this.checked)"> FÁBRICA ✏️ ⬆️</label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;"><input type="checkbox" id="chk_col-pv" onchange="toggleColunaPainelPcp('col-pv', this.checked)"> PV / Pedido</label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;"><input type="checkbox" id="chk_col-cliente" onchange="toggleColunaPainelPcp('col-cliente', this.checked)"> Cliente (C2_OBS)</label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: #c084fc;"><input type="checkbox" id="chk_col-produto-pai" onchange="toggleColunaPainelPcp('col-produto-pai', this.checked)"> Equipamento / Produto Pai</label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;"><input type="checkbox" id="chk_col-marca" onchange="toggleColunaPainelPcp('col-marca', this.checked)"> MARCA ✏️</label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;"><input type="checkbox" id="chk_col-avanco" onchange="toggleColunaPainelPcp('col-avanco', this.checked)"> Avanço Separação</label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;"><input type="checkbox" id="chk_col-motor" onchange="toggleColunaPainelPcp('col-motor', this.checked)"> Motor</label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;"><input type="checkbox" id="chk_col-alternador" onchange="toggleColunaPainelPcp('col-alternador', this.checked)"> Alternador</label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;"><input type="checkbox" id="chk_col-base" onchange="toggleColunaPainelPcp('col-base', this.checked)"> Base</label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;"><input type="checkbox" id="chk_col-carenagem" onchange="toggleColunaPainelPcp('col-carenagem', this.checked)"> Carenagem</label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;"><input type="checkbox" id="chk_col-alertas" onchange="toggleColunaPainelPcp('col-alertas', this.checked)"> Alertas Compras</label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;"><input type="checkbox" id="chk_col-investimento" onchange="toggleColunaPainelPcp('col-investimento', this.checked)"> Investimento Pendente</label>
                 </div>
             </div>
         </div>
@@ -427,7 +430,7 @@
                             {{ $pvItem['cliente'] }}
                         </td>
 
-                        <!-- Equipamento / Produto Pai (Com Largura Expandida min-width: 320px) -->
+                        <!-- Equipamento / Produto Pai -->
                         <td class="col-produto-pai" style="padding: 0.65rem 0.75rem; min-width: 320px; color: #c084fc; font-weight: 500; word-break: break-word;" title="{{ $pvItem['produto_pai'] }}">
                             {{ $pvItem['produto_pai'] }}
                         </td>
@@ -512,6 +515,9 @@
                                 <a href="{{ route('compras.index', ['f_pv' => $pvItem['pv']]) }}" class="btn btn-primary" style="padding: 0.2rem 0.4rem; font-size: 0.7rem; background-color: #6366f1;" title="Filtrar em Compras">
                                     🛒
                                 </a>
+                                <button type="button" class="btn btn-danger" onclick="confirmarExclusaoPv('{{ $pvItem['pv'] }}')" style="padding: 0.2rem 0.4rem; font-size: 0.7rem; background-color: #ef4444; border-color: #ef4444;" title="Excluir PV e componentes da base">
+                                    🗑️
+                                </button>
                             </div>
                         </td>
                     </tr>
@@ -585,12 +591,237 @@
     </div>
 </form>
 
+<!-- Modal 1: Consultar Protheus e Selecionar PVs via Checkboxes -->
+<div id="modalConsultarProtheus" class="modal-overlay">
+    <div class="modal-box">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 0.75rem; margin-bottom: 1rem;">
+            <h3 style="font-size: 1.1rem; font-weight: 700; color: #a5b4fc; display: flex; align-items: center; gap: 0.5rem; margin: 0;">
+                🔍 Consultar Novos PVs no Protheus
+            </h3>
+            <button type="button" onclick="fecharModalConsultarProtheus()" style="background: none; border: none; color: #94a3b8; font-size: 1.25rem; cursor: pointer;">✕</button>
+        </div>
+
+        <div style="display: flex; gap: 0.75rem; margin-bottom: 1rem; align-items: flex-end; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 180px;">
+                <label style="font-size: 0.75rem; font-weight: 600; color: #94a3b8; margin-bottom: 0.3rem; display: block;">N° do Pedido de Venda (PV)</label>
+                <input type="text" id="modal_search_pv_input" class="form-control" placeholder="Ex: 006883..." style="padding: 0.4rem 0.6rem; font-size: 0.85rem;">
+            </div>
+            <button type="button" class="btn btn-primary" onclick="executarBuscaProtheusModal()" style="padding: 0.45rem 1rem; font-size: 0.85rem; background-color: #6366f1;">
+                🔍 Buscar no Protheus
+            </button>
+        </div>
+
+        <!-- Área de Resultados da Consulta Protheus -->
+        <div id="modal_protheus_results_area" style="display: none; border-top: 1px solid #334155; padding-top: 1rem; margin-top: 0.5rem;">
+            <div style="font-size: 0.8rem; font-weight: 700; color: #34d399; margin-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: center;">
+                <span id="modal_protheus_count_label">0 Pedidos Encontrados</span>
+                <label style="font-weight: 400; cursor: pointer; color: #a5b4fc; font-size: 0.75rem;">
+                    <input type="checkbox" id="chk_select_all_modal_pvs" onchange="toggleSelectAllModalPvs(this)" checked> Marcar Todos
+                </label>
+            </div>
+
+            <form action="{{ route('pcp-painel.importar-pvs') }}" method="POST" id="formImportarModalPvs" onsubmit="window.mostrarLoading('📥 Importando PVs selecionados...')">
+                @csrf
+                <input type="hidden" name="items_json" id="modal_import_items_json">
+                
+                <div id="modal_pvs_list_container" style="max-height: 280px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem;">
+                    <!-- Preenchido via JavaScript -->
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 0.5rem; border-top: 1px solid #334155; padding-top: 0.75rem;">
+                    <button type="button" class="btn btn-secondary" onclick="fecharModalConsultarProtheus()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" style="background-color: #059669; border-color: #059669;">
+                        📥 Importar PVs Selecionados
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal 2: Criar PV Manualmente -->
+<div id="modalCriarPvManual" class="modal-overlay">
+    <div class="modal-box" style="max-width: 550px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 0.75rem; margin-bottom: 1rem;">
+            <h3 style="font-size: 1.1rem; font-weight: 700; color: #a5b4fc; display: flex; align-items: center; gap: 0.5rem; margin: 0;">
+                ✏️ Criar Pedido de Venda Manual
+            </h3>
+            <button type="button" onclick="fecharModalCriarPvManual()" style="background: none; border: none; color: #94a3b8; font-size: 1.25rem; cursor: pointer;">✕</button>
+        </div>
+
+        <form action="{{ route('pcp-painel.store-manual') }}" method="POST" onsubmit="window.mostrarLoading('✏️ Cadastrando PV manual...')">
+            @csrf
+            <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.25rem;">
+                <div>
+                    <label style="font-size: 0.75rem; font-weight: 600; color: #94a3b8; margin-bottom: 0.25rem; display: block;">N° do Pedido de Venda (PV) *</label>
+                    <input type="text" name="pedido" class="form-control" required placeholder="Ex: 006899 ou PV-MANUAL-01" style="padding: 0.45rem; font-size: 0.85rem;">
+                </div>
+                <div>
+                    <label style="font-size: 0.75rem; font-weight: 600; color: #94a3b8; margin-bottom: 0.25rem; display: block;">Nome do Cliente / Obra (C2_OBS)</label>
+                    <input type="text" name="cliente_obs" class="form-control" placeholder="Ex: CONCESSIONARIA DA LINHA..." style="padding: 0.45rem; font-size: 0.85rem;">
+                </div>
+                <div>
+                    <label style="font-size: 0.75rem; font-weight: 600; color: #94a3b8; margin-bottom: 0.25rem; display: block;">Equipamento / Produto Pai</label>
+                    <input type="text" name="produto_pai" class="form-control" placeholder="Ex: GMG MAQ450V DNQ BRN AB 46/26V" style="padding: 0.45rem; font-size: 0.85rem;">
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <div style="flex: 1;">
+                        <label style="font-size: 0.75rem; font-weight: 600; color: #94a3b8; margin-bottom: 0.25rem; display: block;">INFO</label>
+                        <input type="text" name="info" class="form-control" placeholder="Ex: CAR 55 KVA 220" style="padding: 0.45rem; font-size: 0.85rem;">
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="font-size: 0.75rem; font-weight: 600; color: #94a3b8; margin-bottom: 0.25rem; display: block;">STATUS (PV)</label>
+                        <select name="status_pv" class="form-control" style="padding: 0.45rem; font-size: 0.85rem;">
+                            <option value="COMPRAS">COMPRAS</option>
+                            <option value="FATURADO">FATURADO</option>
+                            <option value="ENGENHARIA">ENGENHARIA</option>
+                            <option value="ESTOQUE">ESTOQUE</option>
+                            <option value="FINANCEIRO">FINANCEIRO</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <div style="flex: 1;">
+                        <label style="font-size: 0.75rem; font-weight: 600; color: #94a3b8; margin-bottom: 0.25rem; display: block;">FÁBRICA</label>
+                        <input type="text" name="fabrica" value="99" class="form-control" placeholder="Ex: 18, 19, 99" style="padding: 0.45rem; font-size: 0.85rem;">
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="font-size: 0.75rem; font-weight: 600; color: #94a3b8; margin-bottom: 0.25rem; display: block;">MARCA</label>
+                        <input type="text" name="marca" class="form-control" placeholder="Ex: PERKINS, SCANIA" style="padding: 0.45rem; font-size: 0.85rem;">
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 0.5rem; border-top: 1px solid #334155; padding-top: 0.75rem;">
+                <button type="button" class="btn btn-secondary" onclick="fecharModalCriarPvManual()">Cancelar</button>
+                <button type="submit" class="btn btn-primary" style="background-color: #6366f1;">
+                    ✓ Confirmar e Salvar PV
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Form Escondido para Exclusão de PV -->
+<form action="{{ route('pcp-painel.excluir-pv') }}" method="POST" id="formExcluirPvModal" onsubmit="window.mostrarLoading('🗑️ Excluindo Pedido de Venda e componentes...')">
+    @csrf
+    <input type="hidden" name="pedido" id="input_excluir_pv_num">
+</form>
+
 <script>
     function toggleDetails(elementId) {
         const el = document.getElementById(elementId);
         if (el) {
             el.style.display = el.style.display === 'none' ? 'table-row' : 'none';
         }
+    }
+
+    function confirmarExclusaoPv(pvNum) {
+        if (confirm('⚠️ Tem certeza que deseja EXCLUIR permanentemente o Pedido de Venda ' + pvNum + ' e todas as suas matérias-primas da base de dados?')) {
+            document.getElementById('input_excluir_pv_num').value = pvNum;
+            document.getElementById('formExcluirPvModal').submit();
+        }
+    }
+
+    // Modal Consulta Protheus
+    let modalProtheusItemsRaw = [];
+    let modalProtheusPvsMap = {};
+
+    function abrirModalConsultarProtheus() {
+        document.getElementById('modalConsultarProtheus').style.display = 'flex';
+    }
+    function fecharModalConsultarProtheus() {
+        document.getElementById('modalConsultarProtheus').style.display = 'none';
+    }
+
+    function abrirModalCriarPvManual() {
+        document.getElementById('modalCriarPvManual').style.display = 'flex';
+    }
+    function fecharModalCriarPvManual() {
+        document.getElementById('modalCriarPvManual').style.display = 'none';
+    }
+
+    function executarBuscaProtheusModal() {
+        const pvInput = document.getElementById('modal_search_pv_input').value.trim();
+        if (!pvInput) {
+            alert('Informe o número do Pedido de Venda para consultar.');
+            return;
+        }
+
+        window.mostrarLoading('🔍 Buscando novos PVs no Protheus...');
+
+        fetch('{{ route("pcp-painel.consultar-protheus") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({ pedido: pvInput })
+        })
+        .then(res => res.json())
+        .then(data => {
+            window.esconderLoading();
+            if (!data.success) {
+                alert(data.message || 'Nenhum PV encontrado.');
+                return;
+            }
+
+            modalProtheusPvsMap = {};
+            data.pvs.forEach(pvObj => {
+                modalProtheusPvsMap[pvObj.pv] = pvObj;
+            });
+
+            renderModalPvsList(data.pvs);
+        })
+        .catch(err => {
+            window.esconderLoading();
+            alert('Erro ao consultar o Protheus. Tente novamente.');
+        });
+    }
+
+    function renderModalPvsList(pvs) {
+        const container = document.getElementById('modal_pvs_list_container');
+        const countLabel = document.getElementById('modal_protheus_count_label');
+        const area = document.getElementById('modal_protheus_results_area');
+        
+        container.innerHTML = '';
+        countLabel.innerText = pvs.length + ' Pedido(s) Encontrado(s) (' + pvs.reduce((acc, p) => acc + p.count, 0) + ' componentes)';
+        area.style.display = 'block';
+
+        pvs.forEach(pvObj => {
+            const cardHtml = `
+                <div style="background: #1e293b; border: 1px solid #334155; border-radius: 0.5rem; padding: 0.6rem 0.8rem; display: flex; align-items: center; justify-content: space-between;">
+                    <label style="display: flex; align-items: center; gap: 0.6rem; font-size: 0.825rem; font-weight: 600; cursor: pointer; color: #f8fafc; margin: 0;">
+                        <input type="checkbox" class="chk-modal-pv-item" value="${pvObj.pv}" checked onchange="atualizarModalImportJson()">
+                        <span style="color: #a5b4fc;">PV ${pvObj.pv}</span> - <span style="color: #cbd5e1;">${pvObj.cliente}</span>
+                    </label>
+                    <span style="font-size: 0.725rem; color: #34d399; font-weight: 700; background: rgba(16,185,129,0.15); padding: 0.15rem 0.4rem; border-radius: 0.2rem;">
+                        ${pvObj.count} componentes
+                    </span>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', cardHtml);
+        });
+
+        atualizarModalImportJson();
+    }
+
+    function toggleSelectAllModalPvs(masterChk) {
+        document.querySelectorAll('.chk-modal-pv-item').forEach(c => c.checked = masterChk.checked);
+        atualizarModalImportJson();
+    }
+
+    function atualizarModalImportJson() {
+        const selectedPvNums = Array.from(document.querySelectorAll('.chk-modal-pv-item:checked')).map(c => c.value);
+        let itemsToImport = [];
+
+        selectedPvNums.forEach(pvNum => {
+            if (modalProtheusPvsMap[pvNum] && modalProtheusPvsMap[pvNum].items) {
+                itemsToImport = itemsToImport.concat(modalProtheusPvsMap[pvNum].items);
+            }
+        });
+
+        document.getElementById('modal_import_items_json').value = JSON.stringify(itemsToImport);
     }
 
     // Gestor de Visibilidade de Colunas (Excel) do Painel PCP

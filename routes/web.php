@@ -5,6 +5,7 @@ use App\Http\Controllers\ComprasController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EstoqueController;
 use App\Http\Controllers\ImportController;
+use App\Http\Controllers\MontagemPainelController;
 use App\Http\Controllers\OpFechamentoController;
 use App\Http\Controllers\PcpPainelController;
 use App\Http\Controllers\UserController;
@@ -34,6 +35,9 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/painel-pcp/store-manual', [PcpPainelController::class, 'storeManual'])->name('pcp-painel.store-manual');
     Route::post('/painel-pcp/update-single-pv', [PcpPainelController::class, 'updateSinglePv'])->name('pcp-painel.update-single-pv');
     Route::post('/painel-pcp/excluir-pv', [PcpPainelController::class, 'destroyPv'])->name('pcp-painel.excluir-pv');
+
+    // Painel de Status da Montagem e Coleta de Horas (Coletores Protheus)
+    Route::get('/painel-montagem', [MontagemPainelController::class, 'index'])->name('pcp-montagem.index');
 
     // Painel de Estoque (PCP)
     Route::get('/estoque', [EstoqueController::class, 'index'])->name('estoque.index');

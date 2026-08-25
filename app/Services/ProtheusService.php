@@ -165,4 +165,24 @@ class ProtheusService
     {
         return $this->getFornecedorEPedidoCompra($c7Num, $produto);
     }
+
+    /**
+     * Busca todos os apontamentos de montagem e coleta de horas na SH6010 / SH1010 no Protheus
+     */
+    public function getApontamentosMontagem(?string $filial = null): array
+    {
+        try {
+            $filialArg = $filial ? escapeshellarg($filial) : 'null';
+            $command = "python3 " . escapeshellarg($this->scriptPath) . " get_apontamentos_montagem " . $filialArg;
+            $output = shell_exec($command);
+            
+            $json = json_decode($output, true);
+            if (isset($json['success']) && !empty($json['data'])) {
+                return $json['data'];
+            }
+            return [];
+        } catch (Exception $e) {
+            return [];
+        }
+    }
 }

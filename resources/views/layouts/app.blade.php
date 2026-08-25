@@ -402,6 +402,9 @@
             <a href="{{ route('pcp-painel.index') }}" class="nav-link {{ request()->routeIs('pcp-painel.*') ? 'active' : '' }}" style="color: #818cf8; font-weight: 600;">
                 🏭 Painel PCP
             </a>
+            <a href="{{ route('pcp-montagem.index') }}" class="nav-link {{ request()->routeIs('pcp-montagem.*') ? 'active' : '' }}" style="color: #38bdf8; font-weight: 600;">
+                ⏱️ Montagem & Horas
+            </a>
             <a href="{{ route('estoque.index') }}" class="nav-link {{ request()->routeIs('estoque.*') ? 'active' : '' }}">
                 📦 Estoque PCP
             </a>

@@ -217,6 +217,62 @@ def get_ultimo_preco_fornecedor(codigo_produto):
     res = get_ultimos_precos_batch([codigo_produto])
     return res.get(codigo_produto.strip(), {'preco': 0.0, 'valor_unitario': 0.0, 'fornecedor': '', 'codigo_fornecedor': ''})
 
+def get_apontamentos_montagem(filial=None):
+    conn = get_connection()
+    cursor = conn.cursor(as_dict=True)
+    
+    where_filial = ""
+    params = []
+    if filial and filial != 'null':
+        where_filial = " AND H6.H6_FILIAL = %s "
+        params.append(str(filial).strip())
+
+    sql = f"""
+    SELECT TOP 500
+        RTRIM(H6.H6_FILIAL) AS FILIAL,
+        RTRIM(H6.H6_OP) AS OP,
+        RTRIM(C2.C2_PEDIDO) AS PEDIDO,
+        RTRIM(C2.C2_OBS) AS CLIENTE_OBS,
+        RTRIM(H6.H6_OPERAC) AS OPERAC,
+        RTRIM(H6.H6_RECURSO) AS COD_RECURSO,
+        RTRIM(H1.H1_DESCRI) AS NOME_RECURSO,
+        RTRIM(H6.H6_DATAINI) AS DATA_INI,
+        RTRIM(H6.H6_HORAINI) AS HORA_INI,
+        RTRIM(H6.H6_DATAFIN) AS DATA_FIN,
+        RTRIM(H6.H6_HORAFIN) AS HORA_FIN,
+        RTRIM(H6.H6_TEMPO) AS TEMPO,
+        H6.H6_QTDPROD,
+        RTRIM(H6.H6_PT) AS PT
+    FROM SH6010 H6 WITH (NOLOCK)
+    LEFT JOIN SH1010 H1 WITH (NOLOCK) ON H1.H1_FILIAL = H6.H6_FILIAL AND H1.H1_CODIGO = H6.H6_RECURSO AND H1.D_E_L_E_T_ = ' '
+    LEFT JOIN SC2010 C2 WITH (NOLOCK) ON C2.C2_FILIAL = H6.H6_FILIAL AND C2.C2_NUM = SUBSTRING(H6.H6_OP, 1, 6) AND C2.D_E_L_E_T_ = ' '
+    WHERE H6.D_E_L_E_T_ = ' ' {where_filial}
+    ORDER BY H6.H6_DATAINI DESC, H6.H6_HORAINI DESC
+    """
+    cursor.execute(sql, tuple(params))
+    rows = cursor.fetchall()
+    conn.close()
+
+    items = []
+    for r in rows:
+        items.append({
+            'filial': (r.get('FILIAL') or '').strip(),
+            'op': (r.get('OP') or '').strip(),
+            'pedido': (r.get('PEDIDO') or '').strip(),
+            'cliente': (r.get('CLIENTE_OBS') or '').strip(),
+            'operacao': (r.get('OPERAC') or '').strip(),
+            'cod_recurso': (r.get('COD_RECURSO') or '').strip(),
+            'nome_recurso': (r.get('NOME_RECURSO') or '').strip(),
+            'data_ini': (r.get('DATA_INI') or '').strip(),
+            'hora_ini': (r.get('HORA_INI') or '').strip(),
+            'data_fin': (r.get('DATA_FIN') or '').strip(),
+            'hora_fin': (r.get('HORA_FIN') or '').strip(),
+            'tempo': (r.get('TEMPO') or '000:00').strip(),
+            'qtd_prod': float(r.get('H6_QTDPROD') or 0.0),
+            'pt': (r.get('PT') or '').strip()
+        })
+    return items
+
 if __name__ == '__main__':
     command = sys.argv[1] if len(sys.argv) > 1 else ''
 
@@ -236,6 +292,9 @@ if __name__ == '__main__':
         elif command in ['get_precos_batch', 'ultimos_precos_batch']:
             cods = json.loads(sys.argv[2]) if len(sys.argv) > 2 else []
             print(json.dumps({'success': True, 'data': get_ultimos_precos_batch(cods)}))
+        elif command in ['get_apontamentos_montagem', 'apontamentos_montagem']:
+            fil = sys.argv[2] if len(sys.argv) > 2 and sys.argv[2] != 'null' else None
+            print(json.dumps({'success': True, 'data': get_apontamentos_montagem(fil)}))
         else:
             print(json.dumps({'success': False, 'message': f'Comando desconhecido: {command}'}))
     except Exception as e:

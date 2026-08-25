@@ -203,8 +203,36 @@ class PcpPainelController extends Controller
                     $investimentoPendente += $valTotal;
                 }
 
-                $desc = strtoupper($it->descricao . ' ' . $it->descricao_longa . ' ' . $it->codigo_produto);
-                if (str_contains($desc, 'MOTOR')) {
+                $descClean = strtoupper(trim($it->descricao));
+                $codClean = strtoupper(trim($it->codigo_produto));
+
+                // Exclusão de acessórios (motorização, disjuntor motorizado, suporte de motor, cabo, etc.)
+                $isIgnoredMotor = str_contains($descClean, 'MOTORIZ') || 
+                                  str_contains($descClean, 'SUPORTE') || 
+                                  str_contains($descClean, 'SPT MOTOR') || 
+                                  str_contains($descClean, 'FIX DJ') || 
+                                  str_contains($descClean, 'DISJUNTOR') || 
+                                  str_contains($descClean, 'MOT 220V') || 
+                                  str_contains($descClean, 'MOT 24V') || 
+                                  str_contains($descClean, 'MOT ABB') || 
+                                  str_contains($descClean, 'ELETROBOMBA') || 
+                                  str_contains($descClean, 'CABO');
+
+                $isMotor = !$isIgnoredMotor && (
+                    str_starts_with($descClean, 'MOTOR ') || 
+                    (str_contains($descClean, 'MOTOR') && (
+                        str_contains($descClean, 'FPT') || 
+                        str_contains($descClean, 'SCANIA') || 
+                        str_contains($descClean, 'PERKINS') || 
+                        str_contains($descClean, 'MWM') || 
+                        str_contains($descClean, 'CUMMINS') || 
+                        str_contains($descClean, 'VOLVO') || 
+                        str_contains($descClean, 'WEG') || 
+                        str_contains($descClean, 'DIESEL')
+                    ))
+                );
+
+                if ($isMotor) {
                     $hasMotor = true;
                     if ($it->status === 'FALTA') {
                         $motorStatus = $valTotal > 0 ? 'R$ ' . number_format($valTotal, 2, ',', '.') : 'FALTA';

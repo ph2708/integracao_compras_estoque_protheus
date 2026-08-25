@@ -6,6 +6,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EstoqueController;
 use App\Http\Controllers\ImportController;
 use App\Http\Controllers\OpFechamentoController;
+use App\Http\Controllers\PcpPainelController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -24,6 +25,9 @@ Route::middleware(['auth'])->group(function () {
 
     // Dashboard Geral
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Painel PCP GMGs (Visão Gerencial por PV)
+    Route::get('/painel-pcp', [PcpPainelController::class, 'index'])->name('pcp-painel.index');
 
     // Painel de Estoque (PCP)
     Route::get('/estoque', [EstoqueController::class, 'index'])->name('estoque.index');

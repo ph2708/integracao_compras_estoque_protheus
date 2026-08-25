@@ -399,6 +399,9 @@
             <a href="{{ route('dashboard') }}" class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
                 📊 Dashboard
             </a>
+            <a href="{{ route('pcp-painel.index') }}" class="nav-link {{ request()->routeIs('pcp-painel.*') ? 'active' : '' }}" style="color: #818cf8; font-weight: 600;">
+                🏭 Painel PCP
+            </a>
             <a href="{{ route('estoque.index') }}" class="nav-link {{ request()->routeIs('estoque.*') ? 'active' : '' }}">
                 📦 Estoque PCP
             </a>

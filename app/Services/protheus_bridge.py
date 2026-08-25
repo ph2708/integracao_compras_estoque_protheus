@@ -288,6 +288,40 @@ def get_apontamentos_montagem(filial=None, data_de=None, data_ate=None):
         })
     return items
 
+def get_valores_brutos_pvs(pvs_list):
+    if not pvs_list:
+        return {}
+
+    conn = get_connection()
+    cursor = conn.cursor(as_dict=True)
+
+    pvs_unicos = list(set([str(p).strip() for p in pvs_list if p and str(p).strip()]))
+    if not pvs_unicos:
+        conn.close()
+        return {}
+
+    placeholders = ', '.join(['%s'] * len(pvs_unicos))
+    sql = f"""
+    SELECT 
+        RTRIM(C6_NUM) AS PV,
+        SUM(C6_VALOR) AS TOTAL_VALOR_BRUTO
+    FROM SC6010 WITH (NOLOCK)
+    WHERE D_E_L_E_T_ = ' ' AND RTRIM(C6_NUM) IN ({placeholders})
+    GROUP BY RTRIM(C6_NUM)
+    """
+
+    cursor.execute(sql, pvs_unicos)
+    rows = cursor.fetchall()
+    conn.close()
+
+    result = {}
+    for r in rows:
+        pv_num = (r.get('PV') or '').strip()
+        val_bruto = float(r.get('TOTAL_VALOR_BRUTO') or 0.0)
+        if pv_num:
+            result[pv_num] = val_bruto
+    return result
+
 if __name__ == '__main__':
     command = sys.argv[1] if len(sys.argv) > 1 else ''
 
@@ -312,6 +346,9 @@ if __name__ == '__main__':
             dt_de = sys.argv[3] if len(sys.argv) > 3 and sys.argv[3] != 'null' else None
             dt_ate = sys.argv[4] if len(sys.argv) > 4 and sys.argv[4] != 'null' else None
             print(json.dumps({'success': True, 'data': get_apontamentos_montagem(fil, dt_de, dt_ate)}))
+        elif command in ['get_valores_brutos_pvs', 'valores_brutos']:
+            pvs = json.loads(sys.argv[2]) if len(sys.argv) > 2 else []
+            print(json.dumps({'success': True, 'data': get_valores_brutos_pvs(pvs)}))
         else:
             print(json.dumps({'success': False, 'message': f'Comando desconhecido: {command}'}))
     except Exception as e:

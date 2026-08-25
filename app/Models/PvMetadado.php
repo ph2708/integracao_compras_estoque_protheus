@@ -18,6 +18,7 @@ class PvMetadado extends Model
         'fabrica',
         'marca',
         'qtd',
+        'valor_bruto',
         'time_prod',
         'data_emissao',
         'data_contratual',

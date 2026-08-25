@@ -60,6 +60,7 @@ class PcpPainelController extends Controller
         $fStatusPv = $request->get('f_status_pv');
         $fFabrica = $request->get('f_fabrica');
         $fMarca = $request->get('f_marca');
+        $fDataPronto = $request->get('f_data_pronto');
 
         // Carregar Metadados de PVs cadastrados no banco
         $pvMetadados = PvMetadado::all()->keyBy('pedido');
@@ -97,11 +98,16 @@ class PcpPainelController extends Controller
             return $item->pedido ? trim($item->pedido) : 'SEM_PEDIDO';
         });
 
+        // Buscar os Valores Brutos reais dos Pedidos de Venda diretamente na tabela SC6010 do Protheus
+        $allPvKeys = array_filter(array_keys($grouped->toArray()), function($k) { return $k && $k !== 'SEM_PEDIDO'; });
+        $protheusValoresBrutos = $this->protheusService->getValoresBrutosPvs($allPvKeys);
+
         $painelData = collect();
         $opcoesInfo = collect();
         $opcoesStatusPv = collect();
         $opcoesFabrica = collect();
         $opcoesMarca = collect();
+        $opcoesDataPronto = collect();
 
         foreach ($grouped as $pvNum => $items) {
             if ($pvNum === 'SEM_PEDIDO' && $items->isEmpty()) continue;
@@ -135,6 +141,7 @@ class PcpPainelController extends Controller
             $valDataPronto = $meta ? ($meta->data_pronto ?? '-') : '-';
             $valDataBoom = $meta ? ($meta->data_boom ?? '-') : '-';
             $valDataLiberacaoEstoque = $meta ? ($meta->data_liberacao_estoque ?? '-') : '-';
+            $valMetaValorBruto = $meta ? ($meta->valor_bruto ?? null) : null;
 
             // Tentar inferir Marca se não cadastrado
             if (empty($valMarca)) {
@@ -151,12 +158,14 @@ class PcpPainelController extends Controller
             if (!empty($valStatusPv)) $opcoesStatusPv->push($valStatusPv);
             if (!empty($valFabrica)) $opcoesFabrica->push($valFabrica);
             if (!empty($valMarca)) $opcoesMarca->push($valMarca);
+            if (!empty($valDataPronto) && $valDataPronto !== '-') $opcoesDataPronto->push($valDataPronto);
 
             // Aplicar filtros multi-seleção
             if ($fInfo && !$this->matchMultiFilter($valInfo, $fInfo)) continue;
             if ($fStatusPv && !$this->matchMultiFilter($valStatusPv, $fStatusPv, true)) continue;
             if ($fFabrica && !$this->matchMultiFilter($valFabrica, $fFabrica, true)) continue;
             if ($fMarca && !$this->matchMultiFilter($valMarca, $fMarca)) continue;
+            if ($fDataPronto && !$this->matchMultiFilter($valDataPronto, $fDataPronto)) continue;
 
             $totalComponentes = $items->count();
             $totalFalta = $items->where('status', 'FALTA')->count();
@@ -347,6 +356,14 @@ class PcpPainelController extends Controller
             if (!$hasBase) $baseStatus = '-';
             if (!$hasCarenagem) $carenagemStatus = '-';
 
+            // Valor Bruto Real do PV: 1. Override Manual do Usuário | 2. Valor Real do Protheus SC6010 (Soma C6_VALOR) | 3. Acumulado de Componentes
+            $somaComponentesBruto = $valorBruto;
+            if ($valMetaValorBruto !== null && floatval($valMetaValorBruto) > 0) {
+                $valorBruto = floatval($valMetaValorBruto);
+            } elseif (isset($protheusValoresBrutos[$pvNum]) && floatval($protheusValoresBrutos[$pvNum]) > 0) {
+                $valorBruto = floatval($protheusValoresBrutos[$pvNum]);
+            }
+
             $painelData->push([
                 'pv' => $pvNum,
                 'cliente' => $clienteObs,
@@ -396,11 +413,13 @@ class PcpPainelController extends Controller
         $opcoesStatusPv = collect(['FATURADO', 'COMPRAS', 'ENGENHARIA', 'ESTOQUE', 'ENTREGUE', 'FINANCEIRO', 'CANCELADO'])->merge($opcoesStatusPv)->unique()->values();
         $opcoesFabrica = $opcoesFabrica->unique()->sort()->values();
         $opcoesMarca = $opcoesMarca->unique()->sort()->values();
+        $opcoesDataPronto = $opcoesDataPronto->unique()->sort()->values();
 
         // Métricas Globais dos KPIs Superiores (calculadas sobre todos os PVs)
         $kpiTotalPv = $painelDataSorted->count();
         $kpiMediaSeparacao = $painelDataSorted->avg('percent_separado') ?? 0;
         $kpiInvestimentoTotal = $painelDataSorted->sum('investimento_pendente');
+        $kpiValorBrutoTotal = $painelDataSorted->sum('valor_bruto');
         $kpiPvsComFalta = $painelDataSorted->where('total_falta', '>', 0)->count();
 
         // Paginação de 15 Pedidos de Venda por página para manter o painel ultra-rápido e leve
@@ -436,13 +455,16 @@ class PcpPainelController extends Controller
             'fStatusPv',
             'fFabrica',
             'fMarca',
+            'fDataPronto',
             'opcoesInfo',
             'opcoesStatusPv',
             'opcoesFabrica',
             'opcoesMarca',
+            'opcoesDataPronto',
             'kpiTotalPv',
             'kpiMediaSeparacao',
             'kpiInvestimentoTotal',
+            'kpiValorBrutoTotal',
             'kpiPvsComFalta',
             'filiaisProtheus',
             'canEditPcp'
@@ -666,6 +688,7 @@ class PcpPainelController extends Controller
         $fabrica = trim($request->input('fabrica', ''));
         $marca = trim($request->input('marca', ''));
         $qtd = $request->input('qtd');
+        $valorBrutoIn = $request->input('valor_bruto');
         $timeProd = $request->input('time_prod');
         $dataEmissao = $request->input('data_emissao');
         $dataContratual = $request->input('data_contratual');
@@ -673,6 +696,13 @@ class PcpPainelController extends Controller
         $dataPronto = $request->input('data_pronto');
         $dataBoom = $request->input('data_boom');
         $dataLiberacaoEstoque = $request->input('data_liberacao_estoque');
+
+        $valBrutoFloat = null;
+        if ($valorBrutoIn !== null && $valorBrutoIn !== '') {
+            $valBrutoClean = str_replace(['R$', ' ', '.'], '', $valorBrutoIn);
+            $valBrutoClean = str_replace(',', '.', $valBrutoClean);
+            $valBrutoFloat = floatval($valBrutoClean);
+        }
 
         // Atualizar Metadados do PV
         PvMetadado::updateOrCreate(
@@ -683,6 +713,7 @@ class PcpPainelController extends Controller
                 'fabrica' => $fabrica ?: null,
                 'marca' => $marca ?: null,
                 'qtd' => is_numeric($qtd) ? intval($qtd) : 1,
+                'valor_bruto' => $valBrutoFloat,
                 'time_prod' => $timeProd !== null ? trim($timeProd) : null,
                 'data_emissao' => $dataEmissao !== null ? trim($dataEmissao) : null,
                 'data_contratual' => $dataContratual !== null ? trim($dataContratual) : null,
@@ -724,6 +755,11 @@ class PcpPainelController extends Controller
                 ];
 
                 if (isset($data['qtd'])) $updatePayload['qtd'] = is_numeric($data['qtd']) ? intval($data['qtd']) : 1;
+                if (isset($data['valor_bruto']) && $data['valor_bruto'] !== '') {
+                    $vClean = str_replace(['R$', ' ', '.'], '', $data['valor_bruto']);
+                    $vClean = str_replace(',', '.', $vClean);
+                    $updatePayload['valor_bruto'] = floatval($vClean);
+                }
                 if (isset($data['time_prod'])) $updatePayload['time_prod'] = trim($data['time_prod']);
                 if (isset($data['data_emissao'])) $updatePayload['data_emissao'] = trim($data['data_emissao']);
                 if (isset($data['data_contratual'])) $updatePayload['data_contratual'] = trim($data['data_contratual']);

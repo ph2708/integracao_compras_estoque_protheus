@@ -185,54 +185,63 @@
 
 <!-- Cards Executivos de KPI -->
 <div style="display: flex; gap: 1rem; margin-bottom: 1.25rem; flex-wrap: wrap;">
-    <div class="kpi-card" style="border-left: 4px solid #6366f1; background: rgba(99, 102, 241, 0.05);">
+    <div class="kpi-card" style="border-left: 4px solid #6366f1; background: rgba(99, 102, 241, 0.05); flex: 1; min-width: 170px;">
         <div class="kpi-title">📋 Pedidos Acompanhados</div>
         <div class="kpi-value" style="color: #818cf8;">{{ number_format($kpiTotalPv ?? 0, 0, ',', '.') }}</div>
         <div class="kpi-sub">Pedidos de Venda ativos na base</div>
     </div>
-    <div class="kpi-card" style="border-left: 4px solid #10b981; background: rgba(16, 185, 129, 0.05);">
-        <div class="kpi-title">📈 Avanço Médio de Separação</div>
+    <div class="kpi-card" style="border-left: 4px solid #10b981; background: rgba(16, 185, 129, 0.05); flex: 1; min-width: 170px;">
+        <div class="kpi-title">📈 Avanço Médio Separação</div>
         <div class="kpi-value" style="color: #34d399;">{{ number_format($kpiMediaSeparacao ?? 0, 1, ',', '.') }}%</div>
         <div class="kpi-sub">Porcentagem média de atendimento</div>
     </div>
-    <div class="kpi-card" style="border-left: 4px solid #f59e0b; background: rgba(245, 158, 11, 0.05);">
-        <div class="kpi-title">💰 Investimento Pendente (Faltas)</div>
-        <div class="kpi-value" style="color: #fbbf24;">R$ {{ number_format($kpiInvestimentoTotal ?? 0, 2, ',', '.') }}</div>
-        <div class="kpi-sub">Montante total necessário a comprar</div>
+    <div class="kpi-card" style="border-left: 4px solid #38bdf8; background: rgba(56, 189, 248, 0.05); flex: 1.2; min-width: 200px;">
+        <div class="kpi-title">💲 Valor Bruto Total (PVs)</div>
+        <div class="kpi-value" style="color: #38bdf8;">R$ {{ number_format($kpiValorBrutoTotal ?? 0, 2, ',', '.') }}</div>
+        <div class="kpi-sub">Soma do valor bruto real dos PVs</div>
     </div>
-    <div class="kpi-card" style="border-left: 4px solid #ef4444; background: rgba(239, 68, 68, 0.05);">
-        <div class="kpi-title">⚠️ Pedidos com Componentes Faltantes</div>
+    <div class="kpi-card" style="border-left: 4px solid #f59e0b; background: rgba(245, 158, 11, 0.05); flex: 1.2; min-width: 200px;">
+        <div class="kpi-title">💰 Investimento Pendente</div>
+        <div class="kpi-value" style="color: #fbbf24;">R$ {{ number_format($kpiInvestimentoTotal ?? 0, 2, ',', '.') }}</div>
+        <div class="kpi-sub">Montante total a comprar (Faltas)</div>
+    </div>
+    <div class="kpi-card" style="border-left: 4px solid #ef4444; background: rgba(239, 68, 68, 0.05); flex: 1; min-width: 170px;">
+        <div class="kpi-title">⚠️ Pedidos com Faltas</div>
         <div class="kpi-value" style="color: #fca5a5;">{{ number_format($kpiPvsComFalta ?? 0, 0, ',', '.') }}</div>
-        <div class="kpi-sub">Requerem ação imediata de compras</div>
+        <div class="kpi-sub">Requerem ação de compras</div>
     </div>
 </div>
 
 <!-- Filtros de Busca Principais -->
 <div class="card" style="margin-bottom: 1.25rem; padding: 1rem;">
     <div style="display: flex; gap: 0.85rem; align-items: flex-end; flex-wrap: wrap;">
-        <div style="flex: 1; min-width: 160px;">
+        <div style="flex: 1; min-width: 140px;">
             <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.3rem; display: block;">N° Pedido de Venda (PV)</label>
             <input type="text" name="search_pv" value="{{ $searchPv }}" form="formFilterPcpPainel" class="form-control" placeholder="Ex: 006353..." style="padding: 0.4rem 0.6rem; font-size: 0.8rem;" onchange="document.getElementById('formFilterPcpPainel').submit()">
         </div>
-        <div style="flex: 1.5; min-width: 220px;">
+        <div style="flex: 1.4; min-width: 200px;">
             <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.3rem; display: block;">Nome do Cliente / Obra (C2_OBS)</label>
             <input type="text" name="search_cliente" value="{{ $searchCliente }}" form="formFilterPcpPainel" class="form-control" placeholder="Ex: ISA ENERGIA..." style="padding: 0.4rem 0.6rem; font-size: 0.8rem;" onchange="document.getElementById('formFilterPcpPainel').submit()">
         </div>
-        <div style="flex: 1; min-width: 160px;">
+        <div style="flex: 1; min-width: 140px;">
             <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.3rem; display: block;">Status PCP Componentes</label>
             <select name="search_status_pcp" form="formFilterPcpPainel" class="form-control" style="padding: 0.4rem 0.6rem; font-size: 0.8rem;" onchange="document.getElementById('formFilterPcpPainel').submit()">
-                <option value="">-- Todos os Status PCP --</option>
+                <option value="">-- Todos os Status --</option>
                 <option value="FALTA" {{ $searchStatusPcp === 'FALTA' ? 'selected' : '' }}>FALTA</option>
                 <option value="SEPARADO" {{ $searchStatusPcp === 'SEPARADO' ? 'selected' : '' }}>SEPARADO</option>
                 <option value="FABRICA" {{ $searchStatusPcp === 'FABRICA' ? 'selected' : '' }}>FABRICA</option>
                 <option value="PARCIAL" {{ $searchStatusPcp === 'PARCIAL' ? 'selected' : '' }}>PARCIAL</option>
             </select>
         </div>
+        <div style="flex: 1; min-width: 130px;">
+            <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.3rem; display: block;">Data Pronto</label>
+            <input type="text" name="f_data_pronto" value="{{ $fDataPronto }}" form="formFilterPcpPainel" class="form-control" placeholder="Ex: 31/08/26..." style="padding: 0.4rem 0.6rem; font-size: 0.8rem;" onchange="document.getElementById('formFilterPcpPainel').submit()">
+        </div>
         <div style="display: flex; gap: 0.4rem;">
             <button type="submit" form="formFilterPcpPainel" class="btn btn-primary" style="padding: 0.4rem 0.85rem; font-size: 0.8rem; background-color: #6366f1;">
                 🔍 Filtrar
             </button>
-            @if($searchPv || $searchCliente || $searchStatusPcp || $searchStatusPagamento || $fInfo || $fStatusPv || $fFabrica || $fMarca)
+            @if($searchPv || $searchCliente || $searchStatusPcp || $searchStatusPagamento || $fInfo || $fStatusPv || $fFabrica || $fMarca || $fDataPronto)
                 <a href="{{ route('pcp-painel.index') }}" class="btn btn-secondary" style="padding: 0.4rem 0.75rem; font-size: 0.8rem;">
                     ✕ Limpar Filtros
                 </a>
@@ -431,7 +440,9 @@
                         <th class="col-investimento"></th>
                         <th class="col-time-prod"></th>
                         <th class="col-data-pa-pg"></th>
-                        <th class="col-data-pronto"></th>
+                        <th class="col-data-pronto" style="padding: 0.35rem 0.5rem;">
+                            <input type="text" name="f_data_pronto" value="{{ $fDataPronto }}" form="formFilterPcpPainel" class="form-control" placeholder="Pronto..." style="font-size: 0.7rem; padding: 0.2rem 0.35rem; height: 28px; text-align: center;" onchange="document.getElementById('formFilterPcpPainel').submit()">
+                        </th>
                         <th class="col-data-contratual"></th>
                         <th class="col-data-emissao"></th>
                         <th class="col-data-boom"></th>
@@ -566,8 +577,8 @@
                         </td>
 
                         <!-- Valor Bruto -->
-                        <td class="col-valor-bruto" style="padding: 0.65rem 0.75rem; text-align: right; font-weight: 700; color: #f8fafc;">
-                            R$ {{ number_format($pvItem['valor_bruto'], 2, ',', '.') }}
+                        <td class="col-valor-bruto" style="padding: 0.5rem 0.6rem; text-align: right;">
+                            <input type="text" name="pvs[{{ $pvKey }}][valor_bruto]" value="R$ {{ number_format($pvItem['valor_bruto'], 2, ',', '.') }}" class="editable-cell-input" style="text-align: right; font-weight: 700; color: #38bdf8;" {{ !($canEditPcp ?? true) ? 'disabled style=opacity:0.6;cursor:not-allowed;' : '' }}>
                         </td>
 
                         <!-- Investimento Pendente (Falta) -->
@@ -614,7 +625,7 @@
                         <td class="col-acoes" style="padding: 0.65rem 0.75rem; text-align: center;">
                             <div style="display: flex; gap: 0.25rem; justify-content: center;">
                                 @if($canEditPcp ?? true)
-                                <button type="button" class="btn btn-secondary" onclick="abrirModalEditarPv('{{ $pvItem['pv'] }}', '{{ addslashes($pvItem['cliente']) }}', '{{ addslashes($pvItem['produto_pai']) }}', '{{ addslashes($pvItem['info']) }}', '{{ addslashes($pvItem['status_pv']) }}', '{{ addslashes($pvItem['fabrica']) }}', '{{ addslashes($pvItem['marca']) }}', '{{ $pvItem['qtd'] }}', '{{ addslashes($pvItem['time_prod']) }}', '{{ addslashes($pvItem['data_emissao']) }}', '{{ addslashes($pvItem['data_contratual']) }}', '{{ addslashes($pvItem['data_pa_pg']) }}', '{{ addslashes($pvItem['data_pronto']) }}', '{{ addslashes($pvItem['data_boom']) }}', '{{ addslashes($pvItem['data_liberacao_estoque']) }}')" style="padding: 0.2rem 0.4rem; font-size: 0.7rem;" title="Editar dados deste PV">
+                                <button type="button" class="btn btn-secondary" onclick="abrirModalEditarPv('{{ $pvItem['pv'] }}', '{{ addslashes($pvItem['cliente']) }}', '{{ addslashes($pvItem['produto_pai']) }}', '{{ addslashes($pvItem['info']) }}', '{{ addslashes($pvItem['status_pv']) }}', '{{ addslashes($pvItem['fabrica']) }}', '{{ addslashes($pvItem['marca']) }}', '{{ $pvItem['qtd'] }}', '{{ addslashes($pvItem['time_prod']) }}', '{{ addslashes($pvItem['data_emissao']) }}', '{{ addslashes($pvItem['data_contratual']) }}', '{{ addslashes($pvItem['data_pa_pg']) }}', '{{ addslashes($pvItem['data_pronto']) }}', '{{ addslashes($pvItem['data_boom']) }}', '{{ addslashes($pvItem['data_liberacao_estoque']) }}', '{{ number_format($pvItem['valor_bruto'], 2, ',', '.') }}')" style="padding: 0.2rem 0.4rem; font-size: 0.7rem;" title="Editar dados deste PV">
                                     ✏️
                                 </button>
                                 @endif
@@ -893,6 +904,10 @@
                         <input type="number" name="qtd" id="modal_edit_qtd_input" class="form-control" style="padding: 0.45rem; font-size: 0.85rem;">
                     </div>
                     <div style="flex: 1;">
+                        <label style="font-size: 0.75rem; font-weight: 600; color: #38bdf8; margin-bottom: 0.25rem; display: block;">VALOR BRUTO (R$)</label>
+                        <input type="text" name="valor_bruto" id="modal_edit_valor_bruto_input" class="form-control" style="padding: 0.45rem; font-size: 0.85rem; color: #38bdf8; font-weight: 700;">
+                    </div>
+                    <div style="flex: 1;">
                         <label style="font-size: 0.75rem; font-weight: 600; color: #94a3b8; margin-bottom: 0.25rem; display: block;">TIME PROD</label>
                         <input type="text" name="time_prod" id="modal_edit_time_prod_input" class="form-control" style="padding: 0.45rem; font-size: 0.85rem;">
                     </div>
@@ -975,7 +990,7 @@
         document.getElementById('modalCriarPvManual').style.display = 'none';
     }
 
-    function abrirModalEditarPv(pv, cliente, prodPai, info, statusPv, fabrica, marca, qtd, timeProd, dataEmissao, dataContratual, dataPaPg, dataPronto, dataBoom, dataLiberacaoEstoque) {
+    function abrirModalEditarPv(pv, cliente, prodPai, info, statusPv, fabrica, marca, qtd, timeProd, dataEmissao, dataContratual, dataPaPg, dataPronto, dataBoom, dataLiberacaoEstoque, valorBruto) {
         document.getElementById('modal_edit_pv_title').innerText = pv;
         document.getElementById('modal_edit_pedido_input').value = pv;
         document.getElementById('modal_edit_cliente_input').value = cliente;
@@ -985,6 +1000,7 @@
         document.getElementById('modal_edit_fabrica_input').value = fabrica;
         document.getElementById('modal_edit_marca_input').value = marca;
         document.getElementById('modal_edit_qtd_input').value = qtd || 1;
+        document.getElementById('modal_edit_valor_bruto_input').value = valorBruto ? 'R$ ' + valorBruto : '';
         document.getElementById('modal_edit_time_prod_input').value = timeProd || '0';
         document.getElementById('modal_edit_data_emissao_input').value = dataEmissao || '-';
         document.getElementById('modal_edit_data_contratual_input').value = dataContratual || '-';

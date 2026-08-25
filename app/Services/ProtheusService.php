@@ -188,4 +188,24 @@ class ProtheusService
             return [];
         }
     }
+
+    /**
+     * Busca o valor bruto de venda acumulado em SC6010 para cada PV informado
+     */
+    public function getValoresBrutosPvs(array $pvsList): array
+    {
+        try {
+            if (empty($pvsList)) return [];
+            $command = "python3 " . escapeshellarg($this->scriptPath) . " get_valores_brutos_pvs " . escapeshellarg(json_encode(array_values($pvsList)));
+            $output = shell_exec($command);
+            
+            $json = json_decode($output, true);
+            if (isset($json['success']) && !empty($json['data'])) {
+                return $json['data'];
+            }
+            return [];
+        } catch (Exception $e) {
+            return [];
+        }
+    }
 }

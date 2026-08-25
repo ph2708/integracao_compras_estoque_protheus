@@ -98,7 +98,64 @@
             Consolidação em tempo real do atendimento de estoque, compras, metadados (INFO, STATUS, FÁBRICA, MARCA) e componentes críticos por PV.
         </p>
     </div>
-    <div style="display: flex; gap: 0.5rem; align-items: center;">
+    <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+        <!-- Botão Gestor de Colunas Visíveis (Excel) -->
+        <div class="dropdown" style="position: relative; display: inline-block;">
+            <button type="button" class="btn btn-secondary" onclick="toggleMenuColunasPainelPcp()" style="padding: 0.45rem 0.75rem; font-size: 0.8rem; border-color: rgba(99, 102, 241, 0.5); font-weight: 500;">
+                ⚙️ Colunas Visíveis (Excel) ▾
+            </button>
+            <div id="dropdownMenuColunasPainelPcp" style="display: none; position: absolute; right: 0; top: 110%; z-index: 1000; background-color: #0f172a; border: 1px solid #334155; border-radius: 0.5rem; padding: 0.85rem; width: 300px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.7); font-size: 0.78rem;">
+                <div style="font-weight: 700; margin-bottom: 0.6rem; color: #a5b4fc; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 0.4rem;">
+                    <span>👁️ Exibir/Ocultar Colunas</span>
+                    <span style="font-size: 0.7rem; color: #94a3b8; font-weight: normal;">(Salvo Auto)</span>
+                </div>
+                <div style="max-height: 290px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.45rem;">
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                        <input type="checkbox" id="chk_col-info" onchange="toggleColunaPainelPcp('col-info', this.checked)"> INFO ✏️
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                        <input type="checkbox" id="chk_col-status-pv" onchange="toggleColunaPainelPcp('col-status-pv', this.checked)"> STATUS (PV) ✏️
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: #38bdf8;">
+                        <input type="checkbox" id="chk_col-fabrica" onchange="toggleColunaPainelPcp('col-fabrica', this.checked)"> FÁBRICA ✏️ ⬆️
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                        <input type="checkbox" id="chk_col-pv" onchange="toggleColunaPainelPcp('col-pv', this.checked)"> PV / Pedido
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                        <input type="checkbox" id="chk_col-cliente" onchange="toggleColunaPainelPcp('col-cliente', this.checked)"> Cliente (C2_OBS)
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: #c084fc;">
+                        <input type="checkbox" id="chk_col-produto-pai" onchange="toggleColunaPainelPcp('col-produto-pai', this.checked)"> Equipamento / Produto Pai
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                        <input type="checkbox" id="chk_col-marca" onchange="toggleColunaPainelPcp('col-marca', this.checked)"> MARCA ✏️
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                        <input type="checkbox" id="chk_col-avanco" onchange="toggleColunaPainelPcp('col-avanco', this.checked)"> Avanço Separação
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                        <input type="checkbox" id="chk_col-motor" onchange="toggleColunaPainelPcp('col-motor', this.checked)"> Motor
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                        <input type="checkbox" id="chk_col-alternador" onchange="toggleColunaPainelPcp('col-alternador', this.checked)"> Alternador
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                        <input type="checkbox" id="chk_col-base" onchange="toggleColunaPainelPcp('col-base', this.checked)"> Base
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                        <input type="checkbox" id="chk_col-carenagem" onchange="toggleColunaPainelPcp('col-carenagem', this.checked)"> Carenagem
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                        <input type="checkbox" id="chk_col-alertas" onchange="toggleColunaPainelPcp('col-alertas', this.checked)"> Alertas Compras
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                        <input type="checkbox" id="chk_col-investimento" onchange="toggleColunaPainelPcp('col-investimento', this.checked)"> Investimento Pendente
+                    </label>
+                </div>
+            </div>
+        </div>
+
         <button type="submit" form="formBatchPainelPcp" class="btn btn-primary" style="padding: 0.45rem 0.9rem; font-size: 0.8rem; background-color: #059669; border-color: #059669;" onclick="return confirm('Deseja salvar todas as alterações feitas nesta página?')">
             💾 Salvar Todas as Alterações da Página
         </button>
@@ -171,27 +228,27 @@
             <table style="width: 100%; border-collapse: collapse; font-size: 0.78rem;">
                 <thead>
                     <tr style="background-color: #0f172a; border-bottom: 1px solid var(--border-color); color: #94a3b8; text-align: left;">
-                        <th style="padding: 0.65rem 0.75rem; min-width: 130px;">INFO ✏️</th>
-                        <th style="padding: 0.65rem 0.75rem; min-width: 130px;">STATUS (PV) ✏️</th>
-                        <th style="padding: 0.65rem 0.75rem; min-width: 100px; color: #38bdf8;" title="Ordenado em sequência numérica crescente">FÁBRICA ✏️ ⬆️</th>
-                        <th style="padding: 0.65rem 0.75rem;">PV / Pedido</th>
-                        <th style="padding: 0.65rem 0.75rem;">Cliente (C2_OBS)</th>
-                        <th style="padding: 0.65rem 0.75rem;">Equipamento / Produto Pai</th>
-                        <th style="padding: 0.65rem 0.75rem; min-width: 100px;">MARCA ✏️</th>
-                        <th style="padding: 0.65rem 0.75rem; text-align: center;">Avanço Separação</th>
-                        <th style="padding: 0.65rem 0.75rem; text-align: center;">Motor</th>
-                        <th style="padding: 0.65rem 0.75rem; text-align: center;">Alternador</th>
-                        <th style="padding: 0.65rem 0.75rem; text-align: center;">Base</th>
-                        <th style="padding: 0.65rem 0.75rem; text-align: center;">Carenagem</th>
-                        <th style="padding: 0.65rem 0.75rem; text-align: center;">Alertas Compras</th>
-                        <th style="padding: 0.65rem 0.75rem; text-align: right;">Investimento Pend.</th>
-                        <th style="padding: 0.65rem 0.75rem; text-align: center;">Ações</th>
+                        <th class="col-info" style="padding: 0.65rem 0.75rem; min-width: 130px;">INFO ✏️</th>
+                        <th class="col-status-pv" style="padding: 0.65rem 0.75rem; min-width: 130px;">STATUS (PV) ✏️</th>
+                        <th class="col-fabrica" style="padding: 0.65rem 0.75rem; min-width: 100px; color: #38bdf8;" title="Ordenado em sequência numérica crescente">FÁBRICA ✏️ ⬆️</th>
+                        <th class="col-pv" style="padding: 0.65rem 0.75rem;">PV / Pedido</th>
+                        <th class="col-cliente" style="padding: 0.65rem 0.75rem;">Cliente (C2_OBS)</th>
+                        <th class="col-produto-pai" style="padding: 0.65rem 0.75rem; min-width: 320px; color: #c084fc;">Equipamento / Produto Pai</th>
+                        <th class="col-marca" style="padding: 0.65rem 0.75rem; min-width: 100px;">MARCA ✏️</th>
+                        <th class="col-avanco" style="padding: 0.65rem 0.75rem; text-align: center;">Avanço Separação</th>
+                        <th class="col-motor" style="padding: 0.65rem 0.75rem; text-align: center;">Motor</th>
+                        <th class="col-alternador" style="padding: 0.65rem 0.75rem; text-align: center;">Alternador</th>
+                        <th class="col-base" style="padding: 0.65rem 0.75rem; text-align: center;">Base</th>
+                        <th class="col-carenagem" style="padding: 0.65rem 0.75rem; text-align: center;">Carenagem</th>
+                        <th class="col-alertas" style="padding: 0.65rem 0.75rem; text-align: center;">Alertas Compras</th>
+                        <th class="col-investimento" style="padding: 0.65rem 0.75rem; text-align: right;">Investimento Pend.</th>
+                        <th class="col-acoes" style="padding: 0.65rem 0.75rem; text-align: center;">Ações</th>
                     </tr>
 
                     <!-- Linha de Filtros Múltiplos Estilo Excel no Cabeçalho -->
                     <tr class="filter-row" style="background-color: #1e293b; border-bottom: 2px solid var(--border-color);">
                         <!-- Filtro INFO -->
-                        <th style="padding: 0.35rem 0.5rem;">
+                        <th class="col-info" style="padding: 0.35rem 0.5rem;">
                             <div class="dropdown" style="position: relative; width: 100%;">
                                 <button type="button" class="btn btn-secondary dropdown-toggle" id="btnFilterInfo" onclick="toggleMenuFilterInfo()" style="width: 100%; font-size: 0.7rem; padding: 0.2rem 0.35rem; justify-content: space-between; text-align: left; display: flex; align-items: center; background: #0f172a; border-color: #334155; height: 28px;">
                                     <span id="labelInfoSelecionados" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
@@ -223,7 +280,7 @@
                         </th>
 
                         <!-- Filtro STATUS (PV) -->
-                        <th style="padding: 0.35rem 0.5rem;">
+                        <th class="col-status-pv" style="padding: 0.35rem 0.5rem;">
                             <div class="dropdown" style="position: relative; width: 100%;">
                                 <button type="button" class="btn btn-secondary dropdown-toggle" id="btnFilterStatusPv" onclick="toggleMenuFilterStatusPv()" style="width: 100%; font-size: 0.7rem; padding: 0.2rem 0.35rem; justify-content: space-between; text-align: left; display: flex; align-items: center; background: #0f172a; border-color: #334155; height: 28px;">
                                     <span id="labelStatusPvSelecionados" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
@@ -255,12 +312,12 @@
                         </th>
 
                         <!-- Filtro FÁBRICA -->
-                        <th style="padding: 0.35rem 0.5rem;">
+                        <th class="col-fabrica" style="padding: 0.35rem 0.5rem;">
                             <div class="dropdown" style="position: relative; width: 100%;">
                                 <button type="button" class="btn btn-secondary dropdown-toggle" id="btnFilterFabrica" onclick="toggleMenuFilterFabrica()" style="width: 100%; font-size: 0.7rem; padding: 0.2rem 0.35rem; justify-content: space-between; text-align: left; display: flex; align-items: center; background: #0f172a; border-color: #334155; height: 28px;">
                                     <span id="labelFabricaSelecionadas" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                                         @php $selFabArr = $fFabrica ? array_map('trim', explode(',', $fFabrica)) : []; @endphp
-                                        {{ empty($selFabArr) ? 'Fábrica: Toda' : (count($selFabArr) == 1 ? $selFabArr[0] : count($selFabArr) . ' Selec.') }}
+                                        {{ empty($selFabArr) ? 'Fábr.: Toda' : (count($selFabArr) == 1 ? $selFabArr[0] : count($selFabArr) . ' Selec.') }}
                                     </span>
                                     <span style="font-size: 0.5rem;">▼</span>
                                 </button>
@@ -286,12 +343,12 @@
                             </div>
                         </th>
 
-                        <th></th>
-                        <th></th>
-                        <th></th>
+                        <th class="col-pv"></th>
+                        <th class="col-cliente"></th>
+                        <th class="col-produto-pai"></th>
 
                         <!-- Filtro MARCA -->
-                        <th style="padding: 0.35rem 0.5rem;">
+                        <th class="col-marca" style="padding: 0.35rem 0.5rem;">
                             <div class="dropdown" style="position: relative; width: 100%;">
                                 <button type="button" class="btn btn-secondary dropdown-toggle" id="btnFilterMarca" onclick="toggleMenuFilterMarca()" style="width: 100%; font-size: 0.7rem; padding: 0.2rem 0.35rem; justify-content: space-between; text-align: left; display: flex; align-items: center; background: #0f172a; border-color: #334155; height: 28px;">
                                     <span id="labelMarcaSelecionadas" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
@@ -322,14 +379,14 @@
                             </div>
                         </th>
 
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
+                        <th class="col-avanco"></th>
+                        <th class="col-motor"></th>
+                        <th class="col-alternador"></th>
+                        <th class="col-base"></th>
+                        <th class="col-carenagem"></th>
+                        <th class="col-alertas"></th>
+                        <th class="col-investimento"></th>
+                        <th class="col-acoes"></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -337,12 +394,12 @@
                     @php $pvKey = $pvItem['pv']; @endphp
                     <tr class="pv-row" style="border-bottom: 1px solid var(--border-color); transition: background 0.15s;">
                         <!-- Célula Editável INFO -->
-                        <td style="padding: 0.5rem 0.6rem;">
+                        <td class="col-info" style="padding: 0.5rem 0.6rem;">
                             <input type="text" name="pvs[{{ $pvKey }}][info]" value="{{ $pvItem['info'] }}" class="editable-cell-input" placeholder="Ex: CAR 55 KVA...">
                         </td>
 
                         <!-- Célula Editável STATUS PV -->
-                        <td style="padding: 0.5rem 0.6rem;">
+                        <td class="col-status-pv" style="padding: 0.5rem 0.6rem;">
                             <select name="pvs[{{ $pvKey }}][status_pv]" class="editable-cell-input" style="background-color: #0f172a; color: #f8fafc;">
                                 <option value="">-- Selecione --</option>
                                 <option value="FATURADO" {{ $pvItem['status_pv'] === 'FATURADO' ? 'selected' : '' }}>FATURADO</option>
@@ -356,32 +413,32 @@
                         </td>
 
                         <!-- Célula Editável FÁBRICA -->
-                        <td style="padding: 0.5rem 0.6rem;">
+                        <td class="col-fabrica" style="padding: 0.5rem 0.6rem;">
                             <input type="text" name="pvs[{{ $pvKey }}][fabrica]" value="{{ $pvItem['fabrica'] }}" class="editable-cell-input" placeholder="Ex: 99, 18...">
                         </td>
 
                         <!-- PV / Pedido -->
-                        <td style="padding: 0.65rem 0.75rem; font-weight: 700; color: #a5b4fc;">
+                        <td class="col-pv" style="padding: 0.65rem 0.75rem; font-weight: 700; color: #a5b4fc;">
                             {{ $pvItem['pv'] }}
                         </td>
 
                         <!-- Cliente -->
-                        <td style="padding: 0.65rem 0.75rem; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ $pvItem['cliente'] }}">
+                        <td class="col-cliente" style="padding: 0.65rem 0.75rem; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ $pvItem['cliente'] }}">
                             {{ $pvItem['cliente'] }}
                         </td>
 
-                        <!-- Equipamento / Produto Pai -->
-                        <td style="padding: 0.65rem 0.75rem; max-width: 190px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #cbd5e1;" title="{{ $pvItem['produto_pai'] }}">
+                        <!-- Equipamento / Produto Pai (Com Largura Expandida min-width: 320px) -->
+                        <td class="col-produto-pai" style="padding: 0.65rem 0.75rem; min-width: 320px; color: #c084fc; font-weight: 500; word-break: break-word;" title="{{ $pvItem['produto_pai'] }}">
                             {{ $pvItem['produto_pai'] }}
                         </td>
 
                         <!-- Célula Editável MARCA -->
-                        <td style="padding: 0.5rem 0.6rem;">
+                        <td class="col-marca" style="padding: 0.5rem 0.6rem;">
                             <input type="text" name="pvs[{{ $pvKey }}][marca]" value="{{ $pvItem['marca'] }}" class="editable-cell-input" placeholder="Ex: PERKINS, SCANIA...">
                         </td>
 
                         <!-- Avanço Separação -->
-                        <td style="padding: 0.65rem 0.75rem; min-width: 135px;">
+                        <td class="col-avanco" style="padding: 0.65rem 0.75rem; min-width: 135px;">
                             <div style="display: flex; justify-content: space-between; font-size: 0.725rem; margin-bottom: 0.15rem;">
                                 <span style="font-weight: 700; color: {{ $pvItem['percent_separado'] == 100 ? '#34d399' : '#f8fafc' }};">
                                     {{ $pvItem['percent_separado'] }}%
@@ -396,25 +453,25 @@
                         </td>
 
                         <!-- Componentes Críticos -->
-                        <td style="padding: 0.65rem 0.75rem; text-align: center;">
+                        <td class="col-motor" style="padding: 0.65rem 0.75rem; text-align: center;">
                             @if($pvItem['motor_status'] === 'OK') <span class="badge-ok">✓ OK</span>
                             @elseif($pvItem['motor_status'] === '-') <span style="color: #64748b;">-</span>
                             @else <span class="badge-alert" title="Investimento Pendente">{{ $pvItem['motor_status'] }}</span>
                             @endif
                         </td>
-                        <td style="padding: 0.65rem 0.75rem; text-align: center;">
+                        <td class="col-alternador" style="padding: 0.65rem 0.75rem; text-align: center;">
                             @if($pvItem['alternador_status'] === 'OK') <span class="badge-ok">✓ OK</span>
                             @elseif($pvItem['alternador_status'] === '-') <span style="color: #64748b;">-</span>
                             @else <span class="badge-alert" title="Investimento Pendente">{{ $pvItem['alternador_status'] }}</span>
                             @endif
                         </td>
-                        <td style="padding: 0.65rem 0.75rem; text-align: center;">
+                        <td class="col-base" style="padding: 0.65rem 0.75rem; text-align: center;">
                             @if($pvItem['base_status'] === 'OK') <span class="badge-ok">✓ OK</span>
                             @elseif($pvItem['base_status'] === '-') <span style="color: #64748b;">-</span>
                             @else <span class="badge-pen" title="Investimento Pendente">{{ $pvItem['base_status'] }}</span>
                             @endif
                         </td>
-                        <td style="padding: 0.65rem 0.75rem; text-align: center;">
+                        <td class="col-carenagem" style="padding: 0.65rem 0.75rem; text-align: center;">
                             @if($pvItem['carenagem_status'] === 'OK') <span class="badge-ok">✓ OK</span>
                             @elseif($pvItem['carenagem_status'] === '-') <span style="color: #64748b;">-</span>
                             @else <span class="badge-pen" title="Investimento Pendente">{{ $pvItem['carenagem_status'] }}</span>
@@ -422,7 +479,7 @@
                         </td>
 
                         <!-- Alertas Compras -->
-                        <td style="padding: 0.65rem 0.75rem; text-align: center;">
+                        <td class="col-alertas" style="padding: 0.65rem 0.75rem; text-align: center;">
                             @if($pvItem['sem_pedido_compra_count'] > 0)
                                 <span class="badge-alert" style="margin-right: 0.2rem;" title="Itens em falta sem Pedido de Compra">
                                     🚫 {{ $pvItem['sem_pedido_compra_count'] }} S/ PC
@@ -439,12 +496,12 @@
                         </td>
 
                         <!-- Investimento Pendente -->
-                        <td style="padding: 0.65rem 0.75rem; text-align: right; font-weight: 700; color: {{ $pvItem['investimento_pendente'] > 0 ? '#fbbf24' : '#34d399' }};">
+                        <td class="col-investimento" style="padding: 0.65rem 0.75rem; text-align: right; font-weight: 700; color: {{ $pvItem['investimento_pendente'] > 0 ? '#fbbf24' : '#34d399' }};">
                             R$ {{ number_format($pvItem['investimento_pendente'], 2, ',', '.') }}
                         </td>
 
                         <!-- Ações -->
-                        <td style="padding: 0.65rem 0.75rem; text-align: center;">
+                        <td class="col-acoes" style="padding: 0.65rem 0.75rem; text-align: center;">
                             <div style="display: flex; gap: 0.25rem; justify-content: center;">
                                 <button type="button" class="btn btn-secondary" onclick="toggleDetails('pv_details_{{ $pvItem['pv'] }}')" style="padding: 0.2rem 0.4rem; font-size: 0.7rem;" title="Expandir componentes">
                                     👁️
@@ -535,6 +592,51 @@
             el.style.display = el.style.display === 'none' ? 'table-row' : 'none';
         }
     }
+
+    // Gestor de Visibilidade de Colunas (Excel) do Painel PCP
+    const PAINEL_PCP_COLUNAS_PADRAO = {
+        'col-info': true,
+        'col-status-pv': true,
+        'col-fabrica': true,
+        'col-pv': true,
+        'col-cliente': true,
+        'col-produto-pai': true,
+        'col-marca': true,
+        'col-avanco': true,
+        'col-motor': true,
+        'col-alternador': true,
+        'col-base': true,
+        'col-carenagem': true,
+        'col-alertas': true,
+        'col-investimento': true
+    };
+
+    function toggleMenuColunasPainelPcp() {
+        const el = document.getElementById('dropdownMenuColunasPainelPcp');
+        if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function toggleColunaPainelPcp(colClass, isChecked) {
+        const elements = document.querySelectorAll('.' + colClass);
+        elements.forEach(el => {
+            el.style.display = isChecked ? '' : 'none';
+        });
+        let prefs = JSON.parse(localStorage.getItem('painel_pcp_colunas_visiveis') || '{}');
+        prefs[colClass] = isChecked;
+        localStorage.setItem('painel_pcp_colunas_visiveis', JSON.stringify(prefs));
+    }
+
+    function inicializarColunasPainelPcp() {
+        let prefs = JSON.parse(localStorage.getItem('painel_pcp_colunas_visiveis') || '{}');
+        Object.keys(PAINEL_PCP_COLUNAS_PADRAO).forEach(colClass => {
+            let isChecked = prefs.hasOwnProperty(colClass) ? prefs[colClass] : PAINEL_PCP_COLUNAS_PADRAO[colClass];
+            const chk = document.getElementById('chk_' + colClass);
+            if (chk) chk.checked = isChecked;
+            toggleColunaPainelPcp(colClass, isChecked);
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', inicializarColunasPainelPcp);
 
     // Gestores dos Filtros Múltiplos Estilo Excel
 
@@ -631,6 +733,10 @@
                 menu.style.display = 'none';
             }
         });
+        const menuCol = document.getElementById('dropdownMenuColunasPainelPcp');
+        if (menuCol && !menuCol.contains(e.target) && !e.target.closest('.dropdown')) {
+            menuCol.style.display = 'none';
+        }
     });
 </script>
 @endsection

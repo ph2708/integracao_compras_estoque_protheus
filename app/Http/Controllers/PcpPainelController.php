@@ -254,7 +254,31 @@ class PcpPainelController extends Controller
                         $alternadorStatus = $valTotal > 0 ? 'R$ ' . number_format($valTotal, 2, ',', '.') : 'FALTA';
                     }
                 }
-                if (str_contains($desc, 'BASE')) {
+                $isIgnoredBase = str_contains($descClean, 'BASE RELE') || 
+                                 str_contains($descClean, 'BASE RÊLE') || 
+                                 str_contains($descClean, 'BASE P/ RL') || 
+                                 str_contains($descClean, 'BASE PARA RELE') || 
+                                 str_contains($descClean, 'BASE PARA INTTRV') || 
+                                 str_contains($descClean, 'BASE INTTRV') || 
+                                 str_contains($descClean, 'SUPORTE') || 
+                                 str_contains($descClean, 'SPT ') || 
+                                 str_contains($descClean, 'TQ COMB');
+
+                $isBase = !$isIgnoredBase && (
+                    str_starts_with($descClean, 'BS ') || 
+                    str_starts_with($descClean, 'BS-') || 
+                    str_starts_with($descClean, 'BS KSE') || 
+                    str_starts_with($descClean, 'BS WG') || 
+                    str_starts_with($descClean, 'BS WEG') || 
+                    str_starts_with($codClean, 'BS') || 
+                    str_contains($descClean, 'BASE ESTRUTURAL') || 
+                    str_contains($descClean, 'BASE CHASSI') || 
+                    str_contains($descClean, 'BASE GERADOR') || 
+                    str_starts_with($descClean, 'BASE ') || 
+                    $descClean === 'BASE'
+                );
+
+                if ($isBase) {
                     $hasBase = true;
                     if ($it->status === 'FALTA') {
                         $baseStatus = $valTotal > 0 ? 'R$ ' . number_format($valTotal, 2, ',', '.') : 'PEN';

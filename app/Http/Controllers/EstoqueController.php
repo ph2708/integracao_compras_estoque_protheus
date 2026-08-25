@@ -88,6 +88,11 @@ class EstoqueController extends Controller
         $opcoesDescricao = $queryDesc->whereNotNull('descricao')->where('descricao', '!=', '')->distinct()->pluck('descricao')->sort()->values();
         $fDescricao = $request->f_descricao;
 
+        $filiaisProtheus = $this->protheusService->getFiliais();
+        if (empty($filiaisProtheus)) {
+            $filiaisProtheus = ['01', '02', '03', '04', '05', '10', '15', '20', '22', '25', '30'];
+        }
+
         return view('estoque.index', compact('items', 'filiaisProtheus', 'opcoesDescricao', 'fDescricao'));
     }
 

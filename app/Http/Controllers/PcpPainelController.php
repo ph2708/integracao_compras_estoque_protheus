@@ -222,23 +222,6 @@ class PcpPainelController extends Controller
                     }
                 }
 
-            // Componentes Críticos
-            $motorStatus = 'OK';
-            $alternadorStatus = 'OK';
-            $baseStatus = 'OK';
-            $carenagemStatus = 'OK';
-
-            $hasMotor = false;
-            $hasAlternador = false;
-            $hasBase = false;
-            $hasCarenagem = false;
-
-            foreach ($items as $it) {
-                $cItem = $it->compraItem;
-                $valUnit = $cItem ? floatval($cItem->valor_unitario) : 0;
-                $valTotal = $cItem ? floatval($cItem->valor_total) : 0;
-                $valorBruto += $valTotal;
-
                 if ($it->status === 'FALTA') {
                     if (!$cItem || empty(trim($cItem->pedido_compra ?? ''))) {
                         $semPedidoCompraCount++;

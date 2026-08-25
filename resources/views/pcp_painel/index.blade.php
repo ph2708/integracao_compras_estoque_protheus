@@ -173,7 +173,7 @@
                     <tr style="background-color: #0f172a; border-bottom: 1px solid var(--border-color); color: #94a3b8; text-align: left;">
                         <th style="padding: 0.65rem 0.75rem; min-width: 130px;">INFO ✏️</th>
                         <th style="padding: 0.65rem 0.75rem; min-width: 130px;">STATUS (PV) ✏️</th>
-                        <th style="padding: 0.65rem 0.75rem; min-width: 90px;">FÁBRICA ✏️</th>
+                        <th style="padding: 0.65rem 0.75rem; min-width: 100px; color: #38bdf8;" title="Ordenado em sequência numérica crescente">FÁBRICA ✏️ ⬆️</th>
                         <th style="padding: 0.65rem 0.75rem;">PV / Pedido</th>
                         <th style="padding: 0.65rem 0.75rem;">Cliente (C2_OBS)</th>
                         <th style="padding: 0.65rem 0.75rem;">Equipamento / Produto Pai</th>

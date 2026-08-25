@@ -92,7 +92,19 @@ class PcpPainelController extends Controller
             if ($pvNum === 'SEM_PEDIDO' && $items->isEmpty()) continue;
 
             $clienteObs = $items->pluck('cliente_obs')->filter()->first() ?? '-';
-            $produtoPai = $items->pluck('produto_pai')->filter()->first() ?? '-';
+
+            // Priorizar o produto_pai que contém a sigla GMG no texto após o hífen (-)
+            $gmgProdutoPai = $items->pluck('produto_pai')->filter(function ($p) {
+                if (empty($p)) return false;
+                $parts = explode('-', $p, 2);
+                if (count($parts) > 1) {
+                    $afterHyphen = trim($parts[1]);
+                    return str_starts_with(strtoupper($afterHyphen), 'GMG') || str_contains(strtoupper($afterHyphen), 'GMG');
+                }
+                return str_contains(strtoupper($p), 'GMG');
+            })->first();
+
+            $produtoPai = $gmgProdutoPai ?: ($items->pluck('produto_pai')->filter()->first() ?? '-');
 
             // Buscar metadados salvos do PV
             $meta = $pvMetadados->get($pvNum);
@@ -238,6 +250,13 @@ class PcpPainelController extends Controller
                 'items' => $items,
             ]);
         }
+
+        // Ordenar a coleção do painel em sequência numérica pela coluna FÁBRICA (18, 19, 20... 99)
+        $painelData = $painelData->sortBy(function ($item) {
+            $fab = trim($item['fabrica'] ?? '');
+            $numFab = (is_numeric($fab) && intval($fab) > 0) ? intval($fab) : 999999;
+            return sprintf('%08d_%s', $numFab, $item['pv']);
+        })->values();
 
         // Opções de Filtro Únicas
         $opcoesInfo = $opcoesInfo->unique()->sort()->values();

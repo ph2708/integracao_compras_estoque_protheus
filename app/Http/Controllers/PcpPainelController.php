@@ -203,6 +203,7 @@ class PcpPainelController extends Controller
                     $investimentoPendente += $valTotal;
                 }
 
+                $desc = strtoupper($it->descricao . ' ' . $it->descricao_longa . ' ' . $it->codigo_produto);
                 $descClean = strtoupper(trim($it->descricao));
                 $codClean = strtoupper(trim($it->codigo_produto));
 
@@ -238,8 +239,6 @@ class PcpPainelController extends Controller
                         $motorStatus = $valTotal > 0 ? 'R$ ' . number_format($valTotal, 2, ',', '.') : 'FALTA';
                     }
                 }
-                $descClean = strtoupper(trim($it->descricao));
-                $codClean = strtoupper(trim($it->codigo_produto));
 
                 $isAlternador = str_contains($desc, 'ALTERNADOR') || 
                                 str_starts_with($descClean, 'GS ') || 

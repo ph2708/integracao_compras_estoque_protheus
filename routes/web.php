@@ -32,6 +32,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/painel-pcp/consultar-protheus', [PcpPainelController::class, 'consultarProtheus'])->name('pcp-painel.consultar-protheus');
     Route::post('/painel-pcp/importar-pvs', [PcpPainelController::class, 'importarPvsSelecionados'])->name('pcp-painel.importar-pvs');
     Route::post('/painel-pcp/store-manual', [PcpPainelController::class, 'storeManual'])->name('pcp-painel.store-manual');
+    Route::post('/painel-pcp/update-single-pv', [PcpPainelController::class, 'updateSinglePv'])->name('pcp-painel.update-single-pv');
     Route::post('/painel-pcp/excluir-pv', [PcpPainelController::class, 'destroyPv'])->name('pcp-painel.excluir-pv');
 
     // Painel de Estoque (PCP)

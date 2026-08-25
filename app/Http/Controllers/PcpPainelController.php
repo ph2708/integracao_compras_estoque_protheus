@@ -508,6 +508,46 @@ class PcpPainelController extends Controller
     }
 
     /**
+     * Atualização individual de um Pedido de Venda via Modal do Lápis
+     */
+    public function updateSinglePv(Request $request)
+    {
+        $request->validate([
+            'pedido' => 'required|string',
+        ]);
+
+        $pvNum = trim($request->input('pedido'));
+        $cliente = trim($request->input('cliente_obs', ''));
+        $prodPai = trim($request->input('produto_pai', ''));
+        $info = trim($request->input('info', ''));
+        $statusPv = trim($request->input('status_pv', ''));
+        $fabrica = trim($request->input('fabrica', ''));
+        $marca = trim($request->input('marca', ''));
+
+        // Atualizar Metadados do PV
+        PvMetadado::updateOrCreate(
+            ['pedido' => $pvNum],
+            [
+                'info' => $info ?: null,
+                'status_pv' => $statusPv ?: null,
+                'fabrica' => $fabrica ?: null,
+                'marca' => $marca ?: null,
+            ]
+        );
+
+        // Atualizar cliente_obs e produto_pai nos componentes de estoque
+        if ($cliente || $prodPai) {
+            $updates = [];
+            if ($cliente) $updates['cliente_obs'] = $cliente;
+            if ($prodPai) $updates['produto_pai'] = $prodPai;
+            
+            EstoqueItem::where('pedido', $pvNum)->update($updates);
+        }
+
+        return redirect()->route('pcp-painel.index')->with('success', "Pedido de Venda {$pvNum} atualizado com sucesso!");
+    }
+
+    /**
      * Atualização em Lote dos Metadados do Pedido de Venda (INFO, STATUS, FÁBRICA, MARCA)
      */
     public function updateBatch(Request $request)

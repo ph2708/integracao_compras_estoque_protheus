@@ -506,6 +506,9 @@
                         <!-- Ações -->
                         <td class="col-acoes" style="padding: 0.65rem 0.75rem; text-align: center;">
                             <div style="display: flex; gap: 0.25rem; justify-content: center;">
+                                <button type="button" class="btn btn-secondary" onclick="abrirModalEditarPv('{{ $pvItem['pv'] }}', '{{ addslashes($pvItem['cliente']) }}', '{{ addslashes($pvItem['produto_pai']) }}', '{{ addslashes($pvItem['info']) }}', '{{ addslashes($pvItem['status_pv']) }}', '{{ addslashes($pvItem['fabrica']) }}', '{{ addslashes($pvItem['marca']) }}')" style="padding: 0.2rem 0.4rem; font-size: 0.7rem;" title="Editar dados deste PV">
+                                    ✏️
+                                </button>
                                 <button type="button" class="btn btn-secondary" onclick="toggleDetails('pv_details_{{ $pvItem['pv'] }}')" style="padding: 0.2rem 0.4rem; font-size: 0.7rem;" title="Expandir componentes">
                                     👁️
                                 </button>
@@ -708,6 +711,70 @@
     <input type="hidden" name="pedido" id="input_excluir_pv_num">
 </form>
 
+<!-- Modal 3: Editar PV Individualmente -->
+<div id="modalEditarPv" class="modal-overlay">
+    <div class="modal-box" style="max-width: 550px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 0.75rem; margin-bottom: 1rem;">
+            <h3 style="font-size: 1.1rem; font-weight: 700; color: #a5b4fc; display: flex; align-items: center; gap: 0.5rem; margin: 0;">
+                ✏️ Editar Pedido de Venda <span id="modal_edit_pv_title"></span>
+            </h3>
+            <button type="button" onclick="fecharModalEditarPv()" style="background: none; border: none; color: #94a3b8; font-size: 1.25rem; cursor: pointer;">✕</button>
+        </div>
+
+        <form action="{{ route('pcp-painel.update-single-pv') }}" method="POST" onsubmit="window.mostrarLoading('💾 Salvando alterações do PV...')">
+            @csrf
+            <input type="hidden" name="pedido" id="modal_edit_pedido_input">
+
+            <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.25rem;">
+                <div>
+                    <label style="font-size: 0.75rem; font-weight: 600; color: #94a3b8; margin-bottom: 0.25rem; display: block;">Nome do Cliente / Obra (C2_OBS)</label>
+                    <input type="text" name="cliente_obs" id="modal_edit_cliente_input" class="form-control" style="padding: 0.45rem; font-size: 0.85rem;">
+                </div>
+                <div>
+                    <label style="font-size: 0.75rem; font-weight: 600; color: #94a3b8; margin-bottom: 0.25rem; display: block;">Equipamento / Produto Pai</label>
+                    <input type="text" name="produto_pai" id="modal_edit_produto_pai_input" class="form-control" style="padding: 0.45rem; font-size: 0.85rem;">
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <div style="flex: 1;">
+                        <label style="font-size: 0.75rem; font-weight: 600; color: #94a3b8; margin-bottom: 0.25rem; display: block;">INFO</label>
+                        <input type="text" name="info" id="modal_edit_info_input" class="form-control" style="padding: 0.45rem; font-size: 0.85rem;">
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="font-size: 0.75rem; font-weight: 600; color: #94a3b8; margin-bottom: 0.25rem; display: block;">STATUS (PV)</label>
+                        <select name="status_pv" id="modal_edit_status_pv_input" class="form-control" style="padding: 0.45rem; font-size: 0.85rem;">
+                            <option value="">-- Selecione --</option>
+                            <option value="FATURADO">FATURADO</option>
+                            <option value="COMPRAS">COMPRAS</option>
+                            <option value="ENGENHARIA">ENGENHARIA</option>
+                            <option value="ESTOQUE">ESTOQUE</option>
+                            <option value="FINANCEIRO">FINANCEIRO</option>
+                            <option value="ENTREGUE">ENTREGUE</option>
+                            <option value="CANCELADO">CANCELADO</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <div style="flex: 1;">
+                        <label style="font-size: 0.75rem; font-weight: 600; color: #94a3b8; margin-bottom: 0.25rem; display: block;">FÁBRICA</label>
+                        <input type="text" name="fabrica" id="modal_edit_fabrica_input" class="form-control" style="padding: 0.45rem; font-size: 0.85rem;">
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="font-size: 0.75rem; font-weight: 600; color: #94a3b8; margin-bottom: 0.25rem; display: block;">MARCA</label>
+                        <input type="text" name="marca" id="modal_edit_marca_input" class="form-control" style="padding: 0.45rem; font-size: 0.85rem;">
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 0.5rem; border-top: 1px solid #334155; padding-top: 0.75rem;">
+                <button type="button" class="btn btn-secondary" onclick="fecharModalEditarPv()">Cancelar</button>
+                <button type="submit" class="btn btn-primary" style="background-color: #059669; border-color: #059669;">
+                    💾 Salvar Alterações do PV
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
     function toggleDetails(elementId) {
         const el = document.getElementById(elementId);
@@ -739,6 +806,21 @@
     }
     function fecharModalCriarPvManual() {
         document.getElementById('modalCriarPvManual').style.display = 'none';
+    }
+
+    function abrirModalEditarPv(pv, cliente, prodPai, info, statusPv, fabrica, marca) {
+        document.getElementById('modal_edit_pv_title').innerText = pv;
+        document.getElementById('modal_edit_pedido_input').value = pv;
+        document.getElementById('modal_edit_cliente_input').value = cliente;
+        document.getElementById('modal_edit_produto_pai_input').value = prodPai;
+        document.getElementById('modal_edit_info_input').value = info;
+        document.getElementById('modal_edit_status_pv_input').value = statusPv;
+        document.getElementById('modal_edit_fabrica_input').value = fabrica;
+        document.getElementById('modal_edit_marca_input').value = marca;
+        document.getElementById('modalEditarPv').style.display = 'flex';
+    }
+    function fecharModalEditarPv() {
+        document.getElementById('modalEditarPv').style.display = 'none';
     }
 
     function executarBuscaProtheusModal() {

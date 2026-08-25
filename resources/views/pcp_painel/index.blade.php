@@ -160,6 +160,7 @@
                     <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;"><input type="checkbox" id="chk_col-base" onchange="toggleColunaPainelPcp('col-base', this.checked)"> Base</label>
                     <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;"><input type="checkbox" id="chk_col-carenagem" onchange="toggleColunaPainelPcp('col-carenagem', this.checked)"> Carenagem</label>
                     <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;"><input type="checkbox" id="chk_col-alertas" onchange="toggleColunaPainelPcp('col-alertas', this.checked)"> Alertas Compras</label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: #38bdf8;"><input type="checkbox" id="chk_col-valor-bruto" onchange="toggleColunaPainelPcp('col-valor-bruto', this.checked)"> VALOR BRUTO</label>
                     <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;"><input type="checkbox" id="chk_col-investimento" onchange="toggleColunaPainelPcp('col-investimento', this.checked)"> Investimento Pendente</label>
                 </div>
             </div>
@@ -255,6 +256,7 @@
                         <th class="col-base" style="padding: 0.65rem 0.75rem; text-align: center;">Base</th>
                         <th class="col-carenagem" style="padding: 0.65rem 0.75rem; text-align: center;">Carenagem</th>
                         <th class="col-alertas" style="padding: 0.65rem 0.75rem; text-align: center;">Alertas Compras</th>
+                        <th class="col-valor-bruto" style="padding: 0.65rem 0.75rem; text-align: right; color: #38bdf8;">VALOR BRUTO</th>
                         <th class="col-investimento" style="padding: 0.65rem 0.75rem; text-align: right;">Investimento Pend.</th>
                         <th class="col-acoes" style="padding: 0.65rem 0.75rem; text-align: center;">Ações</th>
                     </tr>
@@ -399,6 +401,7 @@
                         <th class="col-base"></th>
                         <th class="col-carenagem"></th>
                         <th class="col-alertas"></th>
+                        <th class="col-valor-bruto"></th>
                         <th class="col-investimento"></th>
                         <th class="col-acoes"></th>
                     </tr>
@@ -507,6 +510,11 @@
                             @if($pvItem['sem_pedido_compra_count'] == 0 && $pvItem['sem_preco_count'] == 0)
                                 <span style="color: #34d399; font-size: 0.725rem;">✓ Regular</span>
                             @endif
+                        </td>
+
+                        <!-- Valor Bruto -->
+                        <td class="col-valor-bruto" style="padding: 0.65rem 0.75rem; text-align: right; font-weight: 700; color: #f8fafc;">
+                            R$ {{ number_format($pvItem['valor_bruto'], 2, ',', '.') }}
                         </td>
 
                         <!-- Investimento Pendente -->
@@ -936,6 +944,7 @@
         'col-base': true,
         'col-carenagem': true,
         'col-alertas': true,
+        'col-valor-bruto': true,
         'col-investimento': true
     };
 

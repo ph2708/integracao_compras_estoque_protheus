@@ -181,6 +181,7 @@ class PcpPainelController extends Controller
             $semPedidoCompraCount = 0;
             $semPrecoCount = 0;
             $investimentoPendente = 0;
+            $valorBruto = 0;
 
             // Componentes Críticos
             $motorStatus = 'OK';
@@ -197,6 +198,7 @@ class PcpPainelController extends Controller
                 $cItem = $it->compraItem;
                 $valUnit = $cItem ? floatval($cItem->valor_unitario) : 0;
                 $valTotal = $cItem ? floatval($cItem->valor_total) : 0;
+                $valorBruto += $valTotal;
 
                 if ($it->status === 'FALTA') {
                     if (!$cItem || empty(trim($cItem->pedido_compra ?? ''))) {
@@ -338,6 +340,7 @@ class PcpPainelController extends Controller
                 'status_badge_class' => $statusBadgeClass,
                 'sem_pedido_compra_count' => $semPedidoCompraCount,
                 'sem_preco_count' => $semPrecoCount,
+                'valor_bruto' => $valorBruto,
                 'investimento_pendente' => $investimentoPendente,
                 'motor_status' => $motorStatus,
                 'alternador_status' => $alternadorStatus,

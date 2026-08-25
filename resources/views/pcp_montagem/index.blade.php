@@ -93,8 +93,8 @@
                         <th style="padding: 0.75rem; min-width: 220px;">Equipamento / Produto Pai</th>
                         <th style="padding: 0.75rem; text-align: center; min-width: 140px;">🔧 Mecânica</th>
                         <th style="padding: 0.75rem; text-align: center; min-width: 140px;">⚡ Elétrica</th>
-                        <th style="padding: 0.75rem; text-align: center; min-width: 140px;">🧪 Teste Gerador</th>
                         <th style="padding: 0.75rem; text-align: center; min-width: 140px;">🏗️ Carenagem</th>
+                        <th style="padding: 0.75rem; text-align: center; min-width: 140px;">🧪 Teste Gerador</th>
                         <th style="padding: 0.75rem; text-align: right; width: 120px;">⏱️ Total Horas</th>
                         <th style="padding: 0.75rem; text-align: center; width: 80px;">Ações</th>
                     </tr>
@@ -154,25 +154,7 @@
                             </div>
                         </td>
 
-                        <!-- Estação 3: Teste Final Gerador -->
-                        <td style="padding: 0.65rem 0.75rem; text-align: center;">
-                            @if($item['teste']['status'] === 'CONCLUIDO')
-                                <span class="badge" style="background-color: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); padding: 0.2rem 0.4rem; border-radius: 4px; font-weight: 700; font-size: 0.7rem; display: block; margin-bottom: 0.15rem;">
-                                    🟢 Concluído
-                                </span>
-                            @elseif($item['teste']['status'] === 'EM_ANDAMENTO')
-                                <span class="badge" style="background-color: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); padding: 0.2rem 0.4rem; border-radius: 4px; font-weight: 700; font-size: 0.7rem; display: block; margin-bottom: 0.15rem;">
-                                    🟡 Em Teste
-                                </span>
-                            @else
-                                <span style="color: #64748b; font-size: 0.725rem; display: block; margin-bottom: 0.15rem;">⚪ Pendente</span>
-                            @endif
-                            <div style="font-size: 0.725rem; font-weight: 600; color: #f8fafc;">
-                                ⏱️ {{ $item['teste_horas_fmt'] }}
-                            </div>
-                        </td>
-
-                        <!-- Estação 4: Carenagem -->
+                        <!-- Estação 3: Carenagem -->
                         <td style="padding: 0.65rem 0.75rem; text-align: center;">
                             @if($item['carenagem']['status'] === 'CONCLUIDO')
                                 <span class="badge" style="background-color: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); padding: 0.2rem 0.4rem; border-radius: 4px; font-weight: 700; font-size: 0.7rem; display: block; margin-bottom: 0.15rem;">
@@ -187,6 +169,24 @@
                             @endif
                             <div style="font-size: 0.725rem; font-weight: 600; color: #f8fafc;">
                                 ⏱️ {{ $item['carenagem_horas_fmt'] }}
+                            </div>
+                        </td>
+
+                        <!-- Estação 4: Teste Final Gerador (Última Etapa da Fábrica) -->
+                        <td style="padding: 0.65rem 0.75rem; text-align: center;">
+                            @if($item['teste']['status'] === 'CONCLUIDO')
+                                <span class="badge" style="background-color: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); padding: 0.2rem 0.4rem; border-radius: 4px; font-weight: 700; font-size: 0.7rem; display: block; margin-bottom: 0.15rem;">
+                                    🟢 Concluído
+                                </span>
+                            @elseif($item['teste']['status'] === 'EM_ANDAMENTO')
+                                <span class="badge" style="background-color: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); padding: 0.2rem 0.4rem; border-radius: 4px; font-weight: 700; font-size: 0.7rem; display: block; margin-bottom: 0.15rem;">
+                                    🟡 Em Teste
+                                </span>
+                            @else
+                                <span style="color: #64748b; font-size: 0.725rem; display: block; margin-bottom: 0.15rem;">⚪ Pendente</span>
+                            @endif
+                            <div style="font-size: 0.725rem; font-weight: 600; color: #f8fafc;">
+                                ⏱️ {{ $item['teste_horas_fmt'] }}
                             </div>
                         </td>
 

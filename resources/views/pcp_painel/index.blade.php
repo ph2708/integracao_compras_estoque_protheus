@@ -233,15 +233,21 @@
                 <option value="PARCIAL" {{ $searchStatusPcp === 'PARCIAL' ? 'selected' : '' }}>PARCIAL</option>
             </select>
         </div>
-        <div style="flex: 1; min-width: 130px;">
-            <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.3rem; display: block;">Data Pronto</label>
-            <input type="text" name="f_data_pronto" value="{{ $fDataPronto }}" form="formFilterPcpPainel" class="form-control" placeholder="Ex: 31/08/26..." style="padding: 0.4rem 0.6rem; font-size: 0.8rem;" onchange="document.getElementById('formFilterPcpPainel').submit()">
+        <div style="display: flex; gap: 0.4rem; flex: 1.4; min-width: 240px;">
+            <div style="flex: 1;">
+                <label style="font-size: 0.75rem; font-weight: 600; color: #a5b4fc; margin-bottom: 0.3rem; display: block;">📅 Pronto De</label>
+                <input type="text" name="f_data_pronto_de" value="{{ $fDataProntoDe }}" form="formFilterPcpPainel" class="form-control" placeholder="01/08/26" style="padding: 0.4rem 0.5rem; font-size: 0.8rem; border-color: #6366f1;" onchange="document.getElementById('formFilterPcpPainel').submit()">
+            </div>
+            <div style="flex: 1;">
+                <label style="font-size: 0.75rem; font-weight: 600; color: #a5b4fc; margin-bottom: 0.3rem; display: block;">📅 Pronto Até</label>
+                <input type="text" name="f_data_pronto_ate" value="{{ $fDataProntoAte }}" form="formFilterPcpPainel" class="form-control" placeholder="31/08/26" style="padding: 0.4rem 0.5rem; font-size: 0.8rem; border-color: #6366f1;" onchange="document.getElementById('formFilterPcpPainel').submit()">
+            </div>
         </div>
         <div style="display: flex; gap: 0.4rem;">
             <button type="submit" form="formFilterPcpPainel" class="btn btn-primary" style="padding: 0.4rem 0.85rem; font-size: 0.8rem; background-color: #6366f1;">
                 🔍 Filtrar
             </button>
-            @if($searchPv || $searchCliente || $searchStatusPcp || $searchStatusPagamento || $fInfo || $fStatusPv || $fFabrica || $fMarca || $fDataPronto)
+            @if($searchPv || $searchCliente || $searchStatusPcp || $searchStatusPagamento || $fInfo || $fStatusPv || $fFabrica || $fMarca || $fDataPronto || $fDataProntoDe || $fDataProntoAte)
                 <a href="{{ route('pcp-painel.index') }}" class="btn btn-secondary" style="padding: 0.4rem 0.75rem; font-size: 0.8rem;">
                     ✕ Limpar Filtros
                 </a>

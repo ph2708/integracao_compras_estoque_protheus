@@ -61,6 +61,8 @@ class PcpPainelController extends Controller
         $fFabrica = $request->get('f_fabrica');
         $fMarca = $request->get('f_marca');
         $fDataPronto = $request->get('f_data_pronto');
+        $fDataProntoDe = $request->get('f_data_pronto_de');
+        $fDataProntoAte = $request->get('f_data_pronto_ate');
 
         // Carregar Metadados de PVs cadastrados no banco
         $pvMetadados = PvMetadado::all()->keyBy('pedido');
@@ -160,7 +162,14 @@ class PcpPainelController extends Controller
             if (!empty($valMarca)) $opcoesMarca->push($valMarca);
             if (!empty($valDataPronto) && $valDataPronto !== '-') $opcoesDataPronto->push($valDataPronto);
 
-            // Aplicar filtros multi-seleção
+            // Aplicar filtros multi-seleção e intervalo de datas (Data Pronto)
+            $parsedValPronto = $this->parseDateToYmd($valDataPronto);
+            $parsedDe = $this->parseDateToYmd($fDataProntoDe);
+            $parsedAte = $this->parseDateToYmd($fDataProntoAte);
+
+            if ($parsedDe && (!$parsedValPronto || $parsedValPronto < $parsedDe)) continue;
+            if ($parsedAte && (!$parsedValPronto || $parsedValPronto > $parsedAte)) continue;
+
             if ($fInfo && !$this->matchMultiFilter($valInfo, $fInfo)) continue;
             if ($fStatusPv && !$this->matchMultiFilter($valStatusPv, $fStatusPv, true)) continue;
             if ($fFabrica && !$this->matchMultiFilter($valFabrica, $fFabrica, true)) continue;
@@ -456,6 +465,8 @@ class PcpPainelController extends Controller
             'fFabrica',
             'fMarca',
             'fDataPronto',
+            'fDataProntoDe',
+            'fDataProntoAte',
             'opcoesInfo',
             'opcoesStatusPv',
             'opcoesFabrica',
@@ -469,6 +480,40 @@ class PcpPainelController extends Controller
             'filiaisProtheus',
             'canEditPcp'
         ));
+    }
+
+    /**
+     * Auxiliar para converter strings de datas (31/08/26, 31/08/2026, 2026-08-31) em YYYY-MM-DD para comparacao de intervalo
+     */
+    private function parseDateToYmd(?string $dateStr): ?string
+    {
+        if (empty($dateStr) || $dateStr === '-') return null;
+        $dateStr = trim($dateStr);
+        
+        // Formato YYYY-MM-DD
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateStr)) {
+            return $dateStr;
+        }
+
+        // Formato DD/MM/YYYY ou DD/MM/YY ou DD-MM-YYYY ou DD-MM-YY
+        if (preg_match('/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/', $dateStr, $m)) {
+            $day = str_pad($m[1], 2, '0', STR_PAD_LEFT);
+            $month = str_pad($m[2], 2, '0', STR_PAD_LEFT);
+            $year = $m[3];
+            if (strlen($year) == 2) {
+                $year = '20' . $year;
+            }
+            return "{$year}-{$month}-{$day}";
+        }
+
+        // Formato DD/MM (assume ano atual 2026)
+        if (preg_match('/^(\d{1,2})[\/\-](\d{1,2})$/', $dateStr, $m)) {
+            $day = str_pad($m[1], 2, '0', STR_PAD_LEFT);
+            $month = str_pad($m[2], 2, '0', STR_PAD_LEFT);
+            return "2026-{$month}-{$day}";
+        }
+
+        return null;
     }
 
     /**

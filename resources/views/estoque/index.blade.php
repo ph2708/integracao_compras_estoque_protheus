@@ -207,6 +207,9 @@
                             <span style="font-size: 0.7rem; color: #94a3b8; font-weight: normal;">(Salvo Auto)</span>
                         </div>
                         <div style="max-height: 290px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.45rem;">
+                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: #38bdf8;">
+                                <input type="checkbox" id="chk_col-fabrica" onchange="toggleColunaEstoque('col-fabrica', this.checked)"> FÁBRICA ✏️ ⬆️
+                            </label>
                             <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
                                 <input type="checkbox" id="chk_col-status-pcp-atual" onchange="toggleColunaEstoque('col-status-pcp-atual', this.checked)"> Status PCP Atual
                             </label>
@@ -266,6 +269,7 @@
             <table>
                 <thead>
                     <tr>
+                        <th class="col-fabrica" style="min-width: 80px; color: #38bdf8; text-align: center;" title="Sequência de montagem da fábrica definida no Painel PCP">FÁBRICA ⬆️</th>
                         <th class="col-status-pcp-atual" style="min-width: 130px;">Status PCP Atual</th>
                         <th class="col-pv">Pedido (C2_PEDIDO)</th>
                         <th class="col-codigo-produto">Código Produto</th>
@@ -282,6 +286,9 @@
                         <th class="col-acoes" style="text-align: center; color: #a5b4fc;">Ações</th>
                     </tr>
                     <tr class="filter-row">
+                        <th class="col-fabrica">
+                            <input type="text" name="f_fabrica" form="formFilterEstoque" class="form-control" placeholder="Fábrica..." value="{{ request('f_fabrica') }}" style="font-size: 0.725rem; padding: 0.25rem 0.4rem; height: 31px; text-align: center;" onchange="this.form.submit()">
+                        </th>
                         <th class="col-status-pcp-atual">
                             <div class="dropdown" style="position: relative; width: 100%;">
                                 <button type="button" 
@@ -362,6 +369,11 @@
                 <tbody>
                     @forelse($items as $item)
                     <tr id="row_estoque_{{ $item->id }}">
+                        <td class="col-fabrica" style="text-align: center;">
+                            <span class="badge" style="background-color: #0284c7; color: #ffffff; font-size: 0.8rem; font-weight: 700; padding: 0.2rem 0.45rem; border-radius: 0.375rem;" title="Sequência de fábrica do PV (Painel PCP)">
+                                {{ $item->fabrica_seq ?? '99' }}
+                            </span>
+                        </td>
                         <td class="col-status-pcp-atual">
                             @php
                                 $badgeClass = match($item->status) {
@@ -761,6 +773,7 @@ function atualizarLabelFiliais() {
 
 // Gestor de Visibilidade de Colunas (Excel) para Estoque
 const ESTOQUE_COLUNAS_PADRAO = {
+    'col-fabrica': true,
     'col-status-pcp-atual': true,
     'col-pv': true,
     'col-codigo-produto': true,

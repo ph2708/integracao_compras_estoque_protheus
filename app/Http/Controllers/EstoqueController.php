@@ -41,24 +41,32 @@ class EstoqueController extends Controller
      */
     public function index(Request $request)
     {
-        $query = EstoqueItem::query();
+        $query = EstoqueItem::leftJoin('pv_metadados', 'estoque_items.pedido', '=', 'pv_metadados.pedido')
+            ->select('estoque_items.*', \DB::raw("COALESCE(NULLIF(pv_metadados.fabrica, ''), '99') as fabrica_seq"));
 
-        $this->applyMultiFilter($query, 'pedido', $request->f_pedido);
+        $this->applyMultiFilter($query, 'estoque_items.pedido', $request->f_pedido);
         $this->applyMultiFilter($query, 'codigo_produto', $request->f_produto);
         $this->applyMultiFilter($query, 'descricao', $request->f_descricao);
         $this->applyMultiFilter($query, 'descricao_longa', $request->f_desc_longa);
-        $this->applyMultiFilter($query, 'pedido', $request->f_pedido);
-        $this->applyMultiFilter($query, 'pedido', $request->f_pv);
+        $this->applyMultiFilter($query, 'estoque_items.pedido', $request->f_pv);
         $this->applyMultiFilter($query, 'produto_pai', $request->f_prod_pai);
         $this->applyMultiFilter($query, 'op', $request->f_op);
+        if ($request->filled('f_fabrica')) {
+            $this->applyMultiFilter($query, 'pv_metadados.fabrica', $request->f_fabrica);
+        }
         if ($request->filled('f_status')) {
-            $this->applyMultiFilter($query, 'status', $request->f_status);
+            $this->applyMultiFilter($query, 'estoque_items.status', $request->f_status);
         } else {
-            $query->where('status', '!=', 'FECHADO');
+            $query->where('estoque_items.status', '!=', 'FECHADO');
         }
         $this->applyMultiFilter($query, 'cliente_obs', $request->f_cliente);
 
-        $items = $query->orderBy('updated_at', 'desc')->paginate(15)->withQueryString();
+        $items = $query->orderByRaw("CASE WHEN pv_metadados.fabrica REGEXP '^[0-9]+$' THEN CAST(pv_metadados.fabrica AS UNSIGNED) ELSE 999999 END ASC")
+            ->orderBy('estoque_items.pedido', 'asc')
+            ->orderBy('estoque_items.id', 'desc')
+            ->paginate(30)
+            ->withQueryString();
+
         $filiaisProtheus = $this->protheusService->getFiliais();
         if (empty($filiaisProtheus)) {
             $filiaisProtheus = ['01', '02', '03', '04', '05', '10', '15', '20', '22', '25', '30'];

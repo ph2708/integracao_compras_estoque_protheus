@@ -210,7 +210,18 @@ class PcpPainelController extends Controller
                         $motorStatus = $valTotal > 0 ? 'R$ ' . number_format($valTotal, 2, ',', '.') : 'FALTA';
                     }
                 }
-                if (str_contains($desc, 'ALTERNADOR')) {
+                $descClean = strtoupper(trim($it->descricao));
+                $codClean = strtoupper(trim($it->codigo_produto));
+
+                $isAlternador = str_contains($desc, 'ALTERNADOR') || 
+                                str_starts_with($descClean, 'GS ') || 
+                                str_starts_with($descClean, 'GS-') || 
+                                str_starts_with($descClean, 'GSWG') || 
+                                str_starts_with($descClean, 'GS WEG') || 
+                                str_starts_with($descClean, 'GS WG') || 
+                                str_starts_with($codClean, 'GS');
+
+                if ($isAlternador) {
                     $hasAlternador = true;
                     if ($it->status === 'FALTA') {
                         $alternadorStatus = $valTotal > 0 ? 'R$ ' . number_format($valTotal, 2, ',', '.') : 'FALTA';

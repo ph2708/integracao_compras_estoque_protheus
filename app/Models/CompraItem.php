@@ -25,6 +25,7 @@ class CompraItem extends Model
         'valor_total',
         'condicao_pagamento',
         'status_pagamento',
+        'updated_by',
     ];
 
     public function estoqueItem(): BelongsTo

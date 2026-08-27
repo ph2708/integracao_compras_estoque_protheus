@@ -312,6 +312,7 @@
                         <th class="col-cliente">Nome do Cliente (C2_OBS)</th>
                         <th class="col-obs-estoque" style="color: #38bdf8;">Observação Estoque ✏️</th>
                         <th class="col-status-pcp-edit">Alterar Status PCP ✏️</th>
+                        <th class="col-updated-by" style="min-width: 140px; color: #a5b4fc;">Última Alteração</th>
                         <th class="col-acoes" style="text-align: center; color: #a5b4fc;">Ações</th>
                     </tr>
                     <tr class="filter-row">
@@ -430,6 +431,7 @@
                         </th>
                         <th class="col-obs-estoque"></th>
                         <th class="col-status-pcp-edit"></th>
+                        <th class="col-updated-by"></th>
                         <th class="col-acoes"></th>
                     </tr>
                 </thead>
@@ -511,6 +513,12 @@
                                 <option value="FABRICA" {{ $item->status == 'FABRICA' ? 'selected' : '' }}>FABRICA</option>
                                 <option value="FABRICAR INTERNO KANBAN" {{ $item->status == 'FABRICAR INTERNO KANBAN' ? 'selected' : '' }}>KANBAN</option>
                             </select>
+                        </td>
+                        <td class="col-updated-by" style="font-size: 0.725rem; color: #cbd5e1;">
+                            <strong style="color: #a5b4fc;">{{ $item->updated_by ?? '-' }}</strong>
+                            @if($item->updated_at)
+                                <br><span style="font-size: 0.65rem; color: #94a3b8;">📅 {{ $item->updated_at->format('d/m/Y H:i') }}</span>
+                            @endif
                         </td>
                         <td class="col-acoes" style="text-align: center;">
                             <button type="button" 
@@ -850,7 +858,8 @@ const ESTOQUE_COLUNAS_PADRAO = {
     'col-op': true,
     'col-qtd-op': true,
     'col-qtd-comprar': true,
-    'col-cliente': true
+    'col-cliente': true,
+    'col-updated-by': true
 };
 
 function toggleMenuColunasEstoque() {

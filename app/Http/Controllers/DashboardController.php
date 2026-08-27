@@ -262,4 +262,55 @@ class DashboardController extends Controller
             'searchCliente'
         ));
     }
+
+    /**
+     * Retorna em JSON todos os itens do fornecedor selecionado para alimentar o Modal do Dashboard
+     */
+    public function getFornecedorItensJson(Request $request)
+    {
+        $codigoFornecedor = trim($request->get('fornecedor', ''));
+
+        $query = CompraItem::join('estoque_items', 'compras_items.estoque_item_id', '=', 'estoque_items.id')
+            ->select(
+                'estoque_items.pedido as pedido_venda',
+                'estoque_items.op',
+                'estoque_items.cliente_obs',
+                'estoque_items.codigo_produto',
+                'estoque_items.descricao',
+                'estoque_items.quantidade as qtd_op',
+                'estoque_items.quantidade_estoque as qtd_estoque',
+                DB::raw('GREATEST(0, estoque_items.quantidade - estoque_items.quantidade_estoque) as qtd_comprar'),
+                'compras_items.codigo_fornecedor',
+                'compras_items.pedido_compra',
+                'compras_items.valor_unitario',
+                'compras_items.valor_total',
+                'estoque_items.status as status_pcp',
+                'compras_items.status_pagamento'
+            )
+            ->where('estoque_items.status', '!=', 'FECHADO');
+
+        if (empty($codigoFornecedor) || $codigoFornecedor === 'SEM FORNECEDOR' || $codigoFornecedor === '0') {
+            $query->where(function ($q) {
+                $q->whereNull('compras_items.codigo_fornecedor')
+                  ->orWhere(DB::raw("TRIM(compras_items.codigo_fornecedor)"), '')
+                  ->orWhere(DB::raw("TRIM(compras_items.codigo_fornecedor)"), '0');
+            });
+        } else {
+            $query->where(DB::raw("TRIM(compras_items.codigo_fornecedor)"), $codigoFornecedor);
+        }
+
+        $items = $query->orderBy('estoque_items.pedido', 'desc')->get();
+
+        $totalValorSum = $items->sum(fn($i) => floatval($i->valor_total));
+        $totalQtdComprarSum = $items->sum(fn($i) => floatval($i->qtd_comprar));
+
+        return response()->json([
+            'success' => true,
+            'fornecedor' => $codigoFornecedor ?: 'SEM FORNECEDOR',
+            'count' => $items->count(),
+            'total_valor' => $totalValorSum,
+            'total_qtd_comprar' => $totalQtdComprarSum,
+            'items' => $items,
+        ]);
+    }
 }

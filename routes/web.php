@@ -26,6 +26,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Dashboard Geral
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard/fornecedor-itens', [DashboardController::class, 'getFornecedorItensJson'])->name('dashboard.fornecedor-itens');
 
     // Painel PCP GMGs (Visão Gerencial por PV)
     Route::get('/painel-pcp', [PcpPainelController::class, 'index'])->name('pcp-painel.index');

@@ -162,6 +162,8 @@ class PcpPainelController extends Controller
             $valDataBoom = $meta ? ($meta->data_boom ?? '-') : '-';
             $valDataLiberacaoEstoque = $meta ? ($meta->data_liberacao_estoque ?? '-') : '-';
             $valMetaValorBruto = $meta ? ($meta->valor_bruto ?? null) : null;
+            $valUpdatedBy = $meta ? ($meta->updated_by ?? '-') : '-';
+            $valUpdatedAt = ($meta && $meta->updated_at) ? $meta->updated_at->format('d/m/Y H:i') : '-';
 
             // Tentar inferir Marca se não cadastrado
             if (empty($valMarca)) {
@@ -424,6 +426,8 @@ class PcpPainelController extends Controller
                 'alternador_status' => $alternadorStatus,
                 'base_status' => $baseStatus,
                 'carenagem_status' => $carenagemStatus,
+                'updated_by' => $valUpdatedBy,
+                'updated_at' => $valUpdatedAt,
                 'items' => $items,
             ]);
         }
@@ -784,6 +788,7 @@ class PcpPainelController extends Controller
                 'data_pronto' => $dataPronto !== null ? trim($dataPronto) : null,
                 'data_boom' => $dataBoom !== null ? trim($dataBoom) : null,
                 'data_liberacao_estoque' => $dataLiberacaoEstoque !== null ? trim($dataLiberacaoEstoque) : null,
+                'updated_by' => auth()->user()->name ?? 'Sistema',
             ]
         );
 
@@ -792,6 +797,7 @@ class PcpPainelController extends Controller
             $updates = [];
             if ($cliente) $updates['cliente_obs'] = $cliente;
             if ($prodPai) $updates['produto_pai'] = $prodPai;
+            $updates['updated_by'] = auth()->user()->name ?? 'Sistema';
             
             EstoqueItem::where('pedido', $pvNum)->update($updates);
         }
@@ -815,6 +821,7 @@ class PcpPainelController extends Controller
                     'status_pv' => isset($data['status_pv']) ? trim($data['status_pv']) : null,
                     'fabrica' => isset($data['fabrica']) ? trim($data['fabrica']) : null,
                     'marca' => isset($data['marca']) ? trim($data['marca']) : null,
+                    'updated_by' => auth()->user()->name ?? 'Sistema',
                 ];
 
                 if (isset($data['qtd'])) $updatePayload['qtd'] = is_numeric($data['qtd']) ? intval($data['qtd']) : 1;

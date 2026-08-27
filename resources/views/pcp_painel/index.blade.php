@@ -295,6 +295,7 @@
                         <th class="col-data-emissao" style="padding: 0.65rem 0.75rem; text-align: center;">DATA EMISSÃO ✏️</th>
                         <th class="col-data-boom" style="padding: 0.65rem 0.75rem; text-align: center;">DATA BOOM ✏️</th>
                         <th class="col-data-liberacao-estoque" style="padding: 0.65rem 0.75rem; text-align: center;">LIBERAÇÃO ESTQ. ✏️</th>
+                        <th class="col-updated-by" style="padding: 0.65rem 0.75rem; min-width: 140px; color: #a5b4fc;">Última Alteração</th>
                         <th class="col-acoes" style="padding: 0.65rem 0.75rem; text-align: center;">Ações</th>
                     </tr>
 
@@ -629,6 +630,14 @@
                         <!-- LIBERAÇÃO ESTOQUE -->
                         <td class="col-data-liberacao-estoque" style="padding: 0.5rem 0.6rem; text-align: center;">
                             <input type="text" name="pvs[{{ $pvKey }}][data_liberacao_estoque]" value="{{ $pvItem['data_liberacao_estoque'] }}" class="editable-cell-input" placeholder="DD/MM/AAAA" style="width: 90px; text-align: center;" {{ !($canEditPcp ?? true) ? 'disabled style=opacity:0.6;cursor:not-allowed;' : '' }}>
+                        </td>
+
+                        <!-- Última Alteração -->
+                        <td class="col-updated-by" style="padding: 0.5rem 0.6rem; font-size: 0.725rem; color: #cbd5e1;">
+                            <strong style="color: #a5b4fc;">{{ $pvItem['updated_by'] ?? '-' }}</strong>
+                            @if(isset($pvItem['updated_at']) && $pvItem['updated_at'] !== '-')
+                                <br><span style="font-size: 0.65rem; color: #94a3b8;">📅 {{ $pvItem['updated_at'] }}</span>
+                            @endif
                         </td>
 
                         <!-- Ações -->

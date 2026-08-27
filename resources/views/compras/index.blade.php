@@ -180,6 +180,7 @@
                         <th class="col-solicitacao-compra" style="min-width: 110px;">Solicitação Compra ✏️</th>
                         <th class="col-status-pagamento">Status Pagamento ✏️</th>
                         <th class="col-valor-total" style="color: #6ee7b7; text-align: right; min-width: 130px;">Valor Total (Calc)</th>
+                        <th class="col-updated-by" style="min-width: 140px; color: #a5b4fc;">Última Alteração</th>
                         <th class="col-acoes" style="text-align: center; color: #a5b4fc;">Ações</th>
                     </tr>
                     <tr class="filter-row">
@@ -350,7 +351,7 @@
                                 <input type="text" name="f_valor_max" value="{{ request('f_valor_max') }}" form="formFilterCompras" class="filter-input" placeholder="Max R$" style="font-size: 0.65rem; padding: 0.15rem 0.2rem; text-align: center; height: 26px;" onchange="document.getElementById('formFilterCompras').submit()">
                             </div>
                         </th>
-                        <th class="col-acoes"></th>
+                        <th class="col-updated-by"></th>
                         <th class="col-acoes"></th>
                     </tr>
                 </thead>
@@ -465,6 +466,14 @@
                         </td>
                         <td class="col-valor-total" style="text-align: right; font-weight: 700; color: #6ee7b7;" id="label_val_total_{{ $estoqueId }}">
                             R$ {{ number_format($item['valor_total'], 2, ',', '.') }}
+                        </td>
+                        <td class="col-updated-by" style="font-size: 0.725rem; color: #cbd5e1;">
+                            <strong style="color: #a5b4fc;">{{ $item['updated_by'] ?? ($item['estoque_item']->updated_by ?? '-') }}</strong>
+                            @if(isset($item['updated_at']) && $item['updated_at'])
+                                <br><span style="font-size: 0.65rem; color: #94a3b8;">📅 {{ $item['updated_at'] }}</span>
+                            @elseif(isset($item['estoque_item']) && $item['estoque_item']->updated_at)
+                                <br><span style="font-size: 0.65rem; color: #94a3b8;">📅 {{ $item['estoque_item']->updated_at->format('d/m/Y H:i') }}</span>
+                            @endif
                         </td>
                         <td class="col-acoes" style="text-align: center;">
                             <button type="button" 
@@ -652,7 +661,8 @@ const COMPRAS_COLUNAS_PADRAO = {
     'col-desc-longa': false,
     'col-produto-pai': false,
     'col-qtd-comprar': true,
-    'col-valor-total': true
+    'col-valor-total': true,
+    'col-updated-by': true
 };
 
 function toggleMenuColunasCompras() {

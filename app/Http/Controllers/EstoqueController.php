@@ -274,6 +274,8 @@ class EstoqueController extends Controller
             $validated['quantidade_estoque'] = (is_null($validated['quantidade_estoque']) || $validated['quantidade_estoque'] === '') ? 0 : floatval($validated['quantidade_estoque']);
         }
 
+        $validated['updated_by'] = auth()->user()->name ?? 'Sistema';
+
         $estoqueItem->update($validated);
 
         // Recalcula o valor total em compras se a quantidade em estoque mudou
@@ -325,6 +327,7 @@ class EstoqueController extends Controller
             }
 
             if (!empty($updateData)) {
+                $updateData['updated_by'] = auth()->user()->name ?? 'Sistema';
                 $estoqueItem->update($updateData);
 
                 // Recalcula o valor total em compras

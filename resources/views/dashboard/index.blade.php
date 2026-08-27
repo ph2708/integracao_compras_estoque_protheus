@@ -245,6 +245,16 @@ document.addEventListener('DOMContentLoaded', () => {
             responsive: true,
             maintainAspectRatio: false,
             layout: { padding: { right: 320 } },
+            onClick: function(event, elements) {
+                if (elements && elements.length > 0) {
+                    const index = elements[0].index;
+                    const codForn = rawFornecedoresLabels[index];
+                    abrirModalFornecedor(codForn);
+                }
+            },
+            onHover: (event, chartElement) => {
+                event.native.target.style.cursor = chartElement[0] ? 'pointer' : 'default';
+            },
             plugins: {
                 legend: { display: false },
                 tooltip: {
@@ -518,5 +528,127 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+</script>
+
+<!-- Modal Flutuante de Itens do Fornecedor -->
+<div id="modalFornecedorItens" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.75); z-index: 10000; align-items: center; justify-content: center; backdrop-filter: blur(4px);" onclick="if(event.target===this) fecharModalFornecedor()">
+    <div style="background: #0f172a; border: 1px solid #334155; border-radius: 0.75rem; width: 92%; max-width: 1200px; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.8); overflow: hidden;">
+        <!-- Header do Modal -->
+        <div style="background: #1e293b; padding: 1rem 1.25rem; border-bottom: 1px solid #334155; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <h3 style="margin: 0; font-size: 1.15rem; color: #38bdf8; display: flex; align-items: center; gap: 0.5rem;">
+                    📦 Matérias-Primas e Itens do Fornecedor: <span id="modalFornNome" style="color: #fcd34d; font-weight: 800;">-</span>
+                </h3>
+            </div>
+            <button type="button" onclick="fecharModalFornecedor()" style="background: transparent; border: none; color: #94a3b8; font-size: 1.5rem; cursor: pointer; line-height: 1; padding: 0 0.5rem;">✕</button>
+        </div>
+
+        <!-- Banner de Metricas do Fornecedor -->
+        <div style="display: flex; gap: 1rem; padding: 1rem 1.25rem; background: rgba(15, 23, 42, 0.6); border-bottom: 1px solid #334155; flex-wrap: wrap;">
+            <div style="border-left: 3px solid #38bdf8; background: rgba(56, 189, 248, 0.08); padding: 0.5rem 0.85rem; border-radius: 0.375rem; flex: 1; min-width: 200px;">
+                <div style="font-size: 0.7rem; font-weight: 700; color: #38bdf8; text-transform: uppercase;">💰 Montante Total (R$)</div>
+                <div style="font-size: 1.25rem; font-weight: 800; color: #38bdf8;" id="modalFornTotalRs">R$ 0,00</div>
+            </div>
+            <div style="border-left: 3px solid #fcd34d; background: rgba(252, 211, 77, 0.08); padding: 0.5rem 0.85rem; border-radius: 0.375rem; flex: 1; min-width: 200px;">
+                <div style="font-size: 0.7rem; font-weight: 700; color: #fcd34d; text-transform: uppercase;">📦 Total Qtd a Comprar</div>
+                <div style="font-size: 1.25rem; font-weight: 800; color: #fcd34d;" id="modalFornTotalQtd">0 un</div>
+            </div>
+            <div style="border-left: 3px solid #a855f7; background: rgba(168, 85, 247, 0.08); padding: 0.5rem 0.85rem; border-radius: 0.375rem; flex: 1; min-width: 160px;">
+                <div style="font-size: 0.7rem; font-weight: 700; color: #c084fc; text-transform: uppercase;">🏷️ Total de Linhas</div>
+                <div style="font-size: 1.25rem; font-weight: 800; color: #c084fc;" id="modalFornTotalLinhas">0 itens</div>
+            </div>
+        </div>
+
+        <!-- Conteudo Tabela -->
+        <div style="padding: 1rem 1.25rem; overflow-y: auto; flex: 1;" id="modalFornContent">
+            <div style="text-align: center; color: #94a3b8; padding: 2rem;" id="modalFornLoading">
+                ⏳ Carregando matérias-primas e componentes do fornecedor...
+            </div>
+            <div class="table-responsive" id="modalFornTableWrapper" style="display: none;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 0.8rem;">
+                    <thead>
+                        <tr style="background: #1e293b; color: #94a3b8; text-align: left; font-weight: 700;">
+                            <th style="padding: 0.6rem; border-bottom: 1px solid #334155;">PV / Pedido</th>
+                            <th style="padding: 0.6rem; border-bottom: 1px solid #334155;">OP</th>
+                            <th style="padding: 0.6rem; border-bottom: 1px solid #334155;">Cliente (C2_OBS)</th>
+                            <th style="padding: 0.6rem; border-bottom: 1px solid #334155;">Código Produto</th>
+                            <th style="padding: 0.6rem; border-bottom: 1px solid #334155;">Descrição</th>
+                            <th style="padding: 0.6rem; border-bottom: 1px solid #334155; text-align: center; color: #38bdf8;">Qtd OP</th>
+                            <th style="padding: 0.6rem; border-bottom: 1px solid #334155; text-align: center; color: #fcd34d;">Qtd Estq</th>
+                            <th style="padding: 0.6rem; border-bottom: 1px solid #334155; text-align: center; color: #ef4444;">Qtd a Comprar</th>
+                            <th style="padding: 0.6rem; border-bottom: 1px solid #334155; text-align: right; color: #a5b4fc;">Val. Unit (R$)</th>
+                            <th style="padding: 0.6rem; border-bottom: 1px solid #334155; text-align: right; color: #6ee7b7;">Val. Total (R$)</th>
+                            <th style="padding: 0.6rem; border-bottom: 1px solid #334155; text-align: center;">Status PCP</th>
+                            <th style="padding: 0.6rem; border-bottom: 1px solid #334155; text-align: center;">Status Pag.</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modalFornTbody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function abrirModalFornecedor(codForn) {
+    const modal = document.getElementById('modalFornecedorItens');
+    const titleForn = document.getElementById('modalFornNome');
+    const loading = document.getElementById('modalFornLoading');
+    const wrapper = document.getElementById('modalFornTableWrapper');
+    const tbody = document.getElementById('modalFornTbody');
+
+    let displayForn = String(codForn || '').trim();
+    if (!displayForn || displayForn === '0') displayForn = 'SEM FORNECEDOR';
+    titleForn.innerText = displayForn;
+
+    loading.style.display = 'block';
+    wrapper.style.display = 'none';
+    modal.style.display = 'flex';
+
+    fetch(`/dashboard/fornecedor-itens?fornecedor=${encodeURIComponent(codForn || '')}`)
+        .then(res => res.json())
+        .then(data => {
+            loading.style.display = 'none';
+            if (data.success && data.items) {
+                document.getElementById('modalFornTotalRs').innerText = 'R$ ' + Number(data.total_valor || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                document.getElementById('modalFornTotalQtd').innerText = Number(data.total_qtd_comprar || 0).toLocaleString('pt-BR') + ' un';
+                document.getElementById('modalFornTotalLinhas').innerText = (data.count || 0) + ' itens';
+
+                tbody.innerHTML = '';
+                if (data.items.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="12" style="text-align: center; color: #94a3b8; padding: 1.5rem;">Nenhum item pendente encontrado para este fornecedor.</td></tr>';
+                } else {
+                    data.items.forEach(it => {
+                        const tr = document.createElement('tr');
+                        tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+                        tr.innerHTML = `
+                            <td style="padding: 0.55rem; color: #f8fafc; font-weight: 700;">${it.pedido_venda || '-'}</td>
+                            <td style="padding: 0.55rem; color: #38bdf8;"><code>${it.op || '-'}</code></td>
+                            <td style="padding: 0.55rem; color: #cbd5e1; font-size: 0.75rem;">${it.cliente_obs || '-'}</td>
+                            <td style="padding: 0.55rem; color: #cbd5e1; font-weight: 600;">${it.codigo_produto || '-'}</td>
+                            <td style="padding: 0.55rem; color: #e2e8f0; font-size: 0.75rem;">${it.descricao || '-'}</td>
+                            <td style="padding: 0.55rem; text-align: center; color: #38bdf8; font-weight: 700;">${Number(it.qtd_op || 0).toLocaleString('pt-BR')}</td>
+                            <td style="padding: 0.55rem; text-align: center; color: #fcd34d;">${Number(it.qtd_estoque || 0).toLocaleString('pt-BR')}</td>
+                            <td style="padding: 0.55rem; text-align: center; color: #ef4444; font-weight: 700;">${Number(it.qtd_comprar || 0).toLocaleString('pt-BR')}</td>
+                            <td style="padding: 0.55rem; text-align: right; color: #a5b4fc;">R$ ${Number(it.valor_unitario || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                            <td style="padding: 0.55rem; text-align: right; color: #6ee7b7; font-weight: 700;">R$ ${Number(it.valor_total || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                            <td style="padding: 0.55rem; text-align: center;"><span class="badge" style="background:#334155; color:#f8fafc; padding:0.15rem 0.4rem; font-size:0.68rem;">${it.status_pcp || '-'}</span></td>
+                            <td style="padding: 0.55rem; text-align: center;"><span class="badge" style="background:#1e293b; color:#38bdf8; border:1px solid #334155; padding:0.15rem 0.4rem; font-size:0.68rem;">${it.status_pagamento || '-'}</span></td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+                wrapper.style.display = 'block';
+            }
+        })
+        .catch(err => {
+            loading.innerText = '❌ Erro ao carregar dados do fornecedor.';
+        });
+}
+
+function fecharModalFornecedor() {
+    document.getElementById('modalFornecedorItens').style.display = 'none';
+}
 </script>
 @endsection

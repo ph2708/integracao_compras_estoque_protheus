@@ -26,6 +26,7 @@ class EstoqueItem extends Model
         'observacao_estoque',
         'fechada_em',
         'fechada_por',
+        'updated_by',
     ];
 
     protected $casts = [

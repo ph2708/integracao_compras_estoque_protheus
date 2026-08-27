@@ -26,5 +26,6 @@ class PvMetadado extends Model
         'data_pronto',
         'data_boom',
         'data_liberacao_estoque',
+        'updated_by',
     ];
 }

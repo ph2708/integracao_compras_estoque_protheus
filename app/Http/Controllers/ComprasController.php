@@ -307,6 +307,7 @@ class ComprasController extends Controller
 
         $valTotal = ($valUnitario * $qtdComprar) + ($valUnitario * $qtdComprar * ($valIpi / 100)) + $valFrete;
         $validated['valor_total'] = $valTotal;
+        $validated['updated_by'] = auth()->user()->name ?? 'Sistema';
 
         $compraItem->update($validated);
 
@@ -352,6 +353,7 @@ class ComprasController extends Controller
 
             $valTotal = ($valUnitario * $qtdComprar) + ($valUnitario * $qtdComprar * ($valIpi / 100)) + $valFrete;
             $updateData['valor_total'] = $valTotal;
+            $updateData['updated_by'] = auth()->user()->name ?? 'Sistema';
 
             $compraItem->fill($updateData);
             $compraItem->save();

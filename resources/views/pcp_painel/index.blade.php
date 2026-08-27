@@ -217,11 +217,11 @@
     <div style="display: flex; gap: 0.85rem; align-items: flex-end; flex-wrap: wrap;">
         <div style="flex: 1; min-width: 140px;">
             <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.3rem; display: block;">N° Pedido de Venda (PV)</label>
-            <input type="text" name="search_pv" value="{{ $searchPv }}" form="formFilterPcpPainel" class="form-control" placeholder="Ex: 006353..." style="padding: 0.4rem 0.6rem; font-size: 0.8rem;" onchange="document.getElementById('formFilterPcpPainel').submit()">
+            <input type="text" name="search_pv" value="{{ $searchPv }}" form="formFilterPcpPainel" class="form-control" placeholder="Multi: 006353, 006354..." style="padding: 0.4rem 0.6rem; font-size: 0.8rem;" onchange="document.getElementById('formFilterPcpPainel').submit()">
         </div>
         <div style="flex: 1.4; min-width: 200px;">
             <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.3rem; display: block;">Nome do Cliente / Obra (C2_OBS)</label>
-            <input type="text" name="search_cliente" value="{{ $searchCliente }}" form="formFilterPcpPainel" class="form-control" placeholder="Ex: ISA ENERGIA..." style="padding: 0.4rem 0.6rem; font-size: 0.8rem;" onchange="document.getElementById('formFilterPcpPainel').submit()">
+            <input type="text" name="search_cliente" value="{{ $searchCliente }}" form="formFilterPcpPainel" class="form-control" placeholder="Multi: ISA, COPEL..." style="padding: 0.4rem 0.6rem; font-size: 0.8rem;" onchange="document.getElementById('formFilterPcpPainel').submit()">
         </div>
         <div style="flex: 1; min-width: 140px;">
             <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.3rem; display: block;">Status PCP Componentes</label>
@@ -396,8 +396,12 @@
                             </div>
                         </th>
 
-                        <th class="col-pv"></th>
-                        <th class="col-cliente"></th>
+                        <th class="col-pv" style="padding: 0.35rem 0.5rem;">
+                            <input type="text" name="search_pv" value="{{ $searchPv }}" class="form-control" placeholder="Multi: 006353, 006354..." form="formFilterPcpPainel" onchange="document.getElementById('formFilterPcpPainel').submit()" style="font-size: 0.7rem; padding: 0.2rem 0.35rem; height: 28px; background: #0f172a; border-color: #334155; color: #f8fafc;">
+                        </th>
+                        <th class="col-cliente" style="padding: 0.35rem 0.5rem;">
+                            <input type="text" name="search_cliente" value="{{ $searchCliente }}" class="form-control" placeholder="Multi: ISA, COPEL..." form="formFilterPcpPainel" onchange="document.getElementById('formFilterPcpPainel').submit()" style="font-size: 0.7rem; padding: 0.2rem 0.35rem; height: 28px; background: #0f172a; border-color: #334155; color: #f8fafc;">
+                        </th>
                         <th class="col-produto-pai"></th>
 
                         <!-- Filtro MARCA -->

@@ -76,6 +76,10 @@ class PcpPainelController extends Controller
                 $query->where(function ($q) use ($pvTokens) {
                     foreach ($pvTokens as $tok) {
                         $q->orWhere('pedido', 'like', '%' . $tok . '%');
+                        if (is_numeric($tok) && strlen($tok) < 6) {
+                            $padded = str_pad($tok, 6, '0', STR_PAD_LEFT);
+                            $q->orWhere('pedido', 'like', '%' . $padded . '%');
+                        }
                     }
                 });
             }
@@ -91,13 +95,20 @@ class PcpPainelController extends Controller
             }
         }
         if ($searchStatusPagamento) {
-            $query->whereHas('compraItem', function ($q) use ($searchStatusPagamento) {
-                if (in_array($searchStatusPagamento, ['PA', 'PAG. ANTECIPADO', 'PAGAMENTO ANTECIPADO', 'ANTECIPADO'])) {
-                    $q->whereIn('status_pagamento', ['PA', 'PAG. ANTECIPADO', 'PAGAMENTO ANTECIPADO', 'ANTECIPADO']);
-                } else {
-                    $q->where('status_pagamento', $searchStatusPagamento);
-                }
-            });
+            $stPagTokens = array_filter(array_map('trim', explode(',', $searchStatusPagamento)));
+            if (!empty($stPagTokens)) {
+                $query->whereHas('compraItem', function ($q) use ($stPagTokens) {
+                    $q->where(function ($sub) use ($stPagTokens) {
+                        foreach ($stPagTokens as $tok) {
+                            if (in_array(strtoupper($tok), ['PA', 'PAG. ANTECIPADO', 'PAGAMENTO ANTECIPADO', 'ANTECIPADO'])) {
+                                $sub->orWhereIn('status_pagamento', ['PA', 'PAG. ANTECIPADO', 'PAGAMENTO ANTECIPADO', 'ANTECIPADO']);
+                            } else {
+                                $sub->orWhere('status_pagamento', $tok);
+                            }
+                        }
+                    });
+                });
+            }
         }
 
         $allEstoqueItems = $query->orderBy('pedido', 'desc')->get();
@@ -207,7 +218,7 @@ class PcpPainelController extends Controller
                 $statusBadgeClass = 'badge-kanban';
             }
 
-            if ($searchStatusPcp && $statusPcpGeral !== $searchStatusPcp) {
+            if ($searchStatusPcp && !$this->matchMultiFilter($statusPcpGeral, $searchStatusPcp, true)) {
                 continue;
             }
 

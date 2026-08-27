@@ -71,7 +71,14 @@ class PcpPainelController extends Controller
         $query = EstoqueItem::with('compraItem');
 
         if ($searchPv) {
-            $query->where('pedido', 'like', '%' . $searchPv . '%');
+            $pvTokens = array_filter(array_map('trim', explode(',', $searchPv)));
+            if (!empty($pvTokens)) {
+                $query->where(function ($q) use ($pvTokens) {
+                    foreach ($pvTokens as $tok) {
+                        $q->orWhere('pedido', 'like', '%' . $tok . '%');
+                    }
+                });
+            }
         }
         if ($searchCliente) {
             $terms = array_filter(array_map('trim', explode(',', $searchCliente)));

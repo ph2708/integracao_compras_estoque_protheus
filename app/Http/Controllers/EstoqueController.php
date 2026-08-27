@@ -64,7 +64,7 @@ class EstoqueController extends Controller
         $items = $query->orderByRaw("CASE WHEN pv_metadados.fabrica REGEXP '^[0-9]+$' THEN CAST(pv_metadados.fabrica AS UNSIGNED) ELSE 999999 END ASC")
             ->orderBy('estoque_items.pedido', 'asc')
             ->orderBy('estoque_items.id', 'desc')
-            ->paginate(30)
+            ->paginate(100)
             ->withQueryString();
 
         // Extrair Opções Reduzidas Dinâmicas para Descrição no Estoque (respeitando cliente, pv, produto, op, etc.)

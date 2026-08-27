@@ -149,14 +149,21 @@
     </div>
 </div>
 
-<!-- PRIMEIRO LUGAR NOS GRÁFICOS: Top Fornecedores por Quantidade a Comprar -->
+<!-- PRIMEIRO LUGAR NOS GRÁFICOS: Fornecedores por Montante (R$) com Scroll -->
 <div style="display: grid; grid-template-columns: 1fr; gap: 1.25rem; margin-bottom: 1.25rem;">
-    <div class="card" style="border: 1px solid rgba(245,158,11,0.3);">
-        <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 1rem; color: #f59e0b; display: flex; align-items: center; gap: 0.5rem;">
-            🏭 Top Fornecedores por Quantidade a Comprar (unidades) e Montante (R$)
-        </h3>
-        <div style="position: relative; height: 320px;">
-            <canvas id="chartTopFornecedores"></canvas>
+    <div class="card" style="border: 1px solid rgba(56, 189, 248, 0.3);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+            <h3 style="font-size: 1.05rem; font-weight: 700; color: #38bdf8; display: flex; align-items: center; gap: 0.5rem; margin: 0;">
+                🏭 Todos os Fornecedores Ordenados por Montante (R$) e Quantidade a Comprar
+            </h3>
+            <span style="font-size: 0.75rem; color: #94a3b8; background: #0f172a; padding: 0.25rem 0.6rem; border-radius: 0.375rem; border: 1px solid #334155;">
+                📊 Total: <strong>{{ count($topFornecedoresValores) }}</strong> Fornecedores (Role para ver todos ↕️)
+            </span>
+        </div>
+        <div style="max-height: 480px; overflow-y: auto; overflow-x: hidden; padding-right: 0.5rem; border: 1px solid rgba(255,255,255,0.05); border-radius: 0.5rem;">
+            <div style="position: relative; height: {{ max(380, count($topFornecedoresValores) * 38) }}px; width: 100%;">
+                <canvas id="chartTopFornecedores"></canvas>
+            </div>
         </div>
     </div>
 </div>
@@ -225,10 +232,10 @@ document.addEventListener('DOMContentLoaded', () => {
         data: {
             labels: fornecedoresLabels.length ? fornecedoresLabels : ['Sem Dados'],
             datasets: [{
-                label: 'Qtd. a Comprar (un)',
-                data: fornecedoresQtdValues.length ? fornecedoresQtdValues : [0],
-                backgroundColor: 'rgba(245, 158, 11, 0.85)',
-                borderColor: '#f59e0b',
+                label: 'Montante Total (R$)',
+                data: fornecedoresRsValues.length ? fornecedoresRsValues : [0],
+                backgroundColor: 'rgba(56, 189, 248, 0.85)',
+                borderColor: '#38bdf8',
                 borderWidth: 1,
                 borderRadius: 6
             }]
@@ -237,15 +244,15 @@ document.addEventListener('DOMContentLoaded', () => {
             indexAxis: 'y',
             responsive: true,
             maintainAspectRatio: false,
-            layout: { padding: { right: 300 } },
+            layout: { padding: { right: 320 } },
             plugins: {
                 legend: { display: false },
                 tooltip: {
                     callbacks: {
                         label: function(context) {
-                            let q = context.raw || 0;
-                            let v = fornecedoresRsValues[context.dataIndex] || 0;
-                            return q.toLocaleString('pt-BR') + ' un | Montante: R$ ' + v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                            let v = context.raw || 0;
+                            let q = fornecedoresQtdValues[context.dataIndex] || 0;
+                            return 'Montante: R$ ' + v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' | Qtd: ' + q.toLocaleString('pt-BR') + ' un';
                         }
                     }
                 },
@@ -253,11 +260,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     display: true,
                     anchor: 'end',
                     align: 'right',
-                    color: '#fcd34d',
+                    color: '#38bdf8',
                     font: { weight: 'bold', size: 11 },
                     formatter: function(value, context) {
-                        let v = fornecedoresRsValues[context.dataIndex] || 0;
-                        return value.toLocaleString('pt-BR') + ' un | R$ ' + v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                        let q = fornecedoresQtdValues[context.dataIndex] || 0;
+                        return 'R$ ' + value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' (' + q.toLocaleString('pt-BR') + ' un)';
                     }
                 }
             },

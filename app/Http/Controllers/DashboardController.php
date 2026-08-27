@@ -190,8 +190,7 @@ class DashboardController extends Controller
         }
 
         $topFornecedoresValores = $topFornecedoresQuery->groupBy(DB::raw($fornecedorExpr))
-            ->orderBy('total_qtd_comprar', 'desc')
-            ->limit(7)
+            ->orderBy('total_valor', 'desc')
             ->get();
 
         // Métricas de Fechamento de OPs

@@ -253,7 +253,7 @@ class ComprasController extends Controller
         $subtotalQtdComprar = $combinedItems->sum('quantidade_comprar');
 
         // Paginação Manual da Coleção
-        $perPage = 15;
+        $perPage = 100;
         $page = LengthAwarePaginator::resolveCurrentPage() ?: 1;
         $paginatedItems = new LengthAwarePaginator(
             $combinedItems->forPage($page, $perPage)->values(),

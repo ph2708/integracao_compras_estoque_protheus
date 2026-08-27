@@ -88,12 +88,22 @@ class EstoqueController extends Controller
         $opcoesDescricao = $queryDesc->whereNotNull('descricao')->where('descricao', '!=', '')->distinct()->pluck('descricao')->sort()->values();
         $fDescricao = $request->f_descricao;
 
-        $filiaisProtheus = $this->protheusService->getFiliais();
-        if (empty($filiaisProtheus)) {
-            $filiaisProtheus = ['01', '02', '03', '04', '05', '10', '15', '20', '22', '25', '30'];
-        }
+        // Totais e Métricas Calculadas sobre o Filtro Atual
+        $totalItensFiltro = (clone $query)->count();
+        $totalQtdOpFiltro = floatval((clone $query)->sum('quantidade') ?? 0);
+        $totalQtdEstoqueFiltro = floatval((clone $query)->sum('quantidade_estoque') ?? 0);
+        $totalQtdComprarFiltro = floatval((clone $query)->sum(\DB::raw('GREATEST(0, quantidade - quantidade_estoque)')) ?? 0);
 
-        return view('estoque.index', compact('items', 'filiaisProtheus', 'opcoesDescricao', 'fDescricao'));
+        return view('estoque.index', compact(
+            'items',
+            'filiaisProtheus',
+            'opcoesDescricao',
+            'fDescricao',
+            'totalItensFiltro',
+            'totalQtdOpFiltro',
+            'totalQtdEstoqueFiltro',
+            'totalQtdComprarFiltro'
+        ));
     }
 
     /**

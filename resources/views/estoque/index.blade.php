@@ -189,12 +189,41 @@
 <!-- Formulário Oculto de Filtros por Colunas -->
 <form action="{{ route('estoque.index') }}" method="GET" id="formFilterEstoque" onsubmit="window.mostrarLoading('🔍 Filtrando itens de estoque...')"></form>
 
+<!-- Cards de Resumo e Subtotais do Filtro do Estoque -->
+<div style="display: flex; gap: 0.75rem; margin-bottom: 1rem; flex-wrap: wrap;">
+    <div class="kpi-card" style="border-left: 4px solid #fcd34d; background: rgba(252, 211, 77, 0.05); padding: 0.65rem 0.9rem; flex: 1; min-width: 170px;">
+        <div style="font-size: 0.7rem; font-weight: 700; color: #fcd34d; text-transform: uppercase;">📦 Total Qtd em Estoque (Filtro)</div>
+        <div style="font-size: 1.4rem; font-weight: 800; color: #fcd34d; margin-top: 0.15rem;">{{ number_format($totalQtdEstoqueFiltro ?? 0, 2, ',', '.') }} <span style="font-size: 0.75rem; font-weight: normal; color: #94a3b8;">un</span></div>
+        <div style="font-size: 0.68rem; color: #94a3b8;">Soma dos itens filtrados</div>
+    </div>
+    <div class="kpi-card" style="border-left: 4px solid #38bdf8; background: rgba(56, 189, 248, 0.05); padding: 0.65rem 0.9rem; flex: 1; min-width: 170px;">
+        <div style="font-size: 0.7rem; font-weight: 700; color: #38bdf8; text-transform: uppercase;">📋 Total Qtd OP (Filtro)</div>
+        <div style="font-size: 1.4rem; font-weight: 800; color: #38bdf8; margin-top: 0.15rem;">{{ number_format($totalQtdOpFiltro ?? 0, 2, ',', '.') }} <span style="font-size: 0.75rem; font-weight: normal; color: #94a3b8;">un</span></div>
+        <div style="font-size: 0.68rem; color: #94a3b8;">Requisitado total</div>
+    </div>
+    <div class="kpi-card" style="border-left: 4px solid #6ee7b7; background: rgba(110, 231, 183, 0.05); padding: 0.65rem 0.9rem; flex: 1; min-width: 170px;">
+        <div style="font-size: 0.7rem; font-weight: 700; color: #6ee7b7; text-transform: uppercase;">🛒 Total Qtd a Comprar (Filtro)</div>
+        <div style="font-size: 1.4rem; font-weight: 800; color: #6ee7b7; margin-top: 0.15rem;">{{ number_format($totalQtdComprarFiltro ?? 0, 2, ',', '.') }} <span style="font-size: 0.75rem; font-weight: normal; color: #94a3b8;">un</span></div>
+        <div style="font-size: 0.68rem; color: #94a3b8;">Falta a comprar</div>
+    </div>
+    <div class="kpi-card" style="border-left: 4px solid #818cf8; background: rgba(129, 140, 248, 0.05); padding: 0.65rem 0.9rem; flex: 1; min-width: 150px;">
+        <div style="font-size: 0.7rem; font-weight: 700; color: #818cf8; text-transform: uppercase;">🏷️ Itens Filtrados</div>
+        <div style="font-size: 1.4rem; font-weight: 800; color: #818cf8; margin-top: 0.15rem;">{{ number_format($totalItensFiltro ?? 0, 0, ',', '.') }} <span style="font-size: 0.75rem; font-weight: normal; color: #94a3b8;">linhas</span></div>
+        <div style="font-size: 0.68rem; color: #94a3b8;">Cadastros listados</div>
+    </div>
+</div>
+
 <!-- Tabela de Itens de Estoque Salvos no MySQL -->
 <div class="card">
     <form action="{{ route('estoque.update-batch') }}" method="POST" id="formBatchEstoque" onsubmit="window.mostrarLoading('💾 Salvando todas as alterações do Estoque... Aguarde...')">
         @csrf
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem; flex-wrap: wrap; gap: 0.5rem;">
-            <h3 style="font-size: 1rem;">📋 Itens Cadastrados no Estoque Local (MySQL)</h3>
+            <div style="display: flex; align-items: center; gap: 0.65rem; flex-wrap: wrap;">
+                <h3 style="font-size: 1rem; margin: 0;">📋 Itens Cadastrados no Estoque Local (MySQL)</h3>
+                <span style="font-size: 0.8rem; font-weight: 700; color: #fcd34d; background: #0f172a; border: 1px solid rgba(252, 211, 77, 0.4); padding: 0.25rem 0.65rem; border-radius: 0.375rem;" title="Soma total de quantidade em estoque dos itens filtrados">
+                    📦 Qtd Estoque (Filtro): <strong>{{ number_format($totalQtdEstoqueFiltro ?? 0, 2, ',', '.') }} un</strong>
+                </span>
+            </div>
             <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
                 <!-- Seletor de Colunas Visíveis Estilo Excel -->
                 <div class="dropdown" style="position: relative; display: inline-block;">

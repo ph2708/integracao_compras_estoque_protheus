@@ -74,22 +74,21 @@ def list_pedidos(filial=None):
     return [r['C2_PEDIDO'] for r in rows if r['C2_PEDIDO']]
 
 def get_pedido_items(c2_pedido, filial=None):
-    """
-    Consulta componentes/matérias-primas requisitados da OP na SD4010 + SC2010.
-    Garante vinculo exato de Produto Pai com SC2010 (D4_OP = C2_NUM + C2_ITEM + C2_SEQUEN).
-    EXCLUINDO produtos do tipo PI (Produto Intermediário) e PA (Produto Acabado) na SB1010.
-    Deduplicado por Filial, OP e Código de Produto.
-    """
+    if not c2_pedido:
+        return []
+
     conn = get_connection()
     cursor = conn.cursor(as_dict=True)
+    term = str(c2_pedido).strip()
+
     sql = """
-    SELECT DISTINCT
+    SELECT DISTINCT TOP 500
         RTRIM(S.C2_FILIAL) AS C2_FILIAL,
         RTRIM(S.C2_PEDIDO) AS C2_PEDIDO,
         RTRIM(D.D4_OP) AS D4_OP,
         RTRIM(D.D4_COD) AS C2_PRODUTO,
         RTRIM(B.B1_DESC) AS B1_DESC,
-        RTRIM(B5.B5_CEME) AS B5_CEME,
+        RTRIM(ISNULL(B5.B5_CEME, '')) AS B5_CEME,
         RTRIM(S.C2_OBS) AS C2_OBS,
         RTRIM(B.B1_TIPO) AS B1_TIPO,
         D.D4_QTDEORI AS QUANTIDADE,
@@ -98,26 +97,27 @@ def get_pedido_items(c2_pedido, filial=None):
     INNER JOIN SC2010 S WITH (NOLOCK) 
         ON RTRIM(D.D4_FILIAL) = RTRIM(S.C2_FILIAL)
        AND (
-           RTRIM(D.D4_OP) = RTRIM(S.C2_NUM) + RTRIM(S.C2_ITEM) + RTRIM(S.C2_SEQUEN)
-           OR (LEN(RTRIM(D.D4_OP)) = 6 AND RTRIM(D.D4_OP) = RTRIM(S.C2_NUM))
+            RTRIM(D.D4_OP) = RTRIM(S.C2_NUM) + RTRIM(S.C2_ITEM) + RTRIM(S.C2_SEQUEN)
+         OR (LEN(RTRIM(D.D4_OP)) >= 6 AND SUBSTRING(RTRIM(D.D4_OP), 1, 6) = RTRIM(S.C2_NUM))
        )
        AND S.D_E_L_E_T_ = ' '
     LEFT JOIN SB1010 B WITH (NOLOCK) ON RTRIM(D.D4_COD) = RTRIM(B.B1_COD) AND B.D_E_L_E_T_ = ' '
     LEFT JOIN SB5010 B5 WITH (NOLOCK) ON RTRIM(D.D4_COD) = RTRIM(B5.B5_COD) AND B5.D_E_L_E_T_ = ' '
     LEFT JOIN SB1010 B_PAI WITH (NOLOCK) ON RTRIM(S.C2_PRODUTO) = RTRIM(B_PAI.B1_COD) AND B_PAI.D_E_L_E_T_ = ' '
     WHERE D.D_E_L_E_T_ = ' '
-      AND (
-        RTRIM(S.C2_PEDIDO) = %s 
-        OR RTRIM(S.C2_OBS) LIKE %s 
-        OR RTRIM(D.D4_OP) LIKE %s 
-        OR RTRIM(S.C2_NUM) LIKE %s 
-        OR RTRIM(D.D4_COD) = %s
-      )
-      AND (B.B1_TIPO IS NULL OR RTRIM(B.B1_TIPO) NOT IN ('PI', 'PA'))
     """
-    search_term = str(c2_pedido).strip()
-    search_like = f"%{search_term}%"
-    params = [search_term, search_like, search_like, search_like, search_term]
+
+    params = []
+    if len(term) >= 10:
+        sql += " AND (RTRIM(D.D4_OP) LIKE %s OR RTRIM(S.C2_PEDIDO) = %s)"
+        params.extend([term + '%', term])
+    elif term.isdigit() and len(term) == 9:
+        sql += " AND (RTRIM(D.D4_COD) = %s OR RTRIM(S.C2_PEDIDO) = %s)"
+        params.extend([term, term])
+    else:
+        search_like = f"%{term}%"
+        sql += " AND (RTRIM(S.C2_PEDIDO) = %s OR RTRIM(S.C2_OBS) LIKE %s OR RTRIM(D.D4_OP) LIKE %s)"
+        params.extend([term, search_like, term + '%'])
 
     if filial and filial != 'null':
         filiais_list = [f.strip() for f in filial.split(',') if f and f.strip()]
@@ -129,6 +129,7 @@ def get_pedido_items(c2_pedido, filial=None):
             sql += f" AND RTRIM(S.C2_FILIAL) IN ({placeholders})"
             params.extend(filiais_list)
 
+    sql += " AND (B.B1_TIPO IS NULL OR RTRIM(B.B1_TIPO) NOT IN ('PI', 'PA'))"
     sql += " ORDER BY RTRIM(D.D4_OP), RTRIM(D.D4_COD)"
     cursor.execute(sql, params)
     rows = cursor.fetchall()

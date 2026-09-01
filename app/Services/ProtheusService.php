@@ -120,6 +120,26 @@ class ProtheusService
     }
 
     /**
+     * Alias para buscar o último preço e fornecedor de um produto
+     */
+    public function getUltimoPrecoFornecedor(string $codigoProduto): array
+    {
+        $res = $this->getUltimoPrecoProduto($codigoProduto);
+        if ($res) {
+            return [
+                'valor_unitario' => floatval($res->valor_unitario ?? ($res->preco ?? 0)),
+                'codigo_fornecedor' => $res->codigo_fornecedor ?? ($res->fornecedor ?? null),
+                'nome_fornecedor' => $res->nome_fornecedor ?? null,
+            ];
+        }
+        return [
+            'valor_unitario' => 0,
+            'codigo_fornecedor' => null,
+            'nome_fornecedor' => null,
+        ];
+    }
+
+    /**
      * Busca em LOTE (1 única query SQL) os últimos preços e fornecedores de uma lista de produtos
      */
     public function getUltimosPrecosBatch(array $codigosProdutos): array

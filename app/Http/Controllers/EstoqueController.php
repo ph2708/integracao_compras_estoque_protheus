@@ -212,6 +212,71 @@ class EstoqueController extends Controller
     }
 
     /**
+    /**
+     * Retorna em JSON os dados do produto/OP pesquisado para auto-preenchimento no Modal de Inserção Manual
+     */
+    public function lookupItemJson(Request $request)
+    {
+        $codigo = trim($request->get('codigo_produto', ''));
+        $op = trim($request->get('op', ''));
+        $pedido = trim($request->get('pedido', ''));
+
+        if (empty($codigo) && empty($op) && empty($pedido)) {
+            return response()->json(['success' => false, 'message' => 'Nenhum termo de busca fornecido.']);
+        }
+
+        // 1. Buscar primeiro em estoques locais existentes
+        $query = EstoqueItem::query();
+        if (!empty($op)) {
+            $query->where('op', 'like', '%' . $op . '%');
+        } elseif (!empty($codigo)) {
+            $query->where('codigo_produto', $codigo);
+        } elseif (!empty($pedido)) {
+            $query->where('pedido', 'like', '%' . $pedido . '%');
+        }
+
+        $existente = $query->whereNotNull('descricao')->orderBy('id', 'desc')->first();
+
+        if ($existente) {
+            return response()->json([
+                'success' => true,
+                'source' => 'local',
+                'codigo_produto' => $existente->codigo_produto,
+                'descricao' => $existente->descricao,
+                'descricao_longa' => $existente->descricao_longa,
+                'produto_pai' => $existente->produto_pai,
+                'op' => $existente->op,
+                'pedido' => $existente->pedido,
+                'cliente_obs' => $existente->cliente_obs,
+                'quantidade' => floatval($existente->quantidade),
+            ]);
+        }
+
+        // 2. Se não encontrou no MySQL local, tenta consultar no Protheus
+        if (!empty($pedido) || !empty($op)) {
+            $term = $pedido ?: $op;
+            $itemsProtheus = $this->protheusService->getItensPorPedido($term);
+            if (!empty($itemsProtheus)) {
+                $pItem = collect($itemsProtheus)->firstWhere('codigo_produto', $codigo) ?? $itemsProtheus[0];
+                return response()->json([
+                    'success' => true,
+                    'source' => 'protheus',
+                    'codigo_produto' => $pItem['codigo_produto'] ?? $codigo,
+                    'descricao' => $pItem['descricao'] ?? null,
+                    'descricao_longa' => $pItem['descricao_longa'] ?? null,
+                    'produto_pai' => $pItem['produto_pai'] ?? null,
+                    'op' => $pItem['op'] ?? $op,
+                    'pedido' => $pItem['pedido'] ?? $pedido,
+                    'cliente_obs' => $pItem['cliente_obs'] ?? null,
+                    'quantidade' => floatval($pItem['quantidade'] ?? 1),
+                ]);
+            }
+        }
+
+        return response()->json(['success' => false, 'message' => 'Nenhum registro encontrado.']);
+    }
+
+    /**
      * Cadastro manual de um item no Estoque
      */
     public function store(Request $request)
@@ -230,10 +295,54 @@ class EstoqueController extends Controller
             'observacao_estoque' => 'nullable|string',
         ]);
 
+        $codClean = strtoupper(trim($validated['codigo_produto']));
+        $opClean = strtoupper(trim($validated['op'] ?? ''));
+        $pedidoClean = strtoupper(trim($validated['pedido'] ?? ''));
         $qtdOp = floatval($validated['quantidade']);
         $qtdEstoque = floatval($validated['quantidade_estoque'] ?? 0);
 
-        $estoqueItem = EstoqueItem::create($validated);
+        // Se descrição ou cliente vierem vazios, tenta enriquecer automaticamente com dados de itens existentes
+        if (empty($validated['descricao']) || empty($validated['cliente_obs']) || empty($validated['produto_pai'])) {
+            $ref = EstoqueItem::where(function($q) use ($codClean, $opClean, $pedidoClean) {
+                if ($opClean) $q->where('op', $opClean);
+                if ($codClean) $q->orWhere('codigo_produto', $codClean);
+                if ($pedidoClean) $q->orWhere('pedido', $pedidoClean);
+            })->whereNotNull('descricao')->orderBy('id', 'desc')->first();
+
+            if ($ref) {
+                if (empty($validated['descricao'])) $validated['descricao'] = $ref->descricao;
+                if (empty($validated['descricao_longa'])) $validated['descricao_longa'] = $ref->descricao_longa;
+                if (empty($validated['produto_pai'])) $validated['produto_pai'] = $ref->produto_pai;
+                if (empty($validated['cliente_obs'])) $validated['cliente_obs'] = $ref->cliente_obs;
+                if (empty($validated['pedido'])) $validated['pedido'] = $ref->pedido;
+            }
+        }
+
+        // Prevenção de duplicidade: atualiza item existente com mesmo Código + OP (+ Pedido se houver)
+        $existente = null;
+        if (!empty($codClean) && !empty($opClean)) {
+            $existente = EstoqueItem::where('codigo_produto', $codClean)
+                ->where('op', $opClean)
+                ->when(!empty($pedidoClean), function($q) use ($pedidoClean) {
+                    $q->where('pedido', $pedidoClean);
+                })->first();
+        }
+
+        if ($existente) {
+            $existente->update([
+                'quantidade' => $qtdOp,
+                'quantidade_estoque' => $qtdEstoque,
+                'status' => $validated['status'],
+                'observacao_estoque' => $validated['observacao_estoque'] ?? $existente->observacao_estoque,
+                'updated_by' => auth()->user()->name ?? 'Sistema',
+            ]);
+            $estoqueItem = $existente;
+            $msgMsg = 'Item existente encontrado e atualizado com sucesso no Estoque!';
+        } else {
+            $validated['updated_by'] = auth()->user()->name ?? 'Sistema';
+            $estoqueItem = EstoqueItem::create($validated);
+            $msgMsg = 'Novo item adicionado ao Estoque com sucesso!';
+        }
 
         // Busca prévia de valor unitário e fornecedor na SC7010
         $prevCompra = $this->protheusService->getUltimoPrecoFornecedor($validated['codigo_produto']);
@@ -241,18 +350,19 @@ class EstoqueController extends Controller
         $valUnitario = floatval($prevCompra['valor_unitario'] ?? ($prevCompra['preco'] ?? 0));
         $codFornecedor = $prevCompra['codigo_fornecedor'] ?? ($prevCompra['fornecedor'] ?? null);
 
-        CompraItem::create([
-            'estoque_item_id' => $estoqueItem->id,
-            'pedido_compra' => null,
-            'codigo_fornecedor' => $codFornecedor,
-            'valor_unitario' => $valUnitario,
-            'ipi' => 0,
-            'frete' => 0,
-            'valor_total' => $valUnitario * $valQtdComprar,
-            'status_pagamento' => 'PENDENTE',
-        ]);
+        CompraItem::updateOrCreate(
+            ['estoque_item_id' => $estoqueItem->id],
+            [
+                'codigo_fornecedor' => $codFornecedor,
+                'valor_unitario' => $valUnitario,
+                'ipi' => 0,
+                'frete' => 0,
+                'valor_total' => $valUnitario * $valQtdComprar,
+                'status_pagamento' => 'PENDENTE',
+            ]
+        );
 
-        return redirect()->route('estoque.index')->with('success', 'Item adicionado ao Estoque com sucesso!');
+        return redirect()->route('estoque.index')->with('success', $msgMsg);
     }
 
     /**

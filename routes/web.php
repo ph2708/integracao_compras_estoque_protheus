@@ -42,6 +42,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Painel de Estoque (PCP)
     Route::get('/estoque', [EstoqueController::class, 'index'])->name('estoque.index');
+    Route::get('/estoque/lookup-item', [EstoqueController::class, 'lookupItemJson'])->name('estoque.lookup-item');
     Route::post('/estoque/consultar-pedido', [EstoqueController::class, 'consultarPedido'])->name('estoque.consultar-pedido');
     Route::post('/estoque/store-batch', [EstoqueController::class, 'storeBatch'])->name('estoque.store-batch');
     Route::post('/estoque/update-batch', [EstoqueController::class, 'updateBatch'])->name('estoque.update-batch');

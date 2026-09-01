@@ -112,40 +112,41 @@
         <h3 style="font-size: 1rem;">Adicionar Item Manualmente</h3>
         <button type="button" class="btn btn-secondary" style="padding: 0.2rem 0.5rem;" onclick="document.getElementById('modalAddManual').style.display='none'">✕</button>
     </div>
+    <div id="manual_lookup_status" style="display: none; font-size: 0.775rem; padding: 0.35rem 0.6rem; border-radius: 0.35rem; margin-bottom: 0.75rem; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.2);"></div>
     <form action="{{ route('estoque.store') }}" method="POST" onsubmit="window.mostrarLoading('📦 Adicionando item ao estoque... Aguarde...')">
         @csrf
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.85rem;">
             <div class="form-group">
                 <label class="form-label">Código do Produto *</label>
-                <input type="text" name="codigo_produto" class="form-control" placeholder="Ex: PROD-1001" required>
+                <input type="text" name="codigo_produto" id="manual_codigo_produto" class="form-control" placeholder="Ex: PROD-1001" required onchange="lookupManualItemInfo()">
             </div>
             <div class="form-group">
                 <label class="form-label">Descrição Curta (B1_DESC)</label>
-                <input type="text" name="descricao" class="form-control" placeholder="Descrição do componente">
+                <input type="text" name="descricao" id="manual_descricao" class="form-control" placeholder="Descrição do componente">
             </div>
             <div class="form-group">
                 <label class="form-label">Descrição Longa (B5_CEME)</label>
-                <input type="text" name="descricao_longa" class="form-control" placeholder="Descrição longa detalhada da SB5010">
+                <input type="text" name="descricao_longa" id="manual_descricao_longa" class="form-control" placeholder="Descrição longa detalhada da SB5010">
             </div>
             <div class="form-group">
                 <label class="form-label">Produto Pai Concatenado</label>
-                <input type="text" name="produto_pai" class="form-control" placeholder="Ex: 951010010 - QUADRO QTA">
+                <input type="text" name="produto_pai" id="manual_produto_pai" class="form-control" placeholder="Ex: 951010010 - QUADRO QTA">
             </div>
             <div class="form-group">
                 <label class="form-label">Ordem de Produção (OP)</label>
-                <input type="text" name="op" class="form-control" placeholder="Ex: OP-01234">
+                <input type="text" name="op" id="manual_op" class="form-control" placeholder="Ex: OP-01234" onchange="lookupManualItemInfo()">
             </div>
             <div class="form-group">
                 <label class="form-label">Pedido de Venda (C2_PEDIDO)</label>
-                <input type="text" name="pedido" class="form-control" placeholder="Ex: 006614">
+                <input type="text" name="pedido" id="manual_pedido" class="form-control" placeholder="Ex: 006614" onchange="lookupManualItemInfo()">
             </div>
             <div class="form-group">
                 <label class="form-label">Nome do Cliente (C2_OBS)</label>
-                <input type="text" name="cliente_obs" class="form-control" placeholder="Ex: CLIENTE EXEMPLO">
+                <input type="text" name="cliente_obs" id="manual_cliente_obs" class="form-control" placeholder="Ex: CLIENTE EXEMPLO">
             </div>
             <div class="form-group">
                 <label class="form-label">Qtd Requisitada da OP *</label>
-                <input type="number" step="0.01" name="quantidade" class="form-control" value="1" required>
+                <input type="number" step="0.01" name="quantidade" id="manual_quantidade" class="form-control" value="1" required>
             </div>
             <div class="form-group">
                 <label class="form-label">Qtd Já Disponível em Estoque</label>
@@ -557,6 +558,46 @@
 <script>
 let protheusItemsCache = [];
 let pendingSaveItemId = null;
+
+function lookupManualItemInfo() {
+    const cod = document.getElementById('manual_codigo_produto') ? document.getElementById('manual_codigo_produto').value.trim() : '';
+    const op = document.getElementById('manual_op') ? document.getElementById('manual_op').value.trim() : '';
+    const pedido = document.getElementById('manual_pedido') ? document.getElementById('manual_pedido').value.trim() : '';
+
+    if (!cod && !op && !pedido) return;
+
+    const statusEl = document.getElementById('manual_lookup_status');
+    if (statusEl) {
+        statusEl.style.display = 'block';
+        statusEl.style.color = '#38bdf8';
+        statusEl.innerText = '🔍 Consultando informações da OP/Código...';
+    }
+
+    fetch(`/estoque/lookup-item?codigo_produto=${encodeURIComponent(cod)}&op=${encodeURIComponent(op)}&pedido=${encodeURIComponent(pedido)}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                if (data.codigo_produto && document.getElementById('manual_codigo_produto')) document.getElementById('manual_codigo_produto').value = data.codigo_produto;
+                if (data.descricao && document.getElementById('manual_descricao')) document.getElementById('manual_descricao').value = data.descricao;
+                if (data.descricao_longa && document.getElementById('manual_descricao_longa')) document.getElementById('manual_descricao_longa').value = data.descricao_longa;
+                if (data.produto_pai && document.getElementById('manual_produto_pai')) document.getElementById('manual_produto_pai').value = data.produto_pai;
+                if (data.op && document.getElementById('manual_op') && !document.getElementById('manual_op').value) document.getElementById('manual_op').value = data.op;
+                if (data.pedido && document.getElementById('manual_pedido') && !document.getElementById('manual_pedido').value) document.getElementById('manual_pedido').value = data.pedido;
+                if (data.cliente_obs && document.getElementById('manual_cliente_obs')) document.getElementById('manual_cliente_obs').value = data.cliente_obs;
+                if (data.quantidade && document.getElementById('manual_quantidade') && (!document.getElementById('manual_quantidade').value || document.getElementById('manual_quantidade').value == '1')) document.getElementById('manual_quantidade').value = data.quantidade;
+
+                if (statusEl) {
+                    statusEl.style.color = '#34d399';
+                    statusEl.innerText = '✨ Informações preenchidas automaticamente!';
+                }
+            } else {
+                if (statusEl) statusEl.style.display = 'none';
+            }
+        })
+        .catch(err => {
+            if (statusEl) statusEl.style.display = 'none';
+        });
+}
 
 function checkColumnsVisibility() {
     const hasFilterPai = {{ request()->filled('f_prod_pai') ? 'true' : 'false' }};

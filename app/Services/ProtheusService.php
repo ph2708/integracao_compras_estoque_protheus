@@ -122,10 +122,11 @@ class ProtheusService
     /**
      * Busca dados de cabeçalho da OP (Pedido, Cliente C2_OBS, Produto Pai) na SC2010 do Protheus
      */
-    public function getOpHeaderInfo(string $term): ?array
+    public function getOpHeaderInfo(string $term, ?string $filial = null): ?array
     {
         try {
-            $command = "python3 " . escapeshellarg($this->scriptPath) . " get_op_header_info " . escapeshellarg(trim($term));
+            $filialArg = (!empty($filial) && $filial !== 'null') ? escapeshellarg(trim($filial)) : 'null';
+            $command = "python3 " . escapeshellarg($this->scriptPath) . " get_op_header_info " . escapeshellarg(trim($term)) . " " . $filialArg;
             $output = shell_exec($command);
             
             $json = json_decode($output, true);

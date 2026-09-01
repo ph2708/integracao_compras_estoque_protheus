@@ -342,7 +342,7 @@ def get_produto_info(codigo_produto):
         }
     return None
 
-def get_op_header_info(term):
+def get_op_header_info(term, filial=None):
     if not term:
         return None
     term = str(term).strip()
@@ -356,6 +356,10 @@ def get_op_header_info(term):
     where_clauses = ["S.D_E_L_E_T_ = ' '"]
     params = []
 
+    if filial and filial != 'null':
+        where_clauses.append("RTRIM(S.C2_FILIAL) = %s")
+        params.append(str(filial).strip())
+
     if c2_seq:
         where_clauses.append("((RTRIM(S.C2_NUM) = %s AND RTRIM(S.C2_ITEM) = %s AND RTRIM(S.C2_SEQUEN) = %s) OR RTRIM(S.C2_NUM) = %s OR RTRIM(S.C2_PEDIDO) = %s)")
         params.extend([c2_num, c2_item, c2_seq, c2_num, term])
@@ -365,6 +369,7 @@ def get_op_header_info(term):
 
     sql = f"""
     SELECT TOP 1
+        RTRIM(S.C2_FILIAL) AS FILIAL,
         RTRIM(S.C2_PEDIDO) AS PEDIDO,
         RTRIM(S.C2_OBS) AS CLIENTE_OBS,
         RTRIM(S.C2_PRODUTO) + ' - ' + RTRIM(ISNULL(B_PAI.B1_DESC, '')) AS PRODUTO_PAI
@@ -379,6 +384,7 @@ def get_op_header_info(term):
 
     if row:
         return {
+            'filial': row.get('FILIAL'),
             'pedido': row.get('PEDIDO'),
             'cliente_obs': row.get('CLIENTE_OBS'),
             'produto_pai': row.get('PRODUTO_PAI')
@@ -403,7 +409,8 @@ if __name__ == '__main__':
             print(json.dumps({'success': True, 'data': get_produto_info(cod)}))
         elif command in ['get_op_header_info', 'op_header_info']:
             term = sys.argv[2] if len(sys.argv) > 2 else ''
-            print(json.dumps({'success': True, 'data': get_op_header_info(term)}))
+            fil = sys.argv[3] if len(sys.argv) > 3 and sys.argv[3] != 'null' else None
+            print(json.dumps({'success': True, 'data': get_op_header_info(term, fil)}))
         elif command in ['get_ultimo_preco', 'ultimo_preco']:
             cod = sys.argv[2] if len(sys.argv) > 2 else ''
             print(json.dumps({'success': True, 'data': get_ultimo_preco_fornecedor(cod)}))

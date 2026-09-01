@@ -117,6 +117,15 @@
         @csrf
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.85rem;">
             <div class="form-group">
+                <label class="form-label">Filial *</label>
+                <select name="filial" id="manual_filial" class="form-select" required onchange="lookupManualItemInfo()">
+                    <option value="">Selecione a Filial *</option>
+                    @foreach($filiaisProtheus as $f)
+                        <option value="{{ $f }}" {{ $f == '22' ? 'selected' : '' }}>Filial {{ $f }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="form-group">
                 <label class="form-label">Código do Produto *</label>
                 <input type="text" name="codigo_produto" id="manual_codigo_produto" class="form-control" placeholder="Ex: PROD-1001" required onchange="lookupManualItemInfo()">
             </div>
@@ -586,6 +595,7 @@ function solicitarExclusaoItem(id, codigo) {
 }
 
 function lookupManualItemInfo() {
+    const filial = document.getElementById('manual_filial') ? document.getElementById('manual_filial').value.trim() : '';
     const cod = document.getElementById('manual_codigo_produto') ? document.getElementById('manual_codigo_produto').value.trim() : '';
     const op = document.getElementById('manual_op') ? document.getElementById('manual_op').value.trim() : '';
     const pedido = document.getElementById('manual_pedido') ? document.getElementById('manual_pedido').value.trim() : '';
@@ -596,13 +606,14 @@ function lookupManualItemInfo() {
     if (statusEl) {
         statusEl.style.display = 'block';
         statusEl.style.color = '#38bdf8';
-        statusEl.innerText = '🔍 Consultando informações da OP/Código...';
+        statusEl.innerText = '🔍 Consultando informações da OP/Código no Protheus...';
     }
 
-    fetch(`/estoque/lookup-item?codigo_produto=${encodeURIComponent(cod)}&op=${encodeURIComponent(op)}&pedido=${encodeURIComponent(pedido)}`)
+    fetch(`/estoque/lookup-item?filial=${encodeURIComponent(filial)}&codigo_produto=${encodeURIComponent(cod)}&op=${encodeURIComponent(op)}&pedido=${encodeURIComponent(pedido)}`)
         .then(res => res.json())
         .then(data => {
             if (data.success) {
+                if (data.filial && document.getElementById('manual_filial')) document.getElementById('manual_filial').value = data.filial;
                 if (data.codigo_produto && document.getElementById('manual_codigo_produto')) document.getElementById('manual_codigo_produto').value = data.codigo_produto;
                 if (data.descricao && document.getElementById('manual_descricao')) document.getElementById('manual_descricao').value = data.descricao;
                 if (data.descricao_longa && document.getElementById('manual_descricao_longa')) document.getElementById('manual_descricao_longa').value = data.descricao_longa;

@@ -233,6 +233,8 @@ class EstoqueController extends Controller
         $pedidoVal = $pedido;
         $quantidadeVal = 1;
 
+        $filialVal = $request->query('filial');
+
         // 1. Prioridade Absoluta: Buscar a descrição oficial do produto na tabela SB1010 / SB5010 do Protheus
         if (!empty($codigo)) {
             $pInfo = $this->protheusService->getProdutoInfo($codigo);
@@ -245,8 +247,9 @@ class EstoqueController extends Controller
         // 2. Buscar instantaneamente Pedido, Cliente C2_OBS e Produto Pai no Protheus (SC2010)
         $searchTerm = $opVal ?: ($pedidoVal ?: $codigo);
         if (!empty($searchTerm)) {
-            $header = $this->protheusService->getOpHeaderInfo($searchTerm);
+            $header = $this->protheusService->getOpHeaderInfo($searchTerm, $filialVal);
             if ($header) {
+                $filialVal = $filialVal ?: ($header['filial'] ?? null);
                 $pedidoVal = $pedidoVal ?: ($header['pedido'] ?? null);
                 $clienteObs = $clienteObs ?: ($header['cliente_obs'] ?? null);
                 $produtoPai = $produtoPai ?: ($header['produto_pai'] ?? null);
@@ -278,6 +281,7 @@ class EstoqueController extends Controller
         if (!empty($codigo) || !empty($descCurta) || !empty($opVal)) {
             return response()->json([
                 'success' => true,
+                'filial' => $filialVal,
                 'codigo_produto' => $codigo,
                 'descricao' => $descCurta,
                 'descricao_longa' => $descLonga,
@@ -306,6 +310,7 @@ class EstoqueController extends Controller
         }
 
         $validated = $request->validate([
+            'filial' => 'required|string',
             'codigo_produto' => 'required|string',
             'descricao' => 'nullable|string',
             'descricao_longa' => 'nullable|string',

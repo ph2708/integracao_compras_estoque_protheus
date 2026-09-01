@@ -13,6 +13,7 @@ class EstoqueItem extends Model
     protected $table = 'estoque_items';
 
     protected $fillable = [
+        'filial',
         'codigo_produto',
         'descricao',
         'descricao_longa',

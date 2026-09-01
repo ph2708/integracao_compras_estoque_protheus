@@ -477,4 +477,20 @@ class EstoqueController extends Controller
 
         return redirect()->route('estoque.index')->with('success', "✅ {$updatedCount} item(ns) de estoque atualizado(s) com sucesso!");
     }
+
+    /**
+     * Exclusão individual de uma matéria-prima/item do Estoque
+     */
+    public function destroy($id)
+    {
+        $estoqueItem = EstoqueItem::findOrFail($id);
+        $cod = $estoqueItem->codigo_produto;
+
+        DB::transaction(function () use ($estoqueItem) {
+            CompraItem::where('estoque_item_id', $estoqueItem->id)->delete();
+            $estoqueItem->delete();
+        });
+
+        return redirect()->route('estoque.index')->with('success', "Item {$cod} excluído do Estoque com sucesso!");
+    }
 }

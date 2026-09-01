@@ -48,6 +48,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/estoque/update-batch', [EstoqueController::class, 'updateBatch'])->name('estoque.update-batch');
     Route::post('/estoque', [EstoqueController::class, 'store'])->name('estoque.store');
     Route::put('/estoque/{id}', [EstoqueController::class, 'update'])->name('estoque.update');
+    Route::delete('/estoque/{id}', [EstoqueController::class, 'destroy'])->name('estoque.destroy');
 
     // Painel de Compras
     Route::get('/compras', [ComprasController::class, 'index'])->name('compras.index');

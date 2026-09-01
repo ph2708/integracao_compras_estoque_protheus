@@ -521,13 +521,25 @@
                                 <br><span style="font-size: 0.65rem; color: #94a3b8;">📅 {{ $item->updated_at->format('d/m/Y H:i') }}</span>
                             @endif
                         </td>
-                        <td class="col-acoes" style="text-align: center;">
-                            <button type="button" 
-                                    class="btn btn-primary" 
-                                    style="padding: 0.2rem 0.5rem; font-size: 0.7rem;"
-                                    onclick="solicitarConfirmacaoSave({{ $item->id }})">
-                                💾 Salvar
-                            </button>
+                        <td class="col-acoes" style="text-align: center; white-space: nowrap;">
+                            <div style="display: flex; gap: 0.35rem; justify-content: center; align-items: center;">
+                                <button type="button" 
+                                        class="btn btn-primary" 
+                                        style="padding: 0.2rem 0.45rem; font-size: 0.7rem;"
+                                        onclick="solicitarConfirmacaoSave({{ $item->id }})">
+                                    💾 Salvar
+                                </button>
+                                <form action="{{ route('estoque.destroy', $item->id) }}" method="POST" style="display: inline;" onsubmit="return confirm('Deseja realmente excluir este item (Código: {{ $item->codigo_produto }}) do Estoque?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" 
+                                            class="btn btn-secondary" 
+                                            style="padding: 0.2rem 0.45rem; font-size: 0.7rem; background-color: #ef4444; border-color: #ef4444; color: #ffffff;"
+                                            title="Excluir item do Estoque">
+                                        🗑️ Excluir
+                                    </button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                     @empty

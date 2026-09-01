@@ -235,19 +235,39 @@ class EstoqueController extends Controller
             $query->where('pedido', 'like', '%' . $pedido . '%');
         }
 
-        $existente = $query->whereNotNull('descricao')->orderBy('id', 'desc')->first();
+        $existente = $query->orderBy('id', 'desc')->first();
 
         if ($existente) {
+            $desc = $existente->descricao;
+            $descLonga = $existente->descricao_longa;
+            $prodPai = $existente->produto_pai;
+            $cliObs = $existente->cliente_obs;
+
+            // Se descrição ou dados estiverem vazios no item local, busca no Protheus
+            if (empty($desc) && (!empty($existente->pedido) || !empty($existente->op))) {
+                $term = $existente->pedido ?: $existente->op;
+                $itemsProtheus = $this->protheusService->getItensPorPedido($term);
+                if (!empty($itemsProtheus)) {
+                    $pItem = collect($itemsProtheus)->firstWhere('codigo_produto', $existente->codigo_produto) ?? $itemsProtheus[0];
+                    if ($pItem) {
+                        $desc = $desc ?: ($pItem['descricao'] ?? null);
+                        $descLonga = $descLonga ?: ($pItem['descricao_longa'] ?? null);
+                        $prodPai = $prodPai ?: ($pItem['produto_pai'] ?? null);
+                        $cliObs = $cliObs ?: ($pItem['cliente_obs'] ?? null);
+                    }
+                }
+            }
+
             return response()->json([
                 'success' => true,
                 'source' => 'local',
                 'codigo_produto' => $existente->codigo_produto,
-                'descricao' => $existente->descricao,
-                'descricao_longa' => $existente->descricao_longa,
-                'produto_pai' => $existente->produto_pai,
+                'descricao' => $desc,
+                'descricao_longa' => $descLonga,
+                'produto_pai' => $prodPai,
                 'op' => $existente->op,
                 'pedido' => $existente->pedido,
-                'cliente_obs' => $existente->cliente_obs,
+                'cliente_obs' => $cliObs,
                 'quantidade' => floatval($existente->quantidade),
             ]);
         }

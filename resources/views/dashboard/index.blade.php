@@ -606,7 +606,10 @@ function abrirModalFornecedor(codForn) {
     wrapper.style.display = 'none';
     modal.style.display = 'flex';
 
-    fetch(`/dashboard/fornecedor-itens?fornecedor=${encodeURIComponent(codForn || '')}`)
+    const urlParams = new URLSearchParams(window.location.search);
+    urlParams.set('fornecedor', codForn || '');
+
+    fetch(`/dashboard/fornecedor-itens?${urlParams.toString()}`)
         .then(res => res.json())
         .then(data => {
             loading.style.display = 'none';

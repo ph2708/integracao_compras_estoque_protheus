@@ -105,12 +105,19 @@ def get_pedido_items(c2_pedido, filial=None):
     LEFT JOIN SB1010 B WITH (NOLOCK) ON RTRIM(D.D4_COD) = RTRIM(B.B1_COD) AND B.D_E_L_E_T_ = ' '
     LEFT JOIN SB5010 B5 WITH (NOLOCK) ON RTRIM(D.D4_COD) = RTRIM(B5.B5_COD) AND B5.D_E_L_E_T_ = ' '
     LEFT JOIN SB1010 B_PAI WITH (NOLOCK) ON RTRIM(S.C2_PRODUTO) = RTRIM(B_PAI.B1_COD) AND B_PAI.D_E_L_E_T_ = ' '
-    WHERE D.D_E_L_E_T_ = ' ' 
-      AND (RTRIM(S.C2_PEDIDO) = %s OR RTRIM(S.C2_OBS) LIKE %s)
+    WHERE D.D_E_L_E_T_ = ' '
+      AND (
+        RTRIM(S.C2_PEDIDO) = %s 
+        OR RTRIM(S.C2_OBS) LIKE %s 
+        OR RTRIM(D.D4_OP) LIKE %s 
+        OR RTRIM(S.C2_NUM) LIKE %s 
+        OR RTRIM(D.D4_COD) = %s
+      )
       AND (B.B1_TIPO IS NULL OR RTRIM(B.B1_TIPO) NOT IN ('PI', 'PA'))
     """
-    search_obs = f"%{c2_pedido}%"
-    params = [c2_pedido, search_obs]
+    search_term = str(c2_pedido).strip()
+    search_like = f"%{search_term}%"
+    params = [search_term, search_like, search_like, search_like, search_term]
 
     if filial and filial != 'null':
         filiais_list = [f.strip() for f in filial.split(',') if f and f.strip()]

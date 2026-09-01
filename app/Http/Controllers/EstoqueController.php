@@ -242,10 +242,10 @@ class EstoqueController extends Controller
             }
         }
 
-        // 2. Tentar buscar OP / Pedido / Cliente no Protheus se Pedido ou OP foram passados
-        if (!empty($pedidoVal) || !empty($opVal)) {
-            $term = $pedidoVal ?: $opVal;
-            $itemsProtheus = $this->protheusService->getItensPorPedido($term);
+        // 2. Tentar buscar OP / Pedido / Cliente no Protheus se Código, OP ou Pedido foram informados
+        $searchTerm = $opVal ?: ($pedidoVal ?: $codigo);
+        if (!empty($searchTerm)) {
+            $itemsProtheus = $this->protheusService->getItensPorPedido($searchTerm);
             if (!empty($itemsProtheus)) {
                 $pItem = null;
                 if (!empty($codigo)) {
@@ -279,15 +279,14 @@ class EstoqueController extends Controller
                 $query->where('pedido', $pedidoVal);
             }
 
-            $local = $query->orderBy('id', 'desc')->first();
-            if ($local) {
-                $descCurta = $descCurta ?: $local->descricao;
-                $descLonga = $descLonga ?: $local->descricao_longa;
-                $produtoPai = $produtoPai ?: $local->produto_pai;
-                $opVal = $opVal ?: $local->op;
-                $pedidoVal = $pedidoVal ?: $local->pedido;
-                $clienteObs = $clienteObs ?: $local->cliente_obs;
-                $quantidadeVal = ($quantidadeVal > 1) ? $quantidadeVal : floatval($local->quantidade ?? 1);
+            $localList = $query->orderBy('id', 'desc')->get();
+            foreach ($localList as $local) {
+                if (empty($produtoPai) && !empty($local->produto_pai)) $produtoPai = $local->produto_pai;
+                if (empty($clienteObs) && !empty($local->cliente_obs)) $clienteObs = $local->cliente_obs;
+                if (empty($opVal) && !empty($local->op)) $opVal = $local->op;
+                if (empty($pedidoVal) && !empty($local->pedido)) $pedidoVal = $local->pedido;
+                if (empty($descCurta) && !empty($local->descricao)) $descCurta = $local->descricao;
+                if (empty($descLonga) && !empty($local->descricao_longa)) $descLonga = $local->descricao_longa;
             }
         }
 

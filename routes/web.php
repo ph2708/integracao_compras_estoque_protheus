@@ -30,6 +30,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Painel PCP GMGs (Visão Gerencial por PV)
     Route::get('/painel-pcp', [PcpPainelController::class, 'index'])->name('pcp-painel.index');
+    Route::redirect('/pcp-painel', '/painel-pcp');
     Route::post('/painel-pcp/update-batch', [PcpPainelController::class, 'updateBatch'])->name('pcp-painel.update-batch');
     Route::post('/painel-pcp/consultar-protheus', [PcpPainelController::class, 'consultarProtheus'])->name('pcp-painel.consultar-protheus');
     Route::post('/painel-pcp/importar-pvs', [PcpPainelController::class, 'importarPvsSelecionados'])->name('pcp-painel.importar-pvs');

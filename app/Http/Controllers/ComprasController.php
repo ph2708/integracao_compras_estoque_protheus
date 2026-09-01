@@ -71,7 +71,9 @@ class ComprasController extends Controller
 
                 $valQtdOp = floatval($pItem['quantidade'] ?? ($estoqueMatch ? $estoqueMatch->quantidade : 1));
                 $valQtdEstoque = $estoqueMatch ? floatval($estoqueMatch->quantidade_estoque) : 0;
-                $valQtdComprar = max(0, $valQtdOp - $valQtdEstoque);
+                $valQtdComprarCalculada = max(0, $valQtdOp - $valQtdEstoque);
+                $valQtdAdicional = $compraMatch ? floatval($compraMatch->quantidade_adicional) : 0;
+                $valQtdComprar = $valQtdComprarCalculada + $valQtdAdicional;
 
                 $valUnitario = $compraMatch ? floatval($compraMatch->valor_unitario) : 0;
                 $valIpi = $compraMatch ? floatval($compraMatch->ipi) : 0;
@@ -99,6 +101,8 @@ class ComprasController extends Controller
                     'op' => $pItem['op'] ?? ($estoqueMatch ? $estoqueMatch->op : '-'),
                     'quantidade' => $valQtdOp,
                     'quantidade_estoque' => $valQtdEstoque,
+                    'quantidade_comprar_calculada' => $valQtdComprarCalculada,
+                    'quantidade_adicional' => $valQtdAdicional,
                     'quantidade_comprar' => $valQtdComprar,
                     'status_pcp' => $statusPcp,
                     'status_pcp_badge' => $badgePcp,
@@ -127,7 +131,9 @@ class ComprasController extends Controller
 
                 $valQtdOp = floatval($estoqueItem->quantidade);
                 $valQtdEstoque = floatval($estoqueItem->quantidade_estoque);
-                $valQtdComprar = max(0, $valQtdOp - $valQtdEstoque);
+                $valQtdComprarCalculada = max(0, $valQtdOp - $valQtdEstoque);
+                $valQtdAdicional = $compraMatch ? floatval($compraMatch->quantidade_adicional) : 0;
+                $valQtdComprar = $valQtdComprarCalculada + $valQtdAdicional;
 
                 $valUnitario = $compraMatch ? floatval($compraMatch->valor_unitario) : 0;
                 $valIpi = $compraMatch ? floatval($compraMatch->ipi) : 0;
@@ -155,6 +161,8 @@ class ComprasController extends Controller
                     'op' => $estoqueItem->op ?? '-',
                     'quantidade' => $valQtdOp,
                     'quantidade_estoque' => $valQtdEstoque,
+                    'quantidade_comprar_calculada' => $valQtdComprarCalculada,
+                    'quantidade_adicional' => $valQtdAdicional,
                     'quantidade_comprar' => $valQtdComprar,
                     'status_pcp' => $statusPcp,
                     'status_pcp_badge' => $badgePcp,
@@ -340,6 +348,10 @@ class ComprasController extends Controller
             if (array_key_exists('pedido_compra', $data)) $updateData['pedido_compra'] = $data['pedido_compra'];
             if (array_key_exists('codigo_fornecedor', $data)) $updateData['codigo_fornecedor'] = $data['codigo_fornecedor'];
             if (array_key_exists('solicitacao_compra', $data)) $updateData['solicitacao_compra'] = $data['solicitacao_compra'];
+            if (array_key_exists('quantidade_adicional', $data)) {
+                $rawQtdAdic = str_replace(',', '.', $data['quantidade_adicional']);
+                $updateData['quantidade_adicional'] = max(0, floatval($rawQtdAdic));
+            }
             if (isset($data['valor_unitario'])) $updateData['valor_unitario'] = floatval($data['valor_unitario']);
             if (isset($data['ipi'])) $updateData['ipi'] = floatval($data['ipi']);
             if (array_key_exists('data_pc', $data)) $updateData['data_pc'] = $data['data_pc'];
@@ -349,9 +361,12 @@ class ComprasController extends Controller
             $valUnitario = isset($updateData['valor_unitario']) ? $updateData['valor_unitario'] : floatval($compraItem->valor_unitario);
             $valIpi = isset($updateData['ipi']) ? $updateData['ipi'] : floatval($compraItem->ipi);
             $valFrete = floatval($compraItem->frete);
-            $qtdComprar = floatval($compraItem->estoqueItem ? $compraItem->estoqueItem->quantidade_comprar : 0);
 
-            $valTotal = ($valUnitario * $qtdComprar) + ($valUnitario * $qtdComprar * ($valIpi / 100)) + $valFrete;
+            $qtdComprarCalculada = floatval($compraItem->estoqueItem ? $compraItem->estoqueItem->quantidade_comprar : 0);
+            $qtdAdicional = isset($updateData['quantidade_adicional']) ? $updateData['quantidade_adicional'] : floatval($compraItem->quantidade_adicional);
+            $qtdComprarTotal = $qtdComprarCalculada + $qtdAdicional;
+
+            $valTotal = ($valUnitario * $qtdComprarTotal) + ($valUnitario * $qtdComprarTotal * ($valIpi / 100)) + $valFrete;
             $updateData['valor_total'] = $valTotal;
             $updateData['updated_by'] = auth()->user()->name ?? 'Sistema';
 

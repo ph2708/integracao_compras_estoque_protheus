@@ -14,6 +14,7 @@ class CompraItem extends Model
 
     protected $fillable = [
         'estoque_item_id',
+        'quantidade_adicional',
         'pedido_compra',
         'codigo_fornecedor',
         'valor_unitario',

@@ -170,6 +170,7 @@
                         <th class="col-desc-longa" style="display: none; color: #38bdf8;">Descrição Longa (B5_CEME - SB5010)</th>
                         <th class="col-produto-pai" style="display: none; color: #c084fc;">Código / Produto Pai Concatenado</th>
                         <th class="col-qtd-comprar" style="color: #6ee7b7; text-align: center;">Qtd Comprar</th>
+                        <th class="col-qtd-adicional" style="color: #38bdf8; text-align: center; min-width: 100px;">Qtd Adicional ✏️</th>
                         <th class="col-pedido-compra" style="color: #38bdf8; min-width: 140px;">Pedido Compra ✏️</th>
                         <th class="col-fornecedor" style="color: #38bdf8; min-width: 150px;">Código / Fornecedor ✏️</th>
                         <th class="col-valor-unitario" style="color: #fcd34d; min-width: 110px;">Valor Unit. (R$) ✏️</th>
@@ -292,6 +293,7 @@
                             <input type="text" name="f_prod_pai" value="{{ request('f_prod_pai') }}" class="filter-input" placeholder="Multi: QUADRO, 9510..." form="formFilterCompras" onchange="document.getElementById('formFilterCompras').submit()">
                         </th>
                         <th class="col-qtd-comprar"></th>
+                        <th class="col-qtd-adicional"></th>
                         <th class="col-pedido-compra">
                             <input type="text" name="f_pedido_compra" value="{{ request('f_pedido_compra') }}" class="filter-input" placeholder="Multi: PC1, PC2..." form="formFilterCompras" onchange="document.getElementById('formFilterCompras').submit()">
                         </th>
@@ -376,9 +378,27 @@
                             <span class="badge-produto-pai">{{ $item['produto_pai'] ?? '-' }}</span>
                         </td>
                         <td class="col-qtd-comprar" style="text-align: center;">
-                            <strong id="qtd_comprar_{{ $estoqueId }}" style="color: {{ $item['quantidade_comprar'] > 0 ? '#ef4444' : '#10b981' }};">
-                                {{ $item['quantidade_comprar'] }}
+                            <strong id="qtd_comprar_calc_{{ $estoqueId }}" style="color: {{ $item['quantidade_comprar'] > 0 ? '#ef4444' : '#10b981' }}; font-size: 0.85rem;" title="Qtd Calculada (OP - Estoque)">
+                                {{ floatval($item['quantidade_comprar_calculada']) }}
                             </strong>
+                            <br>
+                            <span id="label_qtd_total_{{ $estoqueId }}" style="font-size: 0.725rem; font-weight: 700; color: #38bdf8; {{ floatval($item['quantidade_adicional']) > 0 ? '' : 'display: none;' }}" title="Qtd Total a Comprar com o Adicional">
+                                Total: {{ floatval($item['quantidade_comprar']) }}
+                            </span>
+                        </td>
+                        <td class="col-qtd-adicional" style="text-align: center;">
+                            @if($estoqueId)
+                                <input type="text" 
+                                       name="items[{{ $estoqueId }}][quantidade_adicional]" 
+                                       id="input_qtd_adic_{{ $estoqueId }}"
+                                       value="{{ floatval($item['quantidade_adicional']) > 0 ? floatval($item['quantidade_adicional']) : '' }}" 
+                                       class="form-control" 
+                                       placeholder="0"
+                                       style="width: 85px; text-align: center; margin: 0 auto; padding: 0.25rem 0.4rem; font-weight: 600; color: #38bdf8;"
+                                       onchange="recalcularLinhaCompra({{ $estoqueId }})">
+                            @else
+                                <span style="color: #64748b;">-</span>
+                            @endif
                         </td>
 
                         @if($estoqueId)
@@ -558,17 +578,27 @@ function recalcularLinhaCompra(estoqueId) {
     const inputValUnit = document.getElementById('input_val_unit_' + estoqueId);
     const inputIpi = document.getElementById('input_ipi_' + estoqueId);
     const inputFrete = document.getElementById('input_frete_' + estoqueId);
-    const labelQtdComprar = document.getElementById('qtd_comprar_' + estoqueId);
+    const inputQtdAdic = document.getElementById('input_qtd_adic_' + estoqueId);
+    const labelQtdCalc = document.getElementById('qtd_comprar_calc_' + estoqueId);
+    const labelQtdTotal = document.getElementById('label_qtd_total_' + estoqueId);
     const labelTotal = document.getElementById('label_val_total_' + estoqueId);
 
-    if (!inputValUnit || !labelTotal || !labelQtdComprar) return;
+    if (!inputValUnit || !labelTotal || !labelQtdCalc) return;
 
-    const valUnitario = parseFloat(inputValUnit.value) || 0;
-    const ipi = parseFloat(inputIpi ? inputIpi.value : 0) || 0;
-    const frete = parseFloat(inputFrete ? inputFrete.value : 0) || 0;
-    const qtdComprar = parseFloat(labelQtdComprar.innerText) || 0;
+    const valUnitario = parseFloat(inputValUnit.value.replace(',', '.')) || 0;
+    const ipi = parseFloat(inputIpi ? inputIpi.value.replace(',', '.') : 0) || 0;
+    const frete = parseFloat(inputFrete ? inputFrete.value.replace(',', '.') : 0) || 0;
 
-    const valTotal = (valUnitario * qtdComprar) + (valUnitario * qtdComprar * (ipi / 100)) + frete;
+    const qtdCalc = parseFloat(labelQtdCalc.innerText.replace(',', '.')) || 0;
+    const qtdAdic = parseFloat(inputQtdAdic ? inputQtdAdic.value.replace(',', '.') : 0) || 0;
+    const qtdTotal = qtdCalc + qtdAdic;
+
+    if (labelQtdTotal) {
+        labelQtdTotal.innerText = 'Total: ' + qtdTotal;
+        labelQtdTotal.style.display = (qtdAdic > 0) ? 'inline-block' : 'none';
+    }
+
+    const valTotal = (valUnitario * qtdTotal) + (valUnitario * qtdTotal * (ipi / 100)) + frete;
     labelTotal.innerText = 'R$ ' + valTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 

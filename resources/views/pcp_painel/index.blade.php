@@ -233,6 +233,24 @@
                 <option value="PARCIAL" {{ $searchStatusPcp === 'PARCIAL' ? 'selected' : '' }}>PARCIAL</option>
             </select>
         </div>
+        <div style="flex: 1.2; min-width: 140px;">
+            <label style="font-size: 0.75rem; font-weight: 600; color: #a5b4fc; margin-bottom: 0.3rem; display: block;">📅 Mês Pronto</label>
+            <select name="f_data_pronto_mes" form="formFilterPcpPainel" class="form-control" style="padding: 0.4rem 0.6rem; font-size: 0.8rem; border-color: #6366f1; background-color: #0f172a; color: #a5b4fc; font-weight: 600;" onchange="document.getElementById('formFilterPcpPainel').submit()">
+                <option value="">📅 Mês: Todos</option>
+                <option value="01" {{ request('f_data_pronto_mes') == '01' ? 'selected' : '' }}>01 - Janeiro</option>
+                <option value="02" {{ request('f_data_pronto_mes') == '02' ? 'selected' : '' }}>02 - Fevereiro</option>
+                <option value="03" {{ request('f_data_pronto_mes') == '03' ? 'selected' : '' }}>03 - Março</option>
+                <option value="04" {{ request('f_data_pronto_mes') == '04' ? 'selected' : '' }}>04 - Abril</option>
+                <option value="05" {{ request('f_data_pronto_mes') == '05' ? 'selected' : '' }}>05 - Maio</option>
+                <option value="06" {{ request('f_data_pronto_mes') == '06' ? 'selected' : '' }}>06 - Junho</option>
+                <option value="07" {{ request('f_data_pronto_mes') == '07' ? 'selected' : '' }}>07 - Julho</option>
+                <option value="08" {{ request('f_data_pronto_mes') == '08' ? 'selected' : '' }}>08 - Agosto</option>
+                <option value="09" {{ request('f_data_pronto_mes') == '09' ? 'selected' : '' }}>09 - Setembro</option>
+                <option value="10" {{ request('f_data_pronto_mes') == '10' ? 'selected' : '' }}>10 - Outubro</option>
+                <option value="11" {{ request('f_data_pronto_mes') == '11' ? 'selected' : '' }}>11 - Novembro</option>
+                <option value="12" {{ request('f_data_pronto_mes') == '12' ? 'selected' : '' }}>12 - Dezembro</option>
+            </select>
+        </div>
         <div style="display: flex; gap: 0.4rem; flex: 1.4; min-width: 240px;">
             <div style="flex: 1;">
                 <label style="font-size: 0.75rem; font-weight: 600; color: #a5b4fc; margin-bottom: 0.3rem; display: block;">📅 Pronto De</label>
@@ -247,7 +265,7 @@
             <button type="submit" form="formFilterPcpPainel" class="btn btn-primary" style="padding: 0.4rem 0.85rem; font-size: 0.8rem; background-color: #6366f1;">
                 🔍 Filtrar
             </button>
-            @if($searchPv || $searchCliente || $searchStatusPcp || $searchStatusPagamento || $fInfo || $fStatusPv || $fFabrica || $fMarca || $fDataPronto || $fDataProntoDe || $fDataProntoAte)
+            @if($searchPv || $searchCliente || $searchStatusPcp || $searchStatusPagamento || $fInfo || $fStatusPv || $fFabrica || $fMarca || $fDataPronto || $fDataProntoDe || $fDataProntoAte || request('f_data_pronto_mes'))
                 <a href="{{ route('pcp-painel.index') }}" class="btn btn-secondary" style="padding: 0.4rem 0.75rem; font-size: 0.8rem;">
                     ✕ Limpar Filtros
                 </a>
@@ -290,11 +308,11 @@
                         <th class="col-investimento" style="padding: 0.65rem 0.75rem; text-align: right; color: #f87171;">INVEST. (FALTA)</th>
                         <th class="col-time-prod" style="padding: 0.65rem 0.75rem; text-align: center; width: 70px;">TIME PROD ✏️</th>
                         <th class="col-data-pa-pg" style="padding: 0.65rem 0.75rem; text-align: center;">PA (PG) ✏️</th>
-                        <th class="col-data-pronto" style="padding: 0.65rem 0.75rem; text-align: center;">PRONTO ✏️</th>
                         <th class="col-data-contratual" style="padding: 0.65rem 0.75rem; text-align: center;">DATA CONTRATUAL ✏️</th>
                         <th class="col-data-emissao" style="padding: 0.65rem 0.75rem; text-align: center;">DATA EMISSÃO ✏️</th>
                         <th class="col-data-boom" style="padding: 0.65rem 0.75rem; text-align: center;">DATA BOOM ✏️</th>
                         <th class="col-data-liberacao-estoque" style="padding: 0.65rem 0.75rem; text-align: center;">LIBERAÇÃO ESTQ. ✏️</th>
+                        <th class="col-data-pronto" style="padding: 0.65rem 0.75rem; text-align: center; min-width: 120px; color: #a5b4fc;">DATA PRONTO ✏️</th>
                         <th class="col-updated-by" style="padding: 0.65rem 0.75rem; min-width: 140px; color: #a5b4fc;">Última Alteração</th>
                         <th class="col-acoes" style="padding: 0.65rem 0.75rem; text-align: center;">Ações</th>
                     </tr>
@@ -451,13 +469,28 @@
                         <th class="col-investimento"></th>
                         <th class="col-time-prod"></th>
                         <th class="col-data-pa-pg"></th>
-                        <th class="col-data-pronto" style="padding: 0.35rem 0.5rem;">
-                            <input type="text" name="f_data_pronto" value="{{ $fDataPronto }}" form="formFilterPcpPainel" class="form-control" placeholder="Pronto..." style="font-size: 0.7rem; padding: 0.2rem 0.35rem; height: 28px; text-align: center;" onchange="document.getElementById('formFilterPcpPainel').submit()">
-                        </th>
                         <th class="col-data-contratual"></th>
                         <th class="col-data-emissao"></th>
                         <th class="col-data-boom"></th>
                         <th class="col-data-liberacao-estoque"></th>
+                        <th class="col-data-pronto" style="padding: 0.35rem 0.5rem;">
+                            <select name="f_data_pronto_mes" form="formFilterPcpPainel" class="form-control" style="font-size: 0.7rem; padding: 0.2rem 0.35rem; height: 28px; background: #0f172a; border-color: #6366f1; color: #a5b4fc; font-weight: 600;" onchange="document.getElementById('formFilterPcpPainel').submit()">
+                                <option value="">📅 Mês: Todos</option>
+                                <option value="01" {{ request('f_data_pronto_mes') == '01' ? 'selected' : '' }}>01 - Jan</option>
+                                <option value="02" {{ request('f_data_pronto_mes') == '02' ? 'selected' : '' }}>02 - Fev</option>
+                                <option value="03" {{ request('f_data_pronto_mes') == '03' ? 'selected' : '' }}>03 - Mar</option>
+                                <option value="04" {{ request('f_data_pronto_mes') == '04' ? 'selected' : '' }}>04 - Abr</option>
+                                <option value="05" {{ request('f_data_pronto_mes') == '05' ? 'selected' : '' }}>05 - Mai</option>
+                                <option value="06" {{ request('f_data_pronto_mes') == '06' ? 'selected' : '' }}>06 - Jun</option>
+                                <option value="07" {{ request('f_data_pronto_mes') == '07' ? 'selected' : '' }}>07 - Jul</option>
+                                <option value="08" {{ request('f_data_pronto_mes') == '08' ? 'selected' : '' }}>08 - Ago</option>
+                                <option value="09" {{ request('f_data_pronto_mes') == '09' ? 'selected' : '' }}>09 - Set</option>
+                                <option value="10" {{ request('f_data_pronto_mes') == '10' ? 'selected' : '' }}>10 - Out</option>
+                                <option value="11" {{ request('f_data_pronto_mes') == '11' ? 'selected' : '' }}>11 - Nov</option>
+                                <option value="12" {{ request('f_data_pronto_mes') == '12' ? 'selected' : '' }}>12 - Dez</option>
+                            </select>
+                        </th>
+                        <th class="col-updated-by"></th>
                         <th class="col-acoes"></th>
                     </tr>
                 </thead>
@@ -607,11 +640,6 @@
                             <input type="text" name="pvs[{{ $pvKey }}][data_pa_pg]" value="{{ $pvItem['data_pa_pg'] }}" class="editable-cell-input" placeholder="Ex: 01/abr" style="width: 70px; text-align: center;" {{ !($canEditPcp ?? true) ? 'disabled style=opacity:0.6;cursor:not-allowed;' : '' }}>
                         </td>
 
-                        <!-- PRONTO -->
-                        <td class="col-data-pronto" style="padding: 0.5rem 0.6rem; text-align: center;">
-                            <input type="text" name="pvs[{{ $pvKey }}][data_pronto]" value="{{ $pvItem['data_pronto'] }}" class="editable-cell-input" placeholder="Ex: 31/jul" style="width: 70px; text-align: center;" {{ !($canEditPcp ?? true) ? 'disabled style=opacity:0.6;cursor:not-allowed;' : '' }}>
-                        </td>
-
                         <!-- DATA CONTRATUAL -->
                         <td class="col-data-contratual" style="padding: 0.5rem 0.6rem; text-align: center;">
                             <input type="text" name="pvs[{{ $pvKey }}][data_contratual]" value="{{ $pvItem['data_contratual'] }}" class="editable-cell-input" placeholder="DD/MM/AAAA" style="width: 90px; text-align: center;" {{ !($canEditPcp ?? true) ? 'disabled style=opacity:0.6;cursor:not-allowed;' : '' }}>
@@ -630,6 +658,11 @@
                         <!-- LIBERAÇÃO ESTOQUE -->
                         <td class="col-data-liberacao-estoque" style="padding: 0.5rem 0.6rem; text-align: center;">
                             <input type="text" name="pvs[{{ $pvKey }}][data_liberacao_estoque]" value="{{ $pvItem['data_liberacao_estoque'] }}" class="editable-cell-input" placeholder="DD/MM/AAAA" style="width: 90px; text-align: center;" {{ !($canEditPcp ?? true) ? 'disabled style=opacity:0.6;cursor:not-allowed;' : '' }}>
+                        </td>
+
+                        <!-- DATA PRONTO -->
+                        <td class="col-data-pronto" style="padding: 0.5rem 0.6rem; text-align: center;">
+                            <input type="text" name="pvs[{{ $pvKey }}][data_pronto]" value="{{ $pvItem['data_pronto'] }}" class="editable-cell-input" placeholder="Ex: 31/jul" style="width: 80px; text-align: center; border-color: #6366f1;" {{ !($canEditPcp ?? true) ? 'disabled style=opacity:0.6;cursor:not-allowed;' : '' }}>
                         </td>
 
                         <!-- Última Alteração -->

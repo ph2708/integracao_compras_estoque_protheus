@@ -63,6 +63,7 @@ class PcpPainelController extends Controller
         $fDataPronto = $request->get('f_data_pronto');
         $fDataProntoDe = $request->get('f_data_pronto_de');
         $fDataProntoAte = $request->get('f_data_pronto_ate');
+        $fDataProntoMes = $request->get('f_data_pronto_mes');
 
         // Carregar Metadados de PVs cadastrados no banco
         $pvMetadados = PvMetadado::all()->keyBy('pedido');
@@ -189,6 +190,30 @@ class PcpPainelController extends Controller
 
             if ($parsedDe && (!$parsedValPronto || $parsedValPronto < $parsedDe)) continue;
             if ($parsedAte && (!$parsedValPronto || $parsedValPronto > $parsedAte)) continue;
+
+            if ($fDataProntoMes) {
+                $mesTarget = str_pad($fDataProntoMes, 2, '0', STR_PAD_LEFT);
+                if ($parsedValPronto) {
+                    $itemMonth = substr($parsedValPronto, 5, 2);
+                    if ($itemMonth !== $mesTarget) continue;
+                } else {
+                    $mesesNomes = [
+                        '01' => ['JAN', 'JANEIRO', '/01'], '02' => ['FEV', 'FEVEREIRO', '/02'],
+                        '03' => ['MAR', 'MARÇO', 'MARCO', '/03'], '04' => ['ABR', 'ABRIL', '/04'],
+                        '05' => ['MAI', 'MAIO', '/05'], '06' => ['JUN', 'JUNHO', '/06'],
+                        '07' => ['JUL', 'JULHO', '/07'], '08' => ['AGO', 'AGOSTO', '/08'],
+                        '09' => ['SET', 'SETEMBRO', '/09'], '10' => ['OUT', 'OUTUBRO', '/10'],
+                        '11' => ['NOV', 'NOVEMBRO', '/11'], '12' => ['DEZ', 'DEZEMBRO', '/12']
+                    ];
+                    $terms = $mesesNomes[$mesTarget] ?? ["/{$mesTarget}"];
+                    $valUpper = strtoupper($valDataPronto);
+                    $matched = false;
+                    foreach ($terms as $t) {
+                        if (str_contains($valUpper, $t)) { $matched = true; break; }
+                    }
+                    if (!$matched) continue;
+                }
+            }
 
             if ($fInfo && !$this->matchMultiFilter($valInfo, $fInfo)) continue;
             if ($fStatusPv && !$this->matchMultiFilter($valStatusPv, $fStatusPv, true)) continue;
@@ -501,6 +526,7 @@ class PcpPainelController extends Controller
             'fDataPronto',
             'fDataProntoDe',
             'fDataProntoAte',
+            'fDataProntoMes',
             'opcoesInfo',
             'opcoesStatusPv',
             'opcoesFabrica',

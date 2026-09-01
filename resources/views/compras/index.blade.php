@@ -488,11 +488,9 @@
                             R$ {{ number_format($item['valor_total'], 2, ',', '.') }}
                         </td>
                         <td class="col-updated-by" style="font-size: 0.725rem; color: #cbd5e1;">
-                            <strong style="color: #a5b4fc;">{{ $item['updated_by'] ?? ($item['estoque_item']->updated_by ?? '-') }}</strong>
-                            @if(isset($item['updated_at']) && $item['updated_at'])
+                            <strong style="color: #a5b4fc;">{{ !empty($item['updated_by']) ? '👤 ' . $item['updated_by'] : '-' }}</strong>
+                            @if(!empty($item['updated_at']))
                                 <br><span style="font-size: 0.65rem; color: #94a3b8;">📅 {{ $item['updated_at'] }}</span>
-                            @elseif(isset($item['estoque_item']) && $item['estoque_item']->updated_at)
-                                <br><span style="font-size: 0.65rem; color: #94a3b8;">📅 {{ $item['estoque_item']->updated_at->format('d/m/Y H:i') }}</span>
                             @endif
                         </td>
                         <td class="col-acoes" style="text-align: center;">

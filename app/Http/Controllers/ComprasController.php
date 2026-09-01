@@ -119,6 +119,8 @@ class ComprasController extends Controller
                     'condicao_pagamento' => $compraMatch ? $compraMatch->condicao_pagamento : '',
                     'valor_total' => $valTotal,
                     'status_pagamento' => $compraMatch ? $compraMatch->status_pagamento : 'PENDENTE',
+                    'updated_by' => $compraMatch && $compraMatch->updated_by ? $compraMatch->updated_by : ($estoqueMatch ? $estoqueMatch->updated_by : null),
+                    'updated_at' => ($compraMatch && $compraMatch->updated_at) ? $compraMatch->updated_at->format('d/m/Y H:i') : (($estoqueMatch && $estoqueMatch->updated_at) ? $estoqueMatch->updated_at->format('d/m/Y H:i') : null),
                     'no_estoque' => $estoqueMatch ? true : false,
                 ]);
             }
@@ -179,6 +181,8 @@ class ComprasController extends Controller
                     'condicao_pagamento' => $compraMatch ? $compraMatch->condicao_pagamento : '',
                     'valor_total' => $valTotal,
                     'status_pagamento' => $compraMatch ? $compraMatch->status_pagamento : 'PENDENTE',
+                    'updated_by' => $compraMatch && $compraMatch->updated_by ? $compraMatch->updated_by : ($estoqueItem->updated_by ?? null),
+                    'updated_at' => ($compraMatch && $compraMatch->updated_at) ? $compraMatch->updated_at->format('d/m/Y H:i') : ($estoqueItem->updated_at ? $estoqueItem->updated_at->format('d/m/Y H:i') : null),
                     'no_estoque' => true,
                 ]);
             }

@@ -297,6 +297,14 @@ class EstoqueController extends Controller
      */
     public function store(Request $request)
     {
+        // Normaliza vírgulas para pontos em quantidades numéricas
+        if ($request->has('quantidade')) {
+            $request->merge(['quantidade' => str_replace(',', '.', $request->input('quantidade'))]);
+        }
+        if ($request->has('quantidade_estoque')) {
+            $request->merge(['quantidade_estoque' => str_replace(',', '.', $request->input('quantidade_estoque'))]);
+        }
+
         $validated = $request->validate([
             'codigo_produto' => 'required|string',
             'descricao' => 'nullable|string',

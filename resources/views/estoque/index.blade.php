@@ -146,11 +146,11 @@
             </div>
             <div class="form-group">
                 <label class="form-label">Qtd Requisitada da OP *</label>
-                <input type="number" step="0.01" name="quantidade" id="manual_quantidade" class="form-control" value="1" required>
+                <input type="text" name="quantidade" id="manual_quantidade" class="form-control" value="1" required placeholder="Ex: 1 ou 1,5">
             </div>
             <div class="form-group">
                 <label class="form-label">Qtd Já Disponível em Estoque</label>
-                <input type="number" step="0.01" name="quantidade_estoque" class="form-control" value="0">
+                <input type="text" name="quantidade_estoque" class="form-control" value="0" placeholder="Ex: 0 ou 0,5">
             </div>
             <div class="form-group">
                 <label class="form-label">Status PCP *</label>

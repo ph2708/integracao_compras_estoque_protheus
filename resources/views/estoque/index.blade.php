@@ -529,16 +529,13 @@
                                         onclick="solicitarConfirmacaoSave({{ $item->id }})">
                                     💾 Salvar
                                 </button>
-                                <form action="{{ route('estoque.destroy', $item->id) }}" method="POST" style="display: inline;" onsubmit="return confirm('Deseja realmente excluir este item (Código: {{ $item->codigo_produto }}) do Estoque?')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" 
-                                            class="btn btn-secondary" 
-                                            style="padding: 0.2rem 0.45rem; font-size: 0.7rem; background-color: #ef4444; border-color: #ef4444; color: #ffffff;"
-                                            title="Excluir item do Estoque">
-                                        🗑️ Excluir
-                                    </button>
-                                </form>
+                                <button type="button" 
+                                        class="btn btn-secondary" 
+                                        style="padding: 0.2rem 0.45rem; font-size: 0.7rem; background-color: #ef4444; border-color: #ef4444; color: #ffffff;"
+                                        title="Excluir item do Estoque"
+                                        onclick="solicitarExclusaoItem({{ $item->id }}, '{{ $item->codigo_produto }}')">
+                                    🗑️ Excluir
+                                </button>
                             </div>
                         </td>
                     </tr>
@@ -552,6 +549,12 @@
                 </tbody>
             </table>
         </div>
+    </form>
+
+    <!-- Form Standalone Oculto para Exclusão Individual Sem Aninhamento -->
+    <form id="formDeleteEstoque" action="" method="POST" style="display: none;">
+        @csrf
+        @method('DELETE')
     </form>
 
     <!-- Paginação Customizada Dark Mode -->
@@ -570,6 +573,17 @@
 <script>
 let protheusItemsCache = [];
 let pendingSaveItemId = null;
+
+function solicitarExclusaoItem(id, codigo) {
+    if (confirm(`Deseja realmente excluir este item (Código: ${codigo}) do Estoque?`)) {
+        const form = document.getElementById('formDeleteEstoque');
+        if (form) {
+            form.action = `/estoque/${id}`;
+            window.mostrarLoading('🗑️ Excluindo item do estoque...');
+            form.submit();
+        }
+    }
+}
 
 function lookupManualItemInfo() {
     const cod = document.getElementById('manual_codigo_produto') ? document.getElementById('manual_codigo_produto').value.trim() : '';

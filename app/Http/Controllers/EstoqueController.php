@@ -397,7 +397,16 @@ class EstoqueController extends Controller
             ]
         );
 
-        return redirect()->route('estoque.index')->with('success', $msgMsg);
+        $redirectParams = [];
+        if (!empty($codClean)) {
+            $redirectParams['f_produto'] = $codClean;
+        } elseif (!empty($opClean)) {
+            $redirectParams['f_op'] = $opClean;
+        } elseif (!empty($pedidoClean)) {
+            $redirectParams['f_pv'] = $pedidoClean;
+        }
+
+        return redirect()->route('estoque.index', $redirectParams)->with('success', $msgMsg);
     }
 
     /**

@@ -101,6 +101,25 @@ class ProtheusService
     }
 
     /**
+     * Busca no Cadastro de Produtos (SB1010/SB5010) a descrição oficial do produto pelo código
+     */
+    public function getProdutoInfo(string $codigoProduto): ?array
+    {
+        try {
+            $command = "python3 " . escapeshellarg($this->scriptPath) . " get_produto_info " . escapeshellarg(trim($codigoProduto));
+            $output = shell_exec($command);
+            
+            $json = json_decode($output, true);
+            if (isset($json['success']) && !empty($json['data'])) {
+                return $json['data'];
+            }
+            return null;
+        } catch (Exception $e) {
+            return null;
+        }
+    }
+
+    /**
      * Busca a última compra emitida no Protheus para determinado produto (SC7010 por C7_EMISSAO)
      */
     public function getUltimoPrecoProduto(string $codigoProduto): ?object

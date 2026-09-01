@@ -213,7 +213,6 @@ class EstoqueController extends Controller
     }
 
     /**
-    /**
      * Retorna em JSON os dados do produto/OP pesquisado para auto-preenchimento no Modal de Inserção Manual
      */
     public function lookupItemJson(Request $request)
@@ -226,72 +225,84 @@ class EstoqueController extends Controller
             return response()->json(['success' => false, 'message' => 'Nenhum termo de busca fornecido.']);
         }
 
-        // 1. Buscar primeiro em estoques locais existentes
-        $query = EstoqueItem::query();
-        if (!empty($op)) {
-            $query->where('op', 'like', '%' . $op . '%');
-        } elseif (!empty($codigo)) {
-            $query->where('codigo_produto', $codigo);
-        } elseif (!empty($pedido)) {
-            $query->where('pedido', 'like', '%' . $pedido . '%');
-        }
+        $descCurta = null;
+        $descLonga = null;
+        $produtoPai = null;
+        $clienteObs = null;
+        $opVal = $op;
+        $pedidoVal = $pedido;
+        $quantidadeVal = 1;
 
-        $existente = $query->orderBy('id', 'desc')->first();
-
-        if ($existente) {
-            $desc = $existente->descricao;
-            $descLonga = $existente->descricao_longa;
-            $prodPai = $existente->produto_pai;
-            $cliObs = $existente->cliente_obs;
-
-            // Se descrição ou dados estiverem vazios no item local, busca no Protheus
-            if (empty($desc) && (!empty($existente->pedido) || !empty($existente->op))) {
-                $term = $existente->pedido ?: $existente->op;
-                $itemsProtheus = $this->protheusService->getItensPorPedido($term);
-                if (!empty($itemsProtheus)) {
-                    $pItem = collect($itemsProtheus)->firstWhere('codigo_produto', $existente->codigo_produto) ?? $itemsProtheus[0];
-                    if ($pItem) {
-                        $desc = $desc ?: ($pItem['descricao'] ?? null);
-                        $descLonga = $descLonga ?: ($pItem['descricao_longa'] ?? null);
-                        $prodPai = $prodPai ?: ($pItem['produto_pai'] ?? null);
-                        $cliObs = $cliObs ?: ($pItem['cliente_obs'] ?? null);
-                    }
-                }
+        // 1. Prioridade Absoluta: Buscar a descrição oficial do produto na tabela SB1010 / SB5010 do Protheus
+        if (!empty($codigo)) {
+            $pInfo = $this->protheusService->getProdutoInfo($codigo);
+            if ($pInfo) {
+                $descCurta = $pInfo['descricao'] ?? null;
+                $descLonga = $pInfo['descricao_longa'] ?? null;
             }
-
-            return response()->json([
-                'success' => true,
-                'source' => 'local',
-                'codigo_produto' => $existente->codigo_produto,
-                'descricao' => $desc,
-                'descricao_longa' => $descLonga,
-                'produto_pai' => $prodPai,
-                'op' => $existente->op,
-                'pedido' => $existente->pedido,
-                'cliente_obs' => $cliObs,
-                'quantidade' => floatval($existente->quantidade),
-            ]);
         }
 
-        // 2. Se não encontrou no MySQL local, tenta consultar no Protheus
-        if (!empty($pedido) || !empty($op)) {
-            $term = $pedido ?: $op;
+        // 2. Tentar buscar OP / Pedido / Cliente no Protheus se Pedido ou OP foram passados
+        if (!empty($pedidoVal) || !empty($opVal)) {
+            $term = $pedidoVal ?: $opVal;
             $itemsProtheus = $this->protheusService->getItensPorPedido($term);
             if (!empty($itemsProtheus)) {
-                $pItem = collect($itemsProtheus)->firstWhere('codigo_produto', $codigo) ?? $itemsProtheus[0];
-                return response()->json([
-                    'success' => true,
-                    'source' => 'protheus',
-                    'codigo_produto' => $pItem['codigo_produto'] ?? $codigo,
-                    'descricao' => $pItem['descricao'] ?? null,
-                    'descricao_longa' => $pItem['descricao_longa'] ?? null,
-                    'produto_pai' => $pItem['produto_pai'] ?? null,
-                    'op' => $pItem['op'] ?? $op,
-                    'pedido' => $pItem['pedido'] ?? $pedido,
-                    'cliente_obs' => $pItem['cliente_obs'] ?? null,
-                    'quantidade' => floatval($pItem['quantidade'] ?? 1),
-                ]);
+                $pItem = null;
+                if (!empty($codigo)) {
+                    $pItem = collect($itemsProtheus)->firstWhere('codigo_produto', $codigo);
+                }
+                if (!$pItem) {
+                    $pItem = $itemsProtheus[0];
+                }
+
+                if ($pItem) {
+                    $codigo = $codigo ?: ($pItem['codigo_produto'] ?? null);
+                    $descCurta = $descCurta ?: ($pItem['descricao'] ?? null);
+                    $descLonga = $descLonga ?: ($pItem['descricao_longa'] ?? null);
+                    $produtoPai = $produtoPai ?: ($pItem['produto_pai'] ?? null);
+                    $opVal = $opVal ?: ($pItem['op'] ?? null);
+                    $pedidoVal = $pedidoVal ?: ($pItem['pedido'] ?? null);
+                    $clienteObs = $clienteObs ?: ($pItem['cliente_obs'] ?? null);
+                    $quantidadeVal = floatval($pItem['quantidade'] ?? 1);
+                }
             }
+        }
+
+        // 3. Complementar com dados de registros locais existentes se ainda houver campos nulos
+        if (!empty($codigo) || !empty($opVal) || !empty($pedidoVal)) {
+            $query = EstoqueItem::query();
+            if (!empty($opVal)) {
+                $query->where('op', $opVal);
+            } elseif (!empty($codigo)) {
+                $query->where('codigo_produto', $codigo);
+            } elseif (!empty($pedidoVal)) {
+                $query->where('pedido', $pedidoVal);
+            }
+
+            $local = $query->orderBy('id', 'desc')->first();
+            if ($local) {
+                $descCurta = $descCurta ?: $local->descricao;
+                $descLonga = $descLonga ?: $local->descricao_longa;
+                $produtoPai = $produtoPai ?: $local->produto_pai;
+                $opVal = $opVal ?: $local->op;
+                $pedidoVal = $pedidoVal ?: $local->pedido;
+                $clienteObs = $clienteObs ?: $local->cliente_obs;
+                $quantidadeVal = ($quantidadeVal > 1) ? $quantidadeVal : floatval($local->quantidade ?? 1);
+            }
+        }
+
+        if (!empty($codigo) || !empty($descCurta) || !empty($opVal)) {
+            return response()->json([
+                'success' => true,
+                'codigo_produto' => $codigo,
+                'descricao' => $descCurta,
+                'descricao_longa' => $descLonga,
+                'produto_pai' => $produtoPai,
+                'op' => $opVal,
+                'pedido' => $pedidoVal,
+                'cliente_obs' => $clienteObs,
+                'quantidade' => $quantidadeVal,
+            ]);
         }
 
         return response()->json(['success' => false, 'message' => 'Nenhum registro encontrado.']);
@@ -322,8 +333,17 @@ class EstoqueController extends Controller
         $qtdOp = floatval($validated['quantidade']);
         $qtdEstoque = floatval($validated['quantidade_estoque'] ?? 0);
 
-        // Se descrição ou cliente vierem vazios, tenta enriquecer automaticamente com dados de itens existentes
-        if (empty($validated['descricao']) || empty($validated['cliente_obs']) || empty($validated['produto_pai'])) {
+        // Enriquecer com a descrição oficial do Protheus SB1010 / SB5010
+        if (!empty($codClean)) {
+            $pOfficial = $this->protheusService->getProdutoInfo($codClean);
+            if ($pOfficial) {
+                $validated['descricao'] = $pOfficial['descricao'] ?? ($validated['descricao'] ?? null);
+                $validated['descricao_longa'] = $pOfficial['descricao_longa'] ?? ($validated['descricao_longa'] ?? null);
+            }
+        }
+
+        // Se cliente ou produto pai vierem vazios, tenta enriquecer com dados de itens existentes
+        if (empty($validated['cliente_obs']) || empty($validated['produto_pai'])) {
             $ref = EstoqueItem::where(function($q) use ($codClean, $opClean, $pedidoClean) {
                 if ($opClean) $q->where('op', $opClean);
                 if ($codClean) $q->orWhere('codigo_produto', $codClean);
@@ -351,6 +371,8 @@ class EstoqueController extends Controller
 
         if ($existente) {
             $existente->update([
+                'descricao' => $validated['descricao'] ?? $existente->descricao,
+                'descricao_longa' => $validated['descricao_longa'] ?? $existente->descricao_longa,
                 'quantidade' => $qtdOp,
                 'quantidade_estoque' => $qtdEstoque,
                 'status' => $validated['status'],

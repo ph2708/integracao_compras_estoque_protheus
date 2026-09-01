@@ -322,6 +322,31 @@ def get_valores_brutos_pvs(pvs_list):
             result[pv_num] = val_bruto
     return result
 
+def get_produto_info(codigo_produto):
+    if not codigo_produto:
+        return None
+    conn = get_connection()
+    cursor = conn.cursor(as_dict=True)
+    sql = """
+    SELECT 
+        RTRIM(B.B1_COD) AS CODIGO, 
+        RTRIM(B.B1_DESC) AS DESC_CURTA, 
+        RTRIM(ISNULL(B5.B5_CEME, '')) AS DESC_LONGA
+    FROM SB1010 B WITH (NOLOCK)
+    LEFT JOIN SB5010 B5 WITH (NOLOCK) ON RTRIM(B.B1_COD) = RTRIM(B5.B5_COD) AND B5.D_E_L_E_T_ = ' '
+    WHERE B.D_E_L_E_T_ = ' ' AND RTRIM(B.B1_COD) = %s
+    """
+    cursor.execute(sql, [str(codigo_produto).strip()])
+    row = cursor.fetchone()
+    conn.close()
+    if row:
+        return {
+            'codigo_produto': row.get('CODIGO'),
+            'descricao': row.get('DESC_CURTA'),
+            'descricao_longa': row.get('DESC_LONGA')
+        }
+    return None
+
 if __name__ == '__main__':
     command = sys.argv[1] if len(sys.argv) > 1 else ''
 
@@ -335,6 +360,9 @@ if __name__ == '__main__':
             ped = sys.argv[2] if len(sys.argv) > 2 else ''
             fil = sys.argv[3] if len(sys.argv) > 3 and sys.argv[3] != 'null' else None
             print(json.dumps({'success': True, 'data': get_pedido_items(ped, fil)}))
+        elif command in ['get_produto_info', 'produto_info']:
+            cod = sys.argv[2] if len(sys.argv) > 2 else ''
+            print(json.dumps({'success': True, 'data': get_produto_info(cod)}))
         elif command in ['get_ultimo_preco', 'ultimo_preco']:
             cod = sys.argv[2] if len(sys.argv) > 2 else ''
             print(json.dumps({'success': True, 'data': get_ultimo_preco_fornecedor(cod)}))

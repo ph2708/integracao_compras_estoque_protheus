@@ -80,6 +80,7 @@ def get_pedido_items(c2_pedido, filial=None):
     conn = get_connection()
     cursor = conn.cursor(as_dict=True)
     term = str(c2_pedido).strip()
+    c2_num = term[:6] if len(term) >= 6 else term
 
     sql = """
     SELECT DISTINCT TOP 500
@@ -93,31 +94,19 @@ def get_pedido_items(c2_pedido, filial=None):
         RTRIM(B.B1_TIPO) AS B1_TIPO,
         D.D4_QTDEORI AS QUANTIDADE,
         RTRIM(S.C2_PRODUTO) + ' - ' + RTRIM(ISNULL(B_PAI.B1_DESC, '')) AS PRODUTO_PAI
-    FROM SD4010 D WITH (NOLOCK)
-    INNER JOIN SC2010 S WITH (NOLOCK) 
+    FROM SC2010 S WITH (NOLOCK)
+    INNER JOIN SD4010 D WITH (NOLOCK) 
         ON RTRIM(D.D4_FILIAL) = RTRIM(S.C2_FILIAL)
-       AND (
-            RTRIM(D.D4_OP) = RTRIM(S.C2_NUM) + RTRIM(S.C2_ITEM) + RTRIM(S.C2_SEQUEN)
-         OR (LEN(RTRIM(D.D4_OP)) >= 6 AND SUBSTRING(RTRIM(D.D4_OP), 1, 6) = RTRIM(S.C2_NUM))
-       )
-       AND S.D_E_L_E_T_ = ' '
+       AND D.D4_OP LIKE RTRIM(S.C2_NUM) + '%'
+       AND D.D_E_L_E_T_ = ' '
     LEFT JOIN SB1010 B WITH (NOLOCK) ON RTRIM(D.D4_COD) = RTRIM(B.B1_COD) AND B.D_E_L_E_T_ = ' '
     LEFT JOIN SB5010 B5 WITH (NOLOCK) ON RTRIM(D.D4_COD) = RTRIM(B5.B5_COD) AND B5.D_E_L_E_T_ = ' '
     LEFT JOIN SB1010 B_PAI WITH (NOLOCK) ON RTRIM(S.C2_PRODUTO) = RTRIM(B_PAI.B1_COD) AND B_PAI.D_E_L_E_T_ = ' '
-    WHERE D.D_E_L_E_T_ = ' '
+    WHERE S.D_E_L_E_T_ = ' '
+      AND (RTRIM(S.C2_PEDIDO) = %s OR RTRIM(S.C2_NUM) = %s OR RTRIM(S.C2_OBS) LIKE %s)
     """
 
-    params = []
-    if len(term) >= 10:
-        sql += " AND (RTRIM(D.D4_OP) LIKE %s OR RTRIM(S.C2_PEDIDO) = %s)"
-        params.extend([term + '%', term])
-    elif term.isdigit() and len(term) == 9:
-        sql += " AND (RTRIM(D.D4_COD) = %s OR RTRIM(S.C2_PEDIDO) = %s)"
-        params.extend([term, term])
-    else:
-        search_like = f"%{term}%"
-        sql += " AND (RTRIM(S.C2_PEDIDO) = %s OR RTRIM(S.C2_OBS) LIKE %s OR RTRIM(D.D4_OP) LIKE %s)"
-        params.extend([term, search_like, term + '%'])
+    params = [term, c2_num, f"%{term}%"]
 
     if filial and filial != 'null':
         filiais_list = [f.strip() for f in filial.split(',') if f and f.strip()]

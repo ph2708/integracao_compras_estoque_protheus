@@ -24,6 +24,7 @@ class PvMetadado extends Model
         'data_contratual',
         'data_pa_pg',
         'data_pronto',
+        'data_pronto_real',
         'data_boom',
         'data_liberacao_estoque',
         'updated_by',

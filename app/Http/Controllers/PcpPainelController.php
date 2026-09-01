@@ -160,6 +160,7 @@ class PcpPainelController extends Controller
             $valDataContratual = $meta ? ($meta->data_contratual ?? '-') : '-';
             $valDataPaPg = $meta ? ($meta->data_pa_pg ?? '-') : '-';
             $valDataPronto = $meta ? ($meta->data_pronto ?? '-') : '-';
+            $valDataProntoReal = $meta ? ($meta->data_pronto_real ?? '-') : '-';
             $valDataBoom = $meta ? ($meta->data_boom ?? '-') : '-';
             $valDataLiberacaoEstoque = $meta ? ($meta->data_liberacao_estoque ?? '-') : '-';
             $valMetaValorBruto = $meta ? ($meta->valor_bruto ?? null) : null;
@@ -181,10 +182,11 @@ class PcpPainelController extends Controller
             if (!empty($valStatusPv)) $opcoesStatusPv->push($valStatusPv);
             if (!empty($valFabrica)) $opcoesFabrica->push($valFabrica);
             if (!empty($valMarca)) $opcoesMarca->push($valMarca);
-            if (!empty($valDataPronto) && $valDataPronto !== '-') $opcoesDataPronto->push($valDataPronto);
+            if (!empty($valDataProntoReal) && $valDataProntoReal !== '-') $opcoesDataPronto->push($valDataProntoReal);
 
-            // Aplicar filtros multi-seleção e intervalo de datas (Data Pronto)
-            $parsedValPronto = $this->parseDateToYmd($valDataPronto);
+            // Aplicar filtros multi-seleção e intervalo de datas (Data Pronto Real / Data Pronto)
+            $targetProntoVal = ($valDataProntoReal && $valDataProntoReal !== '-') ? $valDataProntoReal : $valDataPronto;
+            $parsedValPronto = $this->parseDateToYmd($targetProntoVal);
             $parsedDe = $this->parseDateToYmd($fDataProntoDe);
             $parsedAte = $this->parseDateToYmd($fDataProntoAte);
 
@@ -206,7 +208,7 @@ class PcpPainelController extends Controller
                         '11' => ['NOV', 'NOVEMBRO', '/11'], '12' => ['DEZ', 'DEZEMBRO', '/12']
                     ];
                     $terms = $mesesNomes[$mesTarget] ?? ["/{$mesTarget}"];
-                    $valUpper = strtoupper($valDataPronto);
+                    $valUpper = strtoupper($targetProntoVal);
                     $matched = false;
                     foreach ($terms as $t) {
                         if (str_contains($valUpper, $t)) { $matched = true; break; }
@@ -444,6 +446,7 @@ class PcpPainelController extends Controller
                 'data_contratual' => $valDataContratual,
                 'data_pa_pg' => $valDataPaPg,
                 'data_pronto' => $valDataPronto,
+                'data_pronto_real' => $valDataProntoReal,
                 'data_boom' => $valDataBoom,
                 'data_liberacao_estoque' => $valDataLiberacaoEstoque,
                 'total_componentes' => $totalComponentes,
@@ -799,6 +802,7 @@ class PcpPainelController extends Controller
         $dataContratual = $request->input('data_contratual');
         $dataPaPg = $request->input('data_pa_pg');
         $dataPronto = $request->input('data_pronto');
+        $dataProntoReal = $request->input('data_pronto_real');
         $dataBoom = $request->input('data_boom');
         $dataLiberacaoEstoque = $request->input('data_liberacao_estoque');
 
@@ -824,6 +828,7 @@ class PcpPainelController extends Controller
                 'data_contratual' => $dataContratual !== null ? trim($dataContratual) : null,
                 'data_pa_pg' => $dataPaPg !== null ? trim($dataPaPg) : null,
                 'data_pronto' => $dataPronto !== null ? trim($dataPronto) : null,
+                'data_pronto_real' => $dataProntoReal !== null ? trim($dataProntoReal) : null,
                 'data_boom' => $dataBoom !== null ? trim($dataBoom) : null,
                 'data_liberacao_estoque' => $dataLiberacaoEstoque !== null ? trim($dataLiberacaoEstoque) : null,
                 'updated_by' => auth()->user()->name ?? 'Sistema',
@@ -873,6 +878,7 @@ class PcpPainelController extends Controller
                 if (isset($data['data_contratual'])) $updatePayload['data_contratual'] = trim($data['data_contratual']);
                 if (isset($data['data_pa_pg'])) $updatePayload['data_pa_pg'] = trim($data['data_pa_pg']);
                 if (isset($data['data_pronto'])) $updatePayload['data_pronto'] = trim($data['data_pronto']);
+                if (isset($data['data_pronto_real'])) $updatePayload['data_pronto_real'] = trim($data['data_pronto_real']);
                 if (isset($data['data_boom'])) $updatePayload['data_boom'] = trim($data['data_boom']);
                 if (isset($data['data_liberacao_estoque'])) $updatePayload['data_liberacao_estoque'] = trim($data['data_liberacao_estoque']);
 

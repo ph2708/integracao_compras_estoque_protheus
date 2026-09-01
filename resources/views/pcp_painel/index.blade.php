@@ -173,6 +173,7 @@
                     <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;"><input type="checkbox" id="chk_col-data-emissao" onchange="toggleColunaPainelPcp('col-data-emissao', this.checked)"> DATA EMISSÃO ✏️</label>
                     <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;"><input type="checkbox" id="chk_col-data-boom" onchange="toggleColunaPainelPcp('col-data-boom', this.checked)"> DATA BOOM ✏️</label>
                     <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;"><input type="checkbox" id="chk_col-data-liberacao-estoque" onchange="toggleColunaPainelPcp('col-data-liberacao-estoque', this.checked)"> LIBERAÇÃO ESTOQUE ✏️</label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: #a5b4fc;"><input type="checkbox" id="chk_col-data-pronto-real" onchange="toggleColunaPainelPcp('col-data-pronto-real', this.checked)"> DATA PRONTO ✏️</label>
                 </div>
             </div>
         </div>
@@ -308,11 +309,12 @@
                         <th class="col-investimento" style="padding: 0.65rem 0.75rem; text-align: right; color: #f87171;">INVEST. (FALTA)</th>
                         <th class="col-time-prod" style="padding: 0.65rem 0.75rem; text-align: center; width: 70px;">TIME PROD ✏️</th>
                         <th class="col-data-pa-pg" style="padding: 0.65rem 0.75rem; text-align: center;">PA (PG) ✏️</th>
+                        <th class="col-data-pronto" style="padding: 0.65rem 0.75rem; text-align: center;">PRONTO ✏️</th>
                         <th class="col-data-contratual" style="padding: 0.65rem 0.75rem; text-align: center;">DATA CONTRATUAL ✏️</th>
                         <th class="col-data-emissao" style="padding: 0.65rem 0.75rem; text-align: center;">DATA EMISSÃO ✏️</th>
                         <th class="col-data-boom" style="padding: 0.65rem 0.75rem; text-align: center;">DATA BOOM ✏️</th>
                         <th class="col-data-liberacao-estoque" style="padding: 0.65rem 0.75rem; text-align: center;">LIBERAÇÃO ESTQ. ✏️</th>
-                        <th class="col-data-pronto" style="padding: 0.65rem 0.75rem; text-align: center; min-width: 120px; color: #a5b4fc;">DATA PRONTO ✏️</th>
+                        <th class="col-data-pronto-real" style="padding: 0.65rem 0.75rem; text-align: center; min-width: 120px; color: #a5b4fc;">DATA PRONTO ✏️</th>
                         <th class="col-updated-by" style="padding: 0.65rem 0.75rem; min-width: 140px; color: #a5b4fc;">Última Alteração</th>
                         <th class="col-acoes" style="padding: 0.65rem 0.75rem; text-align: center;">Ações</th>
                     </tr>
@@ -469,11 +471,14 @@
                         <th class="col-investimento"></th>
                         <th class="col-time-prod"></th>
                         <th class="col-data-pa-pg"></th>
+                        <th class="col-data-pronto" style="padding: 0.35rem 0.5rem;">
+                            <input type="text" name="f_data_pronto" value="{{ $fDataPronto }}" form="formFilterPcpPainel" class="form-control" placeholder="Pronto..." style="font-size: 0.7rem; padding: 0.2rem 0.35rem; height: 28px; text-align: center;" onchange="document.getElementById('formFilterPcpPainel').submit()">
+                        </th>
                         <th class="col-data-contratual"></th>
                         <th class="col-data-emissao"></th>
                         <th class="col-data-boom"></th>
                         <th class="col-data-liberacao-estoque"></th>
-                        <th class="col-data-pronto" style="padding: 0.35rem 0.5rem;">
+                        <th class="col-data-pronto-real" style="padding: 0.35rem 0.5rem;">
                             <select name="f_data_pronto_mes" form="formFilterPcpPainel" class="form-control" style="font-size: 0.7rem; padding: 0.2rem 0.35rem; height: 28px; background: #0f172a; border-color: #6366f1; color: #a5b4fc; font-weight: 600;" onchange="document.getElementById('formFilterPcpPainel').submit()">
                                 <option value="">📅 Mês: Todos</option>
                                 <option value="01" {{ request('f_data_pronto_mes') == '01' ? 'selected' : '' }}>01 - Jan</option>
@@ -640,6 +645,11 @@
                             <input type="text" name="pvs[{{ $pvKey }}][data_pa_pg]" value="{{ $pvItem['data_pa_pg'] }}" class="editable-cell-input" placeholder="Ex: 01/abr" style="width: 70px; text-align: center;" {{ !($canEditPcp ?? true) ? 'disabled style=opacity:0.6;cursor:not-allowed;' : '' }}>
                         </td>
 
+                        <!-- PRONTO (Original) -->
+                        <td class="col-data-pronto" style="padding: 0.5rem 0.6rem; text-align: center;">
+                            <input type="text" name="pvs[{{ $pvKey }}][data_pronto]" value="{{ $pvItem['data_pronto'] }}" class="editable-cell-input" placeholder="Ex: 31/jul" style="width: 70px; text-align: center;" {{ !($canEditPcp ?? true) ? 'disabled style=opacity:0.6;cursor:not-allowed;' : '' }}>
+                        </td>
+
                         <!-- DATA CONTRATUAL -->
                         <td class="col-data-contratual" style="padding: 0.5rem 0.6rem; text-align: center;">
                             <input type="text" name="pvs[{{ $pvKey }}][data_contratual]" value="{{ $pvItem['data_contratual'] }}" class="editable-cell-input" placeholder="DD/MM/AAAA" style="width: 90px; text-align: center;" {{ !($canEditPcp ?? true) ? 'disabled style=opacity:0.6;cursor:not-allowed;' : '' }}>
@@ -660,9 +670,9 @@
                             <input type="text" name="pvs[{{ $pvKey }}][data_liberacao_estoque]" value="{{ $pvItem['data_liberacao_estoque'] }}" class="editable-cell-input" placeholder="DD/MM/AAAA" style="width: 90px; text-align: center;" {{ !($canEditPcp ?? true) ? 'disabled style=opacity:0.6;cursor:not-allowed;' : '' }}>
                         </td>
 
-                        <!-- DATA PRONTO -->
-                        <td class="col-data-pronto" style="padding: 0.5rem 0.6rem; text-align: center;">
-                            <input type="text" name="pvs[{{ $pvKey }}][data_pronto]" value="{{ $pvItem['data_pronto'] }}" class="editable-cell-input" placeholder="Ex: 31/jul" style="width: 80px; text-align: center; border-color: #6366f1;" {{ !($canEditPcp ?? true) ? 'disabled style=opacity:0.6;cursor:not-allowed;' : '' }}>
+                        <!-- DATA PRONTO (Nova ao lado de Liberação Estoque) -->
+                        <td class="col-data-pronto-real" style="padding: 0.5rem 0.6rem; text-align: center;">
+                            <input type="text" name="pvs[{{ $pvKey }}][data_pronto_real]" value="{{ $pvItem['data_pronto_real'] }}" class="editable-cell-input" placeholder="Ex: 31/jul" style="width: 80px; text-align: center; border-color: #6366f1;" {{ !($canEditPcp ?? true) ? 'disabled style=opacity:0.6;cursor:not-allowed;' : '' }}>
                         </td>
 
                         <!-- Última Alteração -->
@@ -1176,7 +1186,8 @@
         'col-data-contratual': true,
         'col-data-emissao': true,
         'col-data-boom': true,
-        'col-data-liberacao-estoque': true
+        'col-data-liberacao-estoque': true,
+        'col-data-pronto-real': true
     };
 
     function toggleMenuColunasPainelPcp() {

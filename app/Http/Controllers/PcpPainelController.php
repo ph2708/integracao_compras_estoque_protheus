@@ -196,9 +196,8 @@ class PcpPainelController extends Controller
             if ($fDataProntoMes) {
                 $mesTarget = str_pad($fDataProntoMes, 2, '0', STR_PAD_LEFT);
                 $matchReal = $this->matchMonth($valDataProntoReal, $mesTarget);
-                $matchOriginal = $this->matchMonth($valDataPronto, $mesTarget);
 
-                if (!$matchReal && !$matchOriginal) {
+                if (!$matchReal) {
                     continue;
                 }
             }
@@ -458,8 +457,14 @@ class PcpPainelController extends Controller
             ]);
         }
 
-        // Ordenar a coleção do painel em sequência numérica pela coluna FÁBRICA (18, 19, 20... 99)
-        $painelDataSorted = $painelData->sortBy(function ($item) {
+        // Ordenar a coleção do painel: se filtro de data pronto ativo, ordenar por data_pronto_real asc, senão por FÁBRICA asc
+        $painelDataSorted = $painelData->sortBy(function ($item) use ($fDataProntoMes, $fDataProntoDe, $fDataProntoAte) {
+            if ($fDataProntoMes || $fDataProntoDe || $fDataProntoAte) {
+                $parsedDate = $this->parseDateToYmd($item['data_pronto_real'] ?? '');
+                $dateKey = $parsedDate ?: '9999-99-99';
+                return sprintf('%s_%s', $dateKey, $item['pv']);
+            }
+
             $fab = trim($item['fabrica'] ?? '');
             $numFab = (is_numeric($fab) && intval($fab) > 0) ? intval($fab) : 999999;
             return sprintf('%08d_%s', $numFab, $item['pv']);

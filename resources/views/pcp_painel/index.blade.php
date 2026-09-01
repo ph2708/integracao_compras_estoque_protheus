@@ -236,7 +236,7 @@
         </div>
         <div style="flex: 1.2; min-width: 140px;">
             <label style="font-size: 0.75rem; font-weight: 600; color: #a5b4fc; margin-bottom: 0.3rem; display: block;">📅 Mês Pronto</label>
-            <select name="f_data_pronto_mes" form="formFilterPcpPainel" class="form-control" style="padding: 0.4rem 0.6rem; font-size: 0.8rem; border-color: #6366f1; background-color: #0f172a; color: #a5b4fc; font-weight: 600;" onchange="document.getElementById('formFilterPcpPainel').submit()">
+            <select name="f_data_pronto_mes" id="top_f_data_pronto_mes" form="formFilterPcpPainel" class="form-control" style="padding: 0.4rem 0.6rem; font-size: 0.8rem; border-color: #6366f1; background-color: #0f172a; color: #a5b4fc; font-weight: 600;" onchange="syncMonthFilter(this.value)">
                 <option value="">📅 Mês: Todos</option>
                 <option value="01" {{ request('f_data_pronto_mes') == '01' ? 'selected' : '' }}>01 - Janeiro</option>
                 <option value="02" {{ request('f_data_pronto_mes') == '02' ? 'selected' : '' }}>02 - Fevereiro</option>
@@ -479,7 +479,7 @@
                         <th class="col-data-boom"></th>
                         <th class="col-data-liberacao-estoque"></th>
                         <th class="col-data-pronto-real" style="padding: 0.35rem 0.5rem;">
-                            <select name="f_data_pronto_mes" form="formFilterPcpPainel" class="form-control" style="font-size: 0.7rem; padding: 0.2rem 0.35rem; height: 28px; background: #0f172a; border-color: #6366f1; color: #a5b4fc; font-weight: 600;" onchange="document.getElementById('formFilterPcpPainel').submit()">
+                            <select id="table_f_data_pronto_mes" class="form-control" style="font-size: 0.7rem; padding: 0.2rem 0.35rem; height: 28px; background: #0f172a; border-color: #6366f1; color: #a5b4fc; font-weight: 600;" onchange="syncMonthFilter(this.value)">
                                 <option value="">📅 Mês: Todos</option>
                                 <option value="01" {{ request('f_data_pronto_mes') == '01' ? 'selected' : '' }}>01 - Jan</option>
                                 <option value="02" {{ request('f_data_pronto_mes') == '02' ? 'selected' : '' }}>02 - Fev</option>
@@ -1302,6 +1302,24 @@
         document.getElementById('input_f_marca').value = (vals.length === tot || vals.length === 0) ? '' : vals.join(',');
         document.getElementById('formFilterPcpPainel').submit();
     }
+
+    function syncMonthFilter(val) {
+        const topSel = document.getElementById('top_f_data_pronto_mes');
+        const tableSel = document.getElementById('table_f_data_pronto_mes');
+        if (topSel) topSel.value = val;
+        if (tableSel) tableSel.value = val;
+        document.getElementById('formFilterPcpPainel').submit();
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const reqMes = "{{ request('f_data_pronto_mes') }}";
+        if (reqMes) {
+            const topSel = document.getElementById('top_f_data_pronto_mes');
+            const tableSel = document.getElementById('table_f_data_pronto_mes');
+            if (topSel) topSel.value = reqMes;
+            if (tableSel) tableSel.value = reqMes;
+        }
+    });
 
     // Fechar dropdowns ao clicar fora
     document.addEventListener('click', function(e) {

@@ -195,25 +195,11 @@ class PcpPainelController extends Controller
 
             if ($fDataProntoMes) {
                 $mesTarget = str_pad($fDataProntoMes, 2, '0', STR_PAD_LEFT);
-                if ($parsedValPronto) {
-                    $itemMonth = substr($parsedValPronto, 5, 2);
-                    if ($itemMonth !== $mesTarget) continue;
-                } else {
-                    $mesesNomes = [
-                        '01' => ['JAN', 'JANEIRO', '/01'], '02' => ['FEV', 'FEVEREIRO', '/02'],
-                        '03' => ['MAR', 'MARÇO', 'MARCO', '/03'], '04' => ['ABR', 'ABRIL', '/04'],
-                        '05' => ['MAI', 'MAIO', '/05'], '06' => ['JUN', 'JUNHO', '/06'],
-                        '07' => ['JUL', 'JULHO', '/07'], '08' => ['AGO', 'AGOSTO', '/08'],
-                        '09' => ['SET', 'SETEMBRO', '/09'], '10' => ['OUT', 'OUTUBRO', '/10'],
-                        '11' => ['NOV', 'NOVEMBRO', '/11'], '12' => ['DEZ', 'DEZEMBRO', '/12']
-                    ];
-                    $terms = $mesesNomes[$mesTarget] ?? ["/{$mesTarget}"];
-                    $valUpper = strtoupper($targetProntoVal);
-                    $matched = false;
-                    foreach ($terms as $t) {
-                        if (str_contains($valUpper, $t)) { $matched = true; break; }
-                    }
-                    if (!$matched) continue;
+                $matchReal = $this->matchMonth($valDataProntoReal, $mesTarget);
+                $matchOriginal = $this->matchMonth($valDataPronto, $mesTarget);
+
+                if (!$matchReal && !$matchOriginal) {
+                    continue;
                 }
             }
 
@@ -577,6 +563,43 @@ class PcpPainelController extends Controller
         }
 
         return null;
+    }
+
+    /**
+     * Verifica se o valor de uma data (formatada ou em texto) corresponde ao mês selecionado
+     */
+    private function matchMonth(?string $dateVal, string $mesTarget): bool
+    {
+        if (empty($dateVal) || $dateVal === '-') return false;
+        $dateVal = trim($dateVal);
+
+        $parsed = $this->parseDateToYmd($dateVal);
+        if ($parsed) {
+            $itemMonth = substr($parsed, 5, 2);
+            if ($itemMonth === $mesTarget) return true;
+        }
+
+        $mesesNomes = [
+            '01' => ['JAN', 'JANEIRO', '/01', '-01', '.01'],
+            '02' => ['FEV', 'FEVEREIRO', '/02', '-02', '.02'],
+            '03' => ['MAR', 'MARÇO', 'MARCO', '/03', '-03', '.03'],
+            '04' => ['ABR', 'ABRIL', '/04', '-04', '.04'],
+            '05' => ['MAI', 'MAIO', '/05', '-05', '.05'],
+            '06' => ['JUN', 'JUNHO', '/06', '-06', '.06'],
+            '07' => ['JUL', 'JULHO', '/07', '-07', '.07'],
+            '08' => ['AGO', 'AGOSTO', '/08', '-08', '.08'],
+            '09' => ['SET', 'SETEMBRO', '/09', '-09', '.09'],
+            '10' => ['OUT', 'OUTUBRO', '/10', '-10', '.10'],
+            '11' => ['NOV', 'NOVEMBRO', '/11', '-11', '.11'],
+            '12' => ['DEZ', 'DEZEMBRO', '/12', '-12', '.12'],
+        ];
+        $terms = $mesesNomes[$mesTarget] ?? ["/{$mesTarget}"];
+        $valUpper = strtoupper($dateVal);
+        foreach ($terms as $t) {
+            if (str_contains($valUpper, $t)) return true;
+        }
+
+        return false;
     }
 
     /**

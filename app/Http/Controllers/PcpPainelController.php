@@ -308,13 +308,25 @@ class PcpPainelController extends Controller
                     }
                 }
 
-                $isAlternador = str_contains($desc, 'ALTERNADOR') || 
-                                str_starts_with($descClean, 'GS ') || 
-                                str_starts_with($descClean, 'GS-') || 
-                                str_starts_with($descClean, 'GSWG') || 
-                                str_starts_with($descClean, 'GS WEG') || 
-                                str_starts_with($descClean, 'GS WG') || 
-                                str_starts_with($codClean, 'GS');
+                $isIgnoredAlternador = str_starts_with($descClean, 'SPT') || 
+                                       str_starts_with($descClean, 'SUPORTE') || 
+                                       str_contains($descClean, 'SUPORTE') || 
+                                       str_contains($descClean, 'SPT ') || 
+                                       str_contains($descClean, 'SPT-') || 
+                                       str_contains($descClean, 'CAIXA ALTERNADOR') || 
+                                       str_contains($descClean, 'POLIA') || 
+                                       str_contains($descClean, 'CORREIA') || 
+                                       str_contains($descClean, 'CABO');
+
+                $isAlternador = !$isIgnoredAlternador && (
+                    str_starts_with($codClean, 'GS') || 
+                    str_starts_with($descClean, 'GS ') || 
+                    str_starts_with($descClean, 'GS-') || 
+                    str_starts_with($descClean, 'GSWG') || 
+                    str_starts_with($descClean, 'GS WEG') || 
+                    str_starts_with($descClean, 'GS WG') || 
+                    str_starts_with($descClean, 'ALTERNADOR')
+                );
 
                 if ($isAlternador) {
                     $hasAlternador = true;

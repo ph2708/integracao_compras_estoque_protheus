@@ -6,6 +6,7 @@ use App\Models\CompraItem;
 use App\Models\EstoqueItem;
 use App\Services\ProtheusService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class EstoqueController extends Controller
 {

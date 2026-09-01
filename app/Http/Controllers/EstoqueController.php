@@ -242,29 +242,14 @@ class EstoqueController extends Controller
             }
         }
 
-        // 2. Tentar buscar OP / Pedido / Cliente no Protheus se Código, OP ou Pedido foram informados
+        // 2. Buscar instantaneamente Pedido, Cliente C2_OBS e Produto Pai no Protheus (SC2010)
         $searchTerm = $opVal ?: ($pedidoVal ?: $codigo);
         if (!empty($searchTerm)) {
-            $itemsProtheus = $this->protheusService->getItensPorPedido($searchTerm);
-            if (!empty($itemsProtheus)) {
-                $pItem = null;
-                if (!empty($codigo)) {
-                    $pItem = collect($itemsProtheus)->firstWhere('codigo_produto', $codigo);
-                }
-                if (!$pItem) {
-                    $pItem = $itemsProtheus[0];
-                }
-
-                if ($pItem) {
-                    $codigo = $codigo ?: ($pItem['codigo_produto'] ?? null);
-                    $descCurta = $descCurta ?: ($pItem['descricao'] ?? null);
-                    $descLonga = $descLonga ?: ($pItem['descricao_longa'] ?? null);
-                    $produtoPai = $produtoPai ?: ($pItem['produto_pai'] ?? null);
-                    $opVal = $opVal ?: ($pItem['op'] ?? null);
-                    $pedidoVal = $pedidoVal ?: ($pItem['pedido'] ?? null);
-                    $clienteObs = $clienteObs ?: ($pItem['cliente_obs'] ?? null);
-                    $quantidadeVal = floatval($pItem['quantidade'] ?? 1);
-                }
+            $header = $this->protheusService->getOpHeaderInfo($searchTerm);
+            if ($header) {
+                $pedidoVal = $pedidoVal ?: ($header['pedido'] ?? null);
+                $clienteObs = $clienteObs ?: ($header['cliente_obs'] ?? null);
+                $produtoPai = $produtoPai ?: ($header['produto_pai'] ?? null);
             }
         }
 

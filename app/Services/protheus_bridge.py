@@ -31,7 +31,9 @@ def get_connection():
         user=DB_USER,
         password=DB_PASS,
         database=DB_NAME,
-        charset='ISO-8859-1'
+        charset='ISO-8859-1',
+        login_timeout=4,
+        timeout=4
     )
 
 def list_filiais():
@@ -103,10 +105,10 @@ def get_pedido_items(c2_pedido, filial=None):
     LEFT JOIN SB5010 B5 WITH (NOLOCK) ON RTRIM(D.D4_COD) = RTRIM(B5.B5_COD) AND B5.D_E_L_E_T_ = ' '
     LEFT JOIN SB1010 B_PAI WITH (NOLOCK) ON RTRIM(S.C2_PRODUTO) = RTRIM(B_PAI.B1_COD) AND B_PAI.D_E_L_E_T_ = ' '
     WHERE S.D_E_L_E_T_ = ' '
-      AND (RTRIM(S.C2_PEDIDO) = %s OR RTRIM(S.C2_NUM) = %s OR RTRIM(S.C2_OBS) LIKE %s)
+      AND (RTRIM(S.C2_PEDIDO) = %s OR RTRIM(S.C2_NUM) = %s)
     """
 
-    params = [term, c2_num, f"%{term}%"]
+    params = [term, c2_num]
 
     if filial and filial != 'null':
         filiais_list = [f.strip() for f in filial.split(',') if f and f.strip()]
@@ -137,22 +139,18 @@ def get_pedido_items(c2_pedido, filial=None):
         if not cod_val:
             continue
 
-        descCurta = (r.get('B1_DESC') or '').strip()
-        descLonga = (r.get('B5_CEME') or descCurta).strip()
-
-        key = (filial_val, op_val, cod_val)
-
+        key = f"{filial_val}_{op_val}_{cod_val}"
         if key not in unique_items:
             unique_items[key] = {
                 'filial': filial_val,
                 'pedido': (r.get('C2_PEDIDO') or '').strip(),
                 'op': op_val,
                 'codigo_produto': cod_val,
-                'descricao': descCurta,
-                'descricao_longa': descLonga,
+                'descricao': (r.get('B1_DESC') or '').strip(),
+                'descricao_longa': (r.get('B5_CEME') or '').strip(),
                 'produto_pai': (r.get('PRODUTO_PAI') or '').strip(),
                 'cliente_obs': (r.get('C2_OBS') or '').strip(),
-                'quantidade': float(r.get('QUANTIDADE') or 1.0)
+                'quantidade': float(r.get('QUANTIDADE') or 0.0),
             }
 
     return list(unique_items.values())
@@ -344,6 +342,49 @@ def get_produto_info(codigo_produto):
         }
     return None
 
+def get_op_header_info(term):
+    if not term:
+        return None
+    term = str(term).strip()
+    c2_num = term[:6] if len(term) >= 6 else term
+    c2_item = term[6:8] if len(term) >= 8 else ''
+    c2_seq = term[8:11] if len(term) >= 11 else ''
+
+    conn = get_connection()
+    cursor = conn.cursor(as_dict=True)
+    
+    where_clauses = ["S.D_E_L_E_T_ = ' '"]
+    params = []
+
+    if c2_seq:
+        where_clauses.append("((RTRIM(S.C2_NUM) = %s AND RTRIM(S.C2_ITEM) = %s AND RTRIM(S.C2_SEQUEN) = %s) OR RTRIM(S.C2_NUM) = %s OR RTRIM(S.C2_PEDIDO) = %s)")
+        params.extend([c2_num, c2_item, c2_seq, c2_num, term])
+    else:
+        where_clauses.append("(RTRIM(S.C2_NUM) = %s OR RTRIM(S.C2_PEDIDO) = %s)")
+        params.extend([c2_num, term])
+
+    sql = f"""
+    SELECT TOP 1
+        RTRIM(S.C2_PEDIDO) AS PEDIDO,
+        RTRIM(S.C2_OBS) AS CLIENTE_OBS,
+        RTRIM(S.C2_PRODUTO) + ' - ' + RTRIM(ISNULL(B_PAI.B1_DESC, '')) AS PRODUTO_PAI
+    FROM SC2010 S WITH (NOLOCK)
+    LEFT JOIN SB1010 B_PAI WITH (NOLOCK) ON RTRIM(S.C2_PRODUTO) = RTRIM(B_PAI.B1_COD) AND B_PAI.D_E_L_E_T_ = ' '
+    WHERE {" AND ".join(where_clauses)}
+    """
+
+    cursor.execute(sql, params)
+    row = cursor.fetchone()
+    conn.close()
+
+    if row:
+        return {
+            'pedido': row.get('PEDIDO'),
+            'cliente_obs': row.get('CLIENTE_OBS'),
+            'produto_pai': row.get('PRODUTO_PAI')
+        }
+    return None
+
 if __name__ == '__main__':
     command = sys.argv[1] if len(sys.argv) > 1 else ''
 
@@ -360,6 +401,9 @@ if __name__ == '__main__':
         elif command in ['get_produto_info', 'produto_info']:
             cod = sys.argv[2] if len(sys.argv) > 2 else ''
             print(json.dumps({'success': True, 'data': get_produto_info(cod)}))
+        elif command in ['get_op_header_info', 'op_header_info']:
+            term = sys.argv[2] if len(sys.argv) > 2 else ''
+            print(json.dumps({'success': True, 'data': get_op_header_info(term)}))
         elif command in ['get_ultimo_preco', 'ultimo_preco']:
             cod = sys.argv[2] if len(sys.argv) > 2 else ''
             print(json.dumps({'success': True, 'data': get_ultimo_preco_fornecedor(cod)}))

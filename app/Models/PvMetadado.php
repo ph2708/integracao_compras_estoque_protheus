@@ -14,6 +14,7 @@ class PvMetadado extends Model
     protected $fillable = [
         'pedido',
         'info',
+        'observacao',
         'status_pv',
         'fabrica',
         'marca',

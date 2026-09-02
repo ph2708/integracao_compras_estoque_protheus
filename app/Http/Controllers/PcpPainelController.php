@@ -151,6 +151,7 @@ class PcpPainelController extends Controller
             // Buscar metadados salvos do PV
             $meta = $pvMetadados->get($pvNum);
             $valInfo = $meta ? ($meta->info ?? '') : '';
+            $valObservacao = $meta ? ($meta->observacao ?? '') : '';
             $valStatusPv = $meta ? ($meta->status_pv ?? '') : '';
             $valFabrica = $meta ? ($meta->fabrica ?? '') : '';
             $valMarca = $meta ? ($meta->marca ?? '') : '';
@@ -422,6 +423,7 @@ class PcpPainelController extends Controller
                 'cliente' => $clienteObs,
                 'produto_pai' => $produtoPai,
                 'info' => $valInfo,
+                'observacao' => $valObservacao,
                 'status_pv' => $valStatusPv,
                 'fabrica' => $valFabrica,
                 'marca' => $valMarca,
@@ -820,6 +822,7 @@ class PcpPainelController extends Controller
         $cliente = trim($request->input('cliente_obs', ''));
         $prodPai = trim($request->input('produto_pai', ''));
         $info = trim($request->input('info', ''));
+        $observacao = trim($request->input('observacao', ''));
         $statusPv = trim($request->input('status_pv', ''));
         $fabrica = trim($request->input('fabrica', ''));
         $marca = trim($request->input('marca', ''));
@@ -846,6 +849,7 @@ class PcpPainelController extends Controller
             ['pedido' => $pvNum],
             [
                 'info' => $info ?: null,
+                'observacao' => $observacao ?: null,
                 'status_pv' => $statusPv ?: null,
                 'fabrica' => $fabrica ?: null,
                 'marca' => $marca ?: null,
@@ -889,6 +893,7 @@ class PcpPainelController extends Controller
 
                 $updatePayload = [
                     'info' => isset($data['info']) ? trim($data['info']) : null,
+                    'observacao' => isset($data['observacao']) ? trim($data['observacao']) : null,
                     'status_pv' => isset($data['status_pv']) ? trim($data['status_pv']) : null,
                     'fabrica' => isset($data['fabrica']) ? trim($data['fabrica']) : null,
                     'marca' => isset($data['marca']) ? trim($data['marca']) : null,

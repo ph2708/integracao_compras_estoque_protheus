@@ -294,6 +294,7 @@
                         <th class="col-pv" style="padding: 0.65rem 0.75rem;">PV / Pedido</th>
                         <th class="col-cliente" style="padding: 0.65rem 0.75rem;">Cliente (C2_OBS)</th>
                         <th class="col-produto-pai" style="padding: 0.65rem 0.75rem; min-width: 300px; color: #c084fc;">Equipamento / Produto Pai</th>
+                        <th class="col-observacao" style="padding: 0.65rem 0.75rem; min-width: 220px; color: #38bdf8;">Anotações ✏️</th>
                         <th class="col-qtd" style="padding: 0.65rem 0.75rem; text-align: center; width: 60px;">QTD ✏️</th>
                         <th class="col-marca" style="padding: 0.65rem 0.75rem; min-width: 100px;">MARCA ✏️</th>
                         <th class="col-motor" style="padding: 0.65rem 0.75rem; text-align: center;">Motor</th>
@@ -424,6 +425,7 @@
                             <input type="text" name="search_cliente" value="{{ $searchCliente }}" class="form-control" placeholder="Multi: ISA, COPEL..." form="formFilterPcpPainel" onchange="document.getElementById('formFilterPcpPainel').submit()" style="font-size: 0.7rem; padding: 0.2rem 0.35rem; height: 28px; background: #0f172a; border-color: #334155; color: #f8fafc;">
                         </th>
                         <th class="col-produto-pai"></th>
+                        <th class="col-observacao"></th>
 
                         <!-- Filtro MARCA -->
                         <th class="col-marca" style="padding: 0.35rem 0.5rem;">
@@ -540,6 +542,11 @@
                         <!-- Equipamento / Produto Pai -->
                         <td class="col-produto-pai" style="padding: 0.65rem 0.75rem; min-width: 300px; color: #c084fc; font-weight: 500; word-break: break-word;" title="{{ $pvItem['produto_pai'] }}">
                             {{ $pvItem['produto_pai'] }}
+                        </td>
+
+                        <!-- Campo Editável Anotações -->
+                        <td class="col-observacao" style="padding: 0.5rem 0.6rem;">
+                            <input type="text" name="pvs[{{ $pvKey }}][observacao]" value="{{ $pvItem['observacao'] ?? '' }}" class="editable-cell-input" placeholder="Anotações / Obs..." {{ !($canEditPcp ?? true) ? 'disabled style=opacity:0.6;cursor:not-allowed;' : '' }}>
                         </td>
 
                         <!-- QTD -->
@@ -687,7 +694,7 @@
                         <td class="col-acoes" style="padding: 0.65rem 0.75rem; text-align: center;">
                             <div style="display: flex; gap: 0.25rem; justify-content: center;">
                                 @if($canEditPcp ?? true)
-                                <button type="button" class="btn btn-secondary" onclick="abrirModalEditarPv('{{ $pvItem['pv'] }}', '{{ addslashes($pvItem['cliente']) }}', '{{ addslashes($pvItem['produto_pai']) }}', '{{ addslashes($pvItem['info']) }}', '{{ addslashes($pvItem['status_pv']) }}', '{{ addslashes($pvItem['fabrica']) }}', '{{ addslashes($pvItem['marca']) }}', '{{ $pvItem['qtd'] }}', '{{ addslashes($pvItem['time_prod']) }}', '{{ addslashes($pvItem['data_emissao']) }}', '{{ addslashes($pvItem['data_contratual']) }}', '{{ addslashes($pvItem['data_pa_pg']) }}', '{{ addslashes($pvItem['data_pronto']) }}', '{{ addslashes($pvItem['data_boom']) }}', '{{ addslashes($pvItem['data_liberacao_estoque']) }}', '{{ number_format($pvItem['valor_bruto'], 2, ',', '.') }}')" style="padding: 0.2rem 0.4rem; font-size: 0.7rem;" title="Editar dados deste PV">
+                                <button type="button" class="btn btn-secondary" onclick="abrirModalEditarPv('{{ $pvItem['pv'] }}', '{{ addslashes($pvItem['cliente']) }}', '{{ addslashes($pvItem['produto_pai']) }}', '{{ addslashes($pvItem['info']) }}', '{{ addslashes($pvItem['observacao']) }}', '{{ addslashes($pvItem['status_pv']) }}', '{{ addslashes($pvItem['fabrica']) }}', '{{ addslashes($pvItem['marca']) }}', '{{ $pvItem['qtd'] }}', '{{ addslashes($pvItem['time_prod']) }}', '{{ addslashes($pvItem['data_emissao']) }}', '{{ addslashes($pvItem['data_contratual']) }}', '{{ addslashes($pvItem['data_pa_pg']) }}', '{{ addslashes($pvItem['data_pronto']) }}', '{{ addslashes($pvItem['data_boom']) }}', '{{ addslashes($pvItem['data_liberacao_estoque']) }}', '{{ number_format($pvItem['valor_bruto'], 2, ',', '.') }}')" style="padding: 0.2rem 0.4rem; font-size: 0.7rem;" title="Editar dados deste PV">
                                     ✏️
                                 </button>
                                 @endif
@@ -930,6 +937,10 @@
                     <label style="font-size: 0.75rem; font-weight: 600; color: #94a3b8; margin-bottom: 0.25rem; display: block;">Equipamento / Produto Pai</label>
                     <input type="text" name="produto_pai" id="modal_edit_produto_pai_input" class="form-control" style="padding: 0.45rem; font-size: 0.85rem;">
                 </div>
+                <div>
+                    <label style="font-size: 0.75rem; font-weight: 600; color: #38bdf8; margin-bottom: 0.25rem; display: block;">Anotações / Observações</label>
+                    <input type="text" name="observacao" id="modal_edit_observacao_input" class="form-control" placeholder="Anotações manuais..." style="padding: 0.45rem; font-size: 0.85rem;">
+                </div>
                 <div style="display: flex; gap: 0.5rem;">
                     <div style="flex: 1;">
                         <label style="font-size: 0.75rem; font-weight: 600; color: #94a3b8; margin-bottom: 0.25rem; display: block;">INFO</label>
@@ -1052,12 +1063,13 @@
         document.getElementById('modalCriarPvManual').style.display = 'none';
     }
 
-    function abrirModalEditarPv(pv, cliente, prodPai, info, statusPv, fabrica, marca, qtd, timeProd, dataEmissao, dataContratual, dataPaPg, dataPronto, dataBoom, dataLiberacaoEstoque, valorBruto) {
+    function abrirModalEditarPv(pv, cliente, prodPai, info, observacao, statusPv, fabrica, marca, qtd, timeProd, dataEmissao, dataContratual, dataPaPg, dataPronto, dataBoom, dataLiberacaoEstoque, valorBruto) {
         document.getElementById('modal_edit_pv_title').innerText = pv;
         document.getElementById('modal_edit_pedido_input').value = pv;
         document.getElementById('modal_edit_cliente_input').value = cliente;
         document.getElementById('modal_edit_produto_pai_input').value = prodPai;
         document.getElementById('modal_edit_info_input').value = info;
+        document.getElementById('modal_edit_observacao_input').value = observacao || '';
         document.getElementById('modal_edit_status_pv_input').value = statusPv;
         document.getElementById('modal_edit_fabrica_input').value = fabrica;
         document.getElementById('modal_edit_marca_input').value = marca;

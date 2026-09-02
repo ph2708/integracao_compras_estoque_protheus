@@ -254,11 +254,11 @@
         </div>
         <div style="display: flex; gap: 0.4rem; flex: 1.4; min-width: 240px;">
             <div style="flex: 1;">
-                <label style="font-size: 0.75rem; font-weight: 600; color: #a5b4fc; margin-bottom: 0.3rem; display: block;">📅 Pronto De</label>
+                <label style="font-size: 0.75rem; font-weight: 600; color: #a5b4fc; margin-bottom: 0.3rem; display: block;">📅 Previsto De</label>
                 <input type="text" name="f_data_pronto_de" value="{{ $fDataProntoDe }}" form="formFilterPcpPainel" class="form-control" placeholder="01/08/26" style="padding: 0.4rem 0.5rem; font-size: 0.8rem; border-color: #6366f1;" onchange="document.getElementById('formFilterPcpPainel').submit()">
             </div>
             <div style="flex: 1;">
-                <label style="font-size: 0.75rem; font-weight: 600; color: #a5b4fc; margin-bottom: 0.3rem; display: block;">📅 Pronto Até</label>
+                <label style="font-size: 0.75rem; font-weight: 600; color: #a5b4fc; margin-bottom: 0.3rem; display: block;">📅 Previsto Até</label>
                 <input type="text" name="f_data_pronto_ate" value="{{ $fDataProntoAte }}" form="formFilterPcpPainel" class="form-control" placeholder="31/08/26" style="padding: 0.4rem 0.5rem; font-size: 0.8rem; border-color: #6366f1;" onchange="document.getElementById('formFilterPcpPainel').submit()">
             </div>
         </div>
@@ -309,7 +309,7 @@
                         <th class="col-investimento" style="padding: 0.65rem 0.75rem; text-align: right; color: #f87171;">INVEST. (FALTA)</th>
                         <th class="col-time-prod" style="padding: 0.65rem 0.75rem; text-align: center; width: 70px;">TIME PROD ✏️</th>
                         <th class="col-data-pa-pg" style="padding: 0.65rem 0.75rem; text-align: center;">PA (PG) ✏️</th>
-                        <th class="col-data-pronto" style="padding: 0.65rem 0.75rem; text-align: center;">PRONTO ✏️</th>
+                        <th class="col-data-pronto" style="padding: 0.65rem 0.75rem; text-align: center;">PREVISTO ✏️</th>
                         <th class="col-data-contratual" style="padding: 0.65rem 0.75rem; text-align: center;">DATA CONTRATUAL ✏️</th>
                         <th class="col-data-emissao" style="padding: 0.65rem 0.75rem; text-align: center;">DATA EMISSÃO ✏️</th>
                         <th class="col-data-boom" style="padding: 0.65rem 0.75rem; text-align: center;">DATA BOOM ✏️</th>
@@ -472,7 +472,7 @@
                         <th class="col-time-prod"></th>
                         <th class="col-data-pa-pg"></th>
                         <th class="col-data-pronto" style="padding: 0.35rem 0.5rem;">
-                            <input type="text" name="f_data_pronto" value="{{ $fDataPronto }}" form="formFilterPcpPainel" class="form-control" placeholder="Pronto..." style="font-size: 0.7rem; padding: 0.2rem 0.35rem; height: 28px; text-align: center;" onchange="document.getElementById('formFilterPcpPainel').submit()">
+                            <input type="text" name="f_data_pronto" value="{{ $fDataPronto }}" form="formFilterPcpPainel" class="form-control" placeholder="Previsto..." style="font-size: 0.7rem; padding: 0.2rem 0.35rem; height: 28px; text-align: center;" onchange="document.getElementById('formFilterPcpPainel').submit()">
                         </th>
                         <th class="col-data-contratual"></th>
                         <th class="col-data-emissao"></th>

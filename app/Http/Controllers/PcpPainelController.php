@@ -184,15 +184,15 @@ class PcpPainelController extends Controller
             if (!empty($valMarca)) $opcoesMarca->push($valMarca);
             if (!empty($valDataProntoReal) && $valDataProntoReal !== '-') $opcoesDataPronto->push($valDataProntoReal);
 
-            // Aplicar filtros multi-seleção e intervalo de datas (Data Pronto Real / Data Pronto)
-            $targetProntoVal = ($valDataProntoReal && $valDataProntoReal !== '-') ? $valDataProntoReal : $valDataPronto;
-            $parsedValPronto = $this->parseDateToYmd($targetProntoVal);
+            // Aplicar filtro de datas para PREVISTO (valDataPronto)
+            $parsedValPrevisto = $this->parseDateToYmd($valDataPronto);
             $parsedDe = $this->parseDateToYmd($fDataProntoDe);
             $parsedAte = $this->parseDateToYmd($fDataProntoAte);
 
-            if ($parsedDe && (!$parsedValPronto || $parsedValPronto < $parsedDe)) continue;
-            if ($parsedAte && (!$parsedValPronto || $parsedValPronto > $parsedAte)) continue;
+            if ($parsedDe && (!$parsedValPrevisto || $parsedValPrevisto < $parsedDe)) continue;
+            if ($parsedAte && (!$parsedValPrevisto || $parsedValPrevisto > $parsedAte)) continue;
 
+            // Filtro por mês exclusivo para DATA PRONTO (valDataProntoReal)
             if ($fDataProntoMes) {
                 $mesTarget = str_pad($fDataProntoMes, 2, '0', STR_PAD_LEFT);
                 $matchReal = $this->matchMonth($valDataProntoReal, $mesTarget);

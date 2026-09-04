@@ -146,6 +146,10 @@ class EstoqueController extends Controller
      */
     public function storeBatch(Request $request)
     {
+        if (!auth()->user()->canEditEstoque()) {
+            return redirect()->back()->with('error', '⛔ Acesso negado: Você não possui permissão para editar os dados do módulo de Estoque.');
+        }
+
         $itemsData = [];
         if ($request->filled('items_json')) {
             $itemsData = json_decode($request->items_json, true) ?? [];
@@ -301,6 +305,10 @@ class EstoqueController extends Controller
      */
     public function store(Request $request)
     {
+        if (!auth()->user()->canEditEstoque()) {
+            return redirect()->back()->with('error', '⛔ Acesso negado: Você não possui permissão para editar os dados do módulo de Estoque.');
+        }
+
         // Normaliza vírgulas para pontos em quantidades numéricas
         if ($request->has('quantidade')) {
             $request->merge(['quantidade' => str_replace(',', '.', $request->input('quantidade'))]);
@@ -419,6 +427,10 @@ class EstoqueController extends Controller
      */
     public function update(Request $request, $id)
     {
+        if (!auth()->user()->canEditEstoque()) {
+            return redirect()->back()->with('error', '⛔ Acesso negado: Você não possui permissão para editar os dados do módulo de Estoque.');
+        }
+
         $estoqueItem = EstoqueItem::findOrFail($id);
 
         $validated = $request->validate([
@@ -456,6 +468,10 @@ class EstoqueController extends Controller
      */
     public function updateBatch(Request $request)
     {
+        if (!auth()->user()->canEditEstoque()) {
+            return redirect()->back()->with('error', '⛔ Acesso negado: Você não possui permissão para editar os dados do módulo de Estoque.');
+        }
+
         $itemsData = $request->input('items', []);
 
         if (empty($itemsData)) {
@@ -512,6 +528,10 @@ class EstoqueController extends Controller
      */
     public function destroy($id)
     {
+        if (!auth()->user()->canEditEstoque()) {
+            return redirect()->back()->with('error', '⛔ Acesso negado: Você não possui permissão para editar os dados do módulo de Estoque.');
+        }
+
         $estoqueItem = EstoqueItem::findOrFail($id);
         $cod = $estoqueItem->codigo_produto;
 

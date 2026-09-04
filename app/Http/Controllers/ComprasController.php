@@ -297,6 +297,10 @@ class ComprasController extends Controller
      */
     public function update(Request $request, $id)
     {
+        if (!auth()->user()->canEditCompras()) {
+            return redirect()->back()->with('error', '⛔ Acesso negado: Você não possui permissão para editar os dados do módulo de Compras.');
+        }
+
         $compraItem = CompraItem::findOrFail($id);
 
         $validated = $request->validate([
@@ -331,6 +335,10 @@ class ComprasController extends Controller
      */
     public function updateBatch(Request $request)
     {
+        if (!auth()->user()->canEditCompras()) {
+            return redirect()->back()->with('error', '⛔ Acesso negado: Você não possui permissão para editar os dados do módulo de Compras.');
+        }
+
         $itemsData = $request->input('items', []);
 
         if (empty($itemsData)) {

@@ -1,16 +1,21 @@
 @extends('layouts.app')
 
-@section('content')
+@php
+    $canEditEstoque = auth()->user()->canEditEstoque();
+@endphp
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
     <div>
         <h1 style="font-size: 1.5rem; font-weight: 700;">📦 Painel de Estoque (PCP)</h1>
         <p style="color: var(--text-muted); font-size: 0.8rem;">Gerenciamento de demanda do estoque local integrado ao Protheus.</p>
     </div>
-    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-        <button class="btn btn-primary" onclick="abrirModalConsultaProtheus()">
+    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+        @if(!$canEditEstoque)
+            <span class="badge badge-antecipado" style="font-size: 0.8rem; padding: 0.4rem 0.75rem;">👁️ Modo Leitura (Edição restrita a ESTOQUE e ADMIN)</span>
+        @endif
+        <button class="btn btn-primary" onclick="abrirModalConsultaProtheus()" {{ !$canEditEstoque ? 'disabled style=opacity:0.5;cursor:not-allowed;' : '' }}>
             🔍 Consultar Pedido no Protheus
         </button>
-        <button class="btn btn-secondary" onclick="document.getElementById('modalAddManual').style.display='block'">
+        <button class="btn btn-secondary" onclick="document.getElementById('modalAddManual').style.display='block'" {{ !$canEditEstoque ? 'disabled style=opacity:0.5;cursor:not-allowed;' : '' }}>
             + Adicionar Manual
         </button>
     </div>
@@ -298,7 +303,7 @@
                         ✕ Limpar Filtros
                     </a>
                 @endif
-                <button type="submit" class="btn btn-primary" style="padding: 0.4rem 0.85rem; font-size: 0.8rem; background-color: #059669;" onclick="return confirm('Deseja salvar todas as alterações editadas nesta página?')">
+                <button type="submit" class="btn btn-primary" style="padding: 0.4rem 0.85rem; font-size: 0.8rem; {{ !$canEditEstoque ? 'background-color: #475569; border-color: #475569; opacity: 0.6; cursor: not-allowed;' : 'background-color: #059669;' }}" {{ !$canEditEstoque ? 'disabled' : '' }} onclick="return confirm('Deseja salvar todas as alterações editadas nesta página?')">
                     💾 Salvar Todas as Alterações da Página
                 </button>
             </div>
@@ -489,7 +494,7 @@
                                    id="input_qtd_est_{{ $item->id }}"
                                    value="{{ $valQtdEstoque }}" 
                                    class="form-control" 
-                                   style="width: 100px; text-align: center; margin: 0 auto; padding: 0.2rem 0.4rem; font-weight: 600; color: #fcd34d;"
+                                   {{ !$canEditEstoque ? 'disabled style=width:100px;text-align:center;margin:0_auto;padding:0.2rem_0.4rem;font-weight:600;color:#fcd34d;opacity:0.6;cursor:not-allowed;' : 'style=width:100px;text-align:center;margin:0_auto;padding:0.2rem_0.4rem;font-weight:600;color:#fcd34d;' }}
                                    onchange="recalcularLinhaEstoque({{ $item->id }})">
                         </td>
                         <td class="col-qtd-comprar" style="text-align: center;">
@@ -509,13 +514,13 @@
                                    value="{{ $item->observacao_estoque }}" 
                                    class="form-control" 
                                    placeholder="Observação..."
-                                   style="min-width: 140px; padding: 0.2rem 0.4rem; font-size: 0.75rem;">
+                                   {{ !$canEditEstoque ? 'disabled style=min-width:140px;padding:0.2rem_0.4rem;font-size:0.75rem;opacity:0.6;cursor:not-allowed;' : 'style=min-width:140px;padding:0.2rem_0.4rem;font-size:0.75rem;' }}>
                         </td>
                         <td class="col-status-pcp-edit">
                             <select name="items[{{ $item->id }}][status]" 
                                     id="select_status_{{ $item->id }}"
                                     class="form-select" 
-                                    style="padding: 0.2rem 0.4rem; font-size: 0.75rem; min-width: 140px;"
+                                    {{ !$canEditEstoque ? 'disabled style=padding:0.2rem_0.4rem;font-size:0.75rem;min-width:140px;opacity:0.6;cursor:not-allowed;' : 'style=padding:0.2rem_0.4rem;font-size:0.75rem;min-width:140px;' }}
                                     onchange="atualizarBadgeStatus({{ $item->id }})">
                                 <option value="FALTA" {{ $item->status == 'FALTA' ? 'selected' : '' }}>FALTA</option>
                                 <option value="SEPARADO" {{ $item->status == 'SEPARADO' ? 'selected' : '' }}>SEPARADO</option>
@@ -534,14 +539,16 @@
                             <div style="display: flex; gap: 0.35rem; justify-content: center; align-items: center;">
                                 <button type="button" 
                                         class="btn btn-primary" 
-                                        style="padding: 0.2rem 0.45rem; font-size: 0.7rem;"
+                                        style="padding: 0.2rem 0.45rem; font-size: 0.7rem; {{ !$canEditEstoque ? 'opacity:0.5;cursor:not-allowed;' : '' }}"
+                                        {{ !$canEditEstoque ? 'disabled' : '' }}
                                         onclick="solicitarConfirmacaoSave({{ $item->id }})">
                                     💾 Salvar
                                 </button>
                                 <button type="button" 
                                         class="btn btn-secondary" 
-                                        style="padding: 0.2rem 0.45rem; font-size: 0.7rem; background-color: #ef4444; border-color: #ef4444; color: #ffffff;"
+                                        style="padding: 0.2rem 0.45rem; font-size: 0.7rem; background-color: #ef4444; border-color: #ef4444; color: #ffffff; {{ !$canEditEstoque ? 'opacity:0.5;cursor:not-allowed;' : '' }}"
                                         title="Excluir item do Estoque"
+                                        {{ !$canEditEstoque ? 'disabled' : '' }}
                                         onclick="solicitarExclusaoItem({{ $item->id }}, '{{ $item->codigo_produto }}')">
                                     🗑️ Excluir
                                 </button>

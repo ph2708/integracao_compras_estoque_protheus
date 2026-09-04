@@ -97,6 +97,24 @@
                     </label>
                     <span style="font-size: 0.675rem; color: #94a3b8;">Encerramento de Ordem</span>
                 </div>
+
+                <!-- Módulo Compras -->
+                <div style="background: rgba(30, 41, 59, 0.6); padding: 0.6rem 0.75rem; border-radius: 6px; border: 1px solid #475569; display: flex; align-items: center; justify-content: space-between;">
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: #f8fafc; font-size: 0.8rem; font-weight: 600; margin: 0;">
+                        <input type="checkbox" name="permissao_compras_edicao" id="add_permissao_compras_edicao" value="1" onchange="verificarMudancaCustom('add')">
+                        🛒 Edição no Painel de Compras
+                    </label>
+                    <span style="font-size: 0.675rem; color: #34d399;">Dados Financeiros / PCs</span>
+                </div>
+
+                <!-- Módulo Estoque -->
+                <div style="background: rgba(30, 41, 59, 0.6); padding: 0.6rem 0.75rem; border-radius: 6px; border: 1px solid #475569; display: flex; align-items: center; justify-content: space-between;">
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: #f8fafc; font-size: 0.8rem; font-weight: 600; margin: 0;">
+                        <input type="checkbox" name="permissao_estoque_edicao" id="add_permissao_estoque_edicao" value="1" onchange="verificarMudancaCustom('add')">
+                        📦 Edição no Painel de Estoque
+                    </label>
+                    <span style="font-size: 0.675rem; color: #fcd34d;">Almoxarifado / Demandas</span>
+                </div>
             </div>
         </div>
 
@@ -190,6 +208,24 @@
                     </label>
                     <span style="font-size: 0.675rem; color: #94a3b8;">Encerramento de Ordem</span>
                 </div>
+
+                <!-- Módulo Compras -->
+                <div style="background: rgba(30, 41, 59, 0.6); padding: 0.6rem 0.75rem; border-radius: 6px; border: 1px solid #475569; display: flex; align-items: center; justify-content: space-between;">
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: #f8fafc; font-size: 0.8rem; font-weight: 600; margin: 0;">
+                        <input type="checkbox" name="permissao_compras_edicao" id="edit_permissao_compras_edicao" value="1" onchange="verificarMudancaCustom('edit')">
+                        🛒 Edição no Painel de Compras
+                    </label>
+                    <span style="font-size: 0.675rem; color: #34d399;">Dados Financeiros / PCs</span>
+                </div>
+
+                <!-- Módulo Estoque -->
+                <div style="background: rgba(30, 41, 59, 0.6); padding: 0.6rem 0.75rem; border-radius: 6px; border: 1px solid #475569; display: flex; align-items: center; justify-content: space-between;">
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: #f8fafc; font-size: 0.8rem; font-weight: 600; margin: 0;">
+                        <input type="checkbox" name="permissao_estoque_edicao" id="edit_permissao_estoque_edicao" value="1" onchange="verificarMudancaCustom('edit')">
+                        📦 Edição no Painel de Estoque
+                    </label>
+                    <span style="font-size: 0.675rem; color: #fcd34d;">Almoxarifado / Demandas</span>
+                </div>
             </div>
         </div>
 
@@ -279,10 +315,16 @@
                                 @endif
 
                                 <!-- Badge Compras / Estoque -->
-                                @if(in_array($u->role, ['COMPRAS', 'ESTOQUE']))
-                                    <span class="badge badge-antecipado" style="font-size: 0.675rem;">
-                                        {{ $u->role === 'COMPRAS' ? '🛒 Compras + 📦 Estoque' : '📦 Estoque PCP' }}
-                                    </span>
+                                @if($u->canEditCompras())
+                                    <span class="badge badge-antecipado" style="font-size: 0.675rem;" title="Painel de Compras">🛒 Compras (✏️ Edição)</span>
+                                @else
+                                    <span class="badge badge-falta" style="font-size: 0.675rem; opacity: 0.6;">🚫 Compras</span>
+                                @endif
+
+                                @if($u->canEditEstoque())
+                                    <span class="badge badge-separado" style="font-size: 0.675rem;" title="Painel de Estoque">📦 Estoque (✏️ Edição)</span>
+                                @else
+                                    <span class="badge badge-falta" style="font-size: 0.675rem; opacity: 0.6;">🚫 Estoque</span>
                                 @endif
                             @endif
                         </div>
@@ -327,6 +369,8 @@ function aplicarPresetPerfil(prefix) {
     const pcpEdicaoChk = document.getElementById(prefix + '_permissao_painel_pcp_edicao');
     const montagemChk = document.getElementById(prefix + '_permissao_painel_montagem');
     const opChk = document.getElementById(prefix + '_permissao_fechamento_op');
+    const comprasEdicaoChk = document.getElementById(prefix + '_permissao_compras_edicao');
+    const estoqueEdicaoChk = document.getElementById(prefix + '_permissao_estoque_edicao');
     const customBadge = document.getElementById(prefix + '_custom_badge');
 
     if (!roleSelect) return;
@@ -339,32 +383,44 @@ function aplicarPresetPerfil(prefix) {
         if (pcpEdicaoChk) { pcpEdicaoChk.checked = true; pcpEdicaoChk.disabled = true; }
         if (montagemChk) { montagemChk.checked = true; montagemChk.disabled = true; }
         if (opChk) { opChk.checked = true; opChk.disabled = true; }
+        if (comprasEdicaoChk) { comprasEdicaoChk.checked = true; comprasEdicaoChk.disabled = true; }
+        if (estoqueEdicaoChk) { estoqueEdicaoChk.checked = true; estoqueEdicaoChk.disabled = true; }
     } else {
         if (pcpChk) pcpChk.disabled = false;
         if (pcpEdicaoChk) pcpEdicaoChk.disabled = false;
         if (montagemChk) montagemChk.disabled = false;
         if (opChk) opChk.disabled = false;
+        if (comprasEdicaoChk) comprasEdicaoChk.disabled = false;
+        if (estoqueEdicaoChk) estoqueEdicaoChk.disabled = false;
 
         if (role === 'PCP') {
             if (pcpChk) pcpChk.checked = true;
             if (pcpEdicaoChk) pcpEdicaoChk.checked = true;
             if (montagemChk) montagemChk.checked = true;
             if (opChk) opChk.checked = true;
+            if (comprasEdicaoChk) comprasEdicaoChk.checked = false;
+            if (estoqueEdicaoChk) estoqueEdicaoChk.checked = false;
         } else if (role === 'COMPRAS') {
             if (pcpChk) pcpChk.checked = true;
             if (pcpEdicaoChk) pcpEdicaoChk.checked = true;
             if (montagemChk) montagemChk.checked = false;
             if (opChk) opChk.checked = false;
+            if (comprasEdicaoChk) comprasEdicaoChk.checked = true;
+            if (estoqueEdicaoChk) estoqueEdicaoChk.checked = false;
         } else if (role === 'ESTOQUE') {
             if (pcpChk) pcpChk.checked = true;
             if (pcpEdicaoChk) pcpEdicaoChk.checked = false;
             if (montagemChk) montagemChk.checked = false;
             if (opChk) opChk.checked = false;
+            if (comprasEdicaoChk) comprasEdicaoChk.checked = false;
+            if (estoqueEdicaoChk) estoqueEdicaoChk.checked = true;
         } else if (role === 'VISUALIZACAO') {
             if (pcpChk) pcpChk.checked = true;
             if (pcpEdicaoChk) pcpEdicaoChk.checked = false;
             if (montagemChk) montagemChk.checked = true;
             if (opChk) opChk.checked = false;
+            if (comprasEdicaoChk) comprasEdicaoChk.checked = false;
+            if (estoqueEdicaoChk) estoqueEdicaoChk.checked = false;
         }
     }
 }
@@ -403,11 +459,15 @@ function abrirModalEditUser(user) {
     const pcpEdicaoChk = document.getElementById('edit_permissao_painel_pcp_edicao');
     const montagemChk = document.getElementById('edit_permissao_painel_montagem');
     const opChk = document.getElementById('edit_permissao_fechamento_op');
+    const comprasEdicaoChk = document.getElementById('edit_permissao_compras_edicao');
+    const estoqueEdicaoChk = document.getElementById('edit_permissao_estoque_edicao');
 
     if (pcpChk) pcpChk.checked = (user.role === 'ADMIN') || (user.permissao_painel_pcp === undefined ? true : !!user.permissao_painel_pcp);
     if (pcpEdicaoChk) pcpEdicaoChk.checked = (user.role === 'ADMIN') || (user.permissao_painel_pcp_edicao === undefined ? true : !!user.permissao_painel_pcp_edicao);
     if (montagemChk) montagemChk.checked = (user.role === 'ADMIN') || (user.permissao_painel_montagem === undefined ? true : !!user.permissao_painel_montagem);
-    if (opChk) opChk.checked = !!user.permissao_fechamento_op;
+    if (opChk) opChk.checked = (user.role === 'ADMIN') || !!user.permissao_fechamento_op;
+    if (comprasEdicaoChk) comprasEdicaoChk.checked = (user.role === 'ADMIN' || user.role === 'COMPRAS') || !!user.permissao_compras_edicao;
+    if (estoqueEdicaoChk) estoqueEdicaoChk.checked = (user.role === 'ADMIN' || user.role === 'ESTOQUE') || !!user.permissao_estoque_edicao;
 
     if (user.role === 'ADMIN') {
         aplicarPresetPerfil('edit');
@@ -416,6 +476,8 @@ function abrirModalEditUser(user) {
         if (pcpEdicaoChk) pcpEdicaoChk.disabled = false;
         if (montagemChk) montagemChk.disabled = false;
         if (opChk) opChk.disabled = false;
+        if (comprasEdicaoChk) comprasEdicaoChk.disabled = false;
+        if (estoqueEdicaoChk) estoqueEdicaoChk.disabled = false;
     }
 
     document.getElementById('modalEditUser').style.display = 'block';

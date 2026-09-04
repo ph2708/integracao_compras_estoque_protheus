@@ -32,6 +32,8 @@ class UserController extends Controller
             'permissao_painel_pcp' => 'nullable|boolean',
             'permissao_painel_pcp_edicao' => 'nullable|boolean',
             'permissao_painel_montagem' => 'nullable|boolean',
+            'permissao_compras_edicao' => 'nullable|boolean',
+            'permissao_estoque_edicao' => 'nullable|boolean',
         ]);
 
         $validated['password'] = Hash::make($validated['password']);
@@ -39,6 +41,8 @@ class UserController extends Controller
         $validated['permissao_painel_pcp'] = $request->has('permissao_painel_pcp');
         $validated['permissao_painel_pcp_edicao'] = $request->has('permissao_painel_pcp_edicao');
         $validated['permissao_painel_montagem'] = $request->has('permissao_painel_montagem');
+        $validated['permissao_compras_edicao'] = $request->has('permissao_compras_edicao');
+        $validated['permissao_estoque_edicao'] = $request->has('permissao_estoque_edicao');
 
         User::create($validated);
 
@@ -59,6 +63,8 @@ class UserController extends Controller
             'permissao_painel_pcp' => 'nullable|boolean',
             'permissao_painel_pcp_edicao' => 'nullable|boolean',
             'permissao_painel_montagem' => 'nullable|boolean',
+            'permissao_compras_edicao' => 'nullable|boolean',
+            'permissao_estoque_edicao' => 'nullable|boolean',
         ]);
 
         if (!empty($validated['password'])) {
@@ -71,6 +77,8 @@ class UserController extends Controller
         $validated['permissao_painel_pcp'] = $request->has('permissao_painel_pcp');
         $validated['permissao_painel_pcp_edicao'] = $request->has('permissao_painel_pcp_edicao');
         $validated['permissao_painel_montagem'] = $request->has('permissao_painel_montagem');
+        $validated['permissao_compras_edicao'] = $request->has('permissao_compras_edicao');
+        $validated['permissao_estoque_edicao'] = $request->has('permissao_estoque_edicao');
 
         $user->update($validated);
 

@@ -24,6 +24,8 @@ class User extends Authenticatable
         'permissao_painel_pcp',
         'permissao_painel_pcp_edicao',
         'permissao_painel_montagem',
+        'permissao_compras_edicao',
+        'permissao_estoque_edicao',
     ];
 
     /**
@@ -50,6 +52,8 @@ class User extends Authenticatable
             'permissao_painel_pcp' => 'boolean',
             'permissao_painel_pcp_edicao' => 'boolean',
             'permissao_painel_montagem' => 'boolean',
+            'permissao_compras_edicao' => 'boolean',
+            'permissao_estoque_edicao' => 'boolean',
         ];
     }
 
@@ -71,6 +75,22 @@ class User extends Authenticatable
     public function canAccessMontagem(): bool
     {
         return $this->role === 'ADMIN' || (bool) $this->permissao_painel_montagem;
+    }
+
+    public function canEditCompras(): bool
+    {
+        if ($this->role === 'ADMIN' || $this->role === 'COMPRAS') {
+            return true;
+        }
+        return (bool) $this->permissao_compras_edicao;
+    }
+
+    public function canEditEstoque(): bool
+    {
+        if ($this->role === 'ADMIN' || $this->role === 'ESTOQUE') {
+            return true;
+        }
+        return (bool) $this->permissao_estoque_edicao;
     }
 
     public function isAdmin(): bool

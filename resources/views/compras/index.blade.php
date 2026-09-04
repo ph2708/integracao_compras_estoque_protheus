@@ -1,11 +1,18 @@
 @extends('layouts.app')
 
-@section('content')
+@php
+    $canEditCompras = auth()->user()->canEditCompras();
+@endphp
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
     <div>
         <h1 style="font-size: 1.5rem; font-weight: 700;">🛒 Painel de Compras</h1>
         <p style="color: var(--text-muted); font-size: 0.8rem;">Gerenciamento financeiro com edição linear direta na tabela e gravação em massa.</p>
     </div>
+    @if(!$canEditCompras)
+        <div>
+            <span class="badge badge-antecipado" style="font-size: 0.8rem; padding: 0.4rem 0.75rem;">👁️ Modo Leitura (Edição restrita a COMPRAS e ADMIN)</span>
+        </div>
+    @endif
 </div>
 
 <!-- Filtro e Busca por PV (Pedido de Venda) no Protheus -->
@@ -151,7 +158,7 @@
                         ✕ Limpar Todos os Filtros
                     </a>
                 @endif
-                <button type="submit" class="btn btn-primary" style="padding: 0.4rem 0.85rem; font-size: 0.8rem; background-color: #059669;" onclick="return confirm('Deseja salvar todas as alterações financeiras editadas nesta página?')">
+                <button type="submit" class="btn btn-primary" style="padding: 0.4rem 0.85rem; font-size: 0.8rem; {{ !$canEditCompras ? 'background-color: #475569; border-color: #475569; opacity: 0.6; cursor: not-allowed;' : 'background-color: #059669;' }}" {{ !$canEditCompras ? 'disabled' : '' }} onclick="return confirm('Deseja salvar todas as alterações financeiras editadas nesta página?')">
                     💾 Salvar Todas as Alterações da Página
                 </button>
             </div>
@@ -395,6 +402,7 @@
                                        class="form-control" 
                                        placeholder="0"
                                        style="width: 85px; text-align: center; margin: 0 auto; padding: 0.25rem 0.4rem; font-weight: 600; color: #38bdf8;"
+                                       {{ !$canEditCompras ? 'disabled' : '' }}
                                        onchange="recalcularLinhaCompra({{ $estoqueId }})">
                             @else
                                 <span style="color: #64748b;">-</span>
@@ -409,6 +417,7 @@
                                    value="{{ $item['pedido_compra'] }}" 
                                    class="form-control" 
                                    placeholder="N° PC..."
+                                   {{ !$canEditCompras ? 'disabled style=opacity:0.6;cursor:not-allowed;' : '' }}
                                    style="padding: 0.2rem 0.4rem; font-size: 0.75rem;">
                         </td>
                         <td class="col-fornecedor">
@@ -417,6 +426,7 @@
                                    value="{{ $item['codigo_fornecedor'] }}" 
                                    class="form-control" 
                                    placeholder="Cód / Nome Fornecedor..."
+                                   {{ !$canEditCompras ? 'disabled style=opacity:0.6;cursor:not-allowed;' : '' }}
                                    style="padding: 0.2rem 0.4rem; font-size: 0.75rem;">
                         </td>
                         <td class="col-valor-unitario">
@@ -427,6 +437,7 @@
                                    value="{{ $item['valor_unitario'] }}" 
                                    class="form-control" 
                                    placeholder="0.00"
+                                   {{ !$canEditCompras ? 'disabled style=opacity:0.6;cursor:not-allowed;' : '' }}
                                    style="padding: 0.2rem 0.4rem; font-size: 0.75rem; font-weight: 600; color: #fcd34d;"
                                    onchange="recalcularLinhaCompra({{ $estoqueId }})">
                         </td>
@@ -438,6 +449,7 @@
                                    value="{{ $item['ipi'] }}" 
                                    class="form-control" 
                                    placeholder="0"
+                                   {{ !$canEditCompras ? 'disabled style=opacity:0.6;cursor:not-allowed;' : '' }}
                                    style="padding: 0.2rem 0.4rem; font-size: 0.75rem; text-align: center;"
                                    onchange="recalcularLinhaCompra({{ $estoqueId }})">
                         </td>
@@ -449,6 +461,7 @@
                                    value="{{ $item['frete'] }}" 
                                    class="form-control" 
                                    placeholder="0.00"
+                                   {{ !$canEditCompras ? 'disabled style=opacity:0.6;cursor:not-allowed;' : '' }}
                                    style="padding: 0.2rem 0.4rem; font-size: 0.75rem; text-align: right;"
                                    onchange="recalcularLinhaCompra({{ $estoqueId }})">
                         </td>
@@ -457,6 +470,7 @@
                                    name="items[{{ $estoqueId }}][data_pc]" 
                                    value="{{ $item['data_pc'] ? (is_string($item['data_pc']) ? $item['data_pc'] : $item['data_pc']->format('Y-m-d')) : '' }}" 
                                    class="form-control" 
+                                   {{ !$canEditCompras ? 'disabled style=opacity:0.6;cursor:not-allowed;' : '' }}
                                    style="padding: 0.15rem 0.3rem; font-size: 0.75rem;">
                         </td>
                         <td class="col-data-pagamento">
@@ -464,6 +478,7 @@
                                    name="items[{{ $estoqueId }}][data_pagamento]" 
                                    value="{{ $item['data_pagamento'] ? (is_string($item['data_pagamento']) ? $item['data_pagamento'] : $item['data_pagamento']->format('Y-m-d')) : '' }}" 
                                    class="form-control" 
+                                   {{ !$canEditCompras ? 'disabled style=opacity:0.6;cursor:not-allowed;' : '' }}
                                    style="padding: 0.15rem 0.3rem; font-size: 0.75rem;">
                         </td>
                         <td class="col-solicitacao-compra">
@@ -472,11 +487,13 @@
                                    value="{{ $item['solicitacao_compra'] }}" 
                                    class="form-control" 
                                    placeholder="N° SC..."
+                                   {{ !$canEditCompras ? 'disabled style=opacity:0.6;cursor:not-allowed;' : '' }}
                                    style="padding: 0.2rem 0.4rem; font-size: 0.75rem;">
                         </td>
                         <td class="col-status-pagamento">
                             <select name="items[{{ $estoqueId }}][status_pagamento]" 
                                     class="form-select" 
+                                    {{ !$canEditCompras ? 'disabled style=opacity:0.6;cursor:not-allowed;' : '' }}
                                     style="padding: 0.2rem 0.3rem; font-size: 0.75rem;">
                                 <option value="PENDENTE" {{ in_array($item['status_pagamento'], ['PENDENTE']) ? 'selected' : '' }}>PENDENTE</option>
                                 <option value="PA" {{ in_array($item['status_pagamento'], ['PA', 'PAG. ANTECIPADO', 'PAGAMENTO ANTECIPADO', 'ANTECIPADO']) ? 'selected' : '' }}>PA</option>

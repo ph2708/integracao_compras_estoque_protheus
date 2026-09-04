@@ -1,5 +1,6 @@
 @extends('layouts.app')
 
+@section('content')
 @php
     $canEditCompras = auth()->user()->canEditCompras();
 @endphp

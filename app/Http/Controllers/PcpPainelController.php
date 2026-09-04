@@ -247,15 +247,22 @@ class PcpPainelController extends Controller
             $valorPago = 0;
 
             // Componentes Críticos
-            $motorStatus = 'OK';
-            $alternadorStatus = 'OK';
-            $baseStatus = 'OK';
-            $carenagemStatus = 'OK';
-
             $hasMotor = false;
             $hasAlternador = false;
             $hasBase = false;
             $hasCarenagem = false;
+
+            $motorValTotal = 0;
+            $motorHasFalta = false;
+
+            $alternadorValTotal = 0;
+            $alternadorHasFalta = false;
+
+            $baseValTotal = 0;
+            $baseHasFalta = false;
+
+            $carenagemValTotal = 0;
+            $carenagemHasFalta = false;
 
             foreach ($items as $it) {
                 $cItem = $it->compraItem;
@@ -317,7 +324,8 @@ class PcpPainelController extends Controller
                 if ($isMotor) {
                     $hasMotor = true;
                     if ($it->status === 'FALTA') {
-                        $motorStatus = $valTotal > 0 ? 'R$ ' . number_format($valTotal, 2, ',', '.') : 'FALTA';
+                        $motorHasFalta = true;
+                        $motorValTotal += $valTotal;
                     }
                 }
 
@@ -344,9 +352,11 @@ class PcpPainelController extends Controller
                 if ($isAlternador) {
                     $hasAlternador = true;
                     if ($it->status === 'FALTA') {
-                        $alternadorStatus = $valTotal > 0 ? 'R$ ' . number_format($valTotal, 2, ',', '.') : 'FALTA';
+                        $alternadorHasFalta = true;
+                        $alternadorValTotal += $valTotal;
                     }
                 }
+
                 $isIgnoredBase = str_contains($descClean, 'BASE RELE') || 
                                  str_contains($descClean, 'BASE RÊLE') || 
                                  str_contains($descClean, 'BASE P/ RL') || 
@@ -374,9 +384,11 @@ class PcpPainelController extends Controller
                 if ($isBase) {
                     $hasBase = true;
                     if ($it->status === 'FALTA') {
-                        $baseStatus = $valTotal > 0 ? 'R$ ' . number_format($valTotal, 2, ',', '.') : 'PEN';
+                        $baseHasFalta = true;
+                        $baseValTotal += $valTotal;
                     }
                 }
+
                 $isIgnoredCarenagem = str_contains($descClean, 'BOTAO') || 
                                       str_contains($descClean, 'BOTÃO') || 
                                       str_contains($descClean, 'CHAVE') || 
@@ -400,15 +412,43 @@ class PcpPainelController extends Controller
                 if ($isCarenagem) {
                     $hasCarenagem = true;
                     if ($it->status === 'FALTA') {
-                        $carenagemStatus = $valTotal > 0 ? 'R$ ' . number_format($valTotal, 2, ',', '.') : 'PEN';
+                        $carenagemHasFalta = true;
+                        $carenagemValTotal += $valTotal;
                     }
                 }
             }
 
-            if (!$hasMotor) $motorStatus = '-';
-            if (!$hasAlternador) $alternadorStatus = '-';
-            if (!$hasBase) $baseStatus = '-';
-            if (!$hasCarenagem) $carenagemStatus = '-';
+            if (!$hasMotor) {
+                $motorStatus = '-';
+            } elseif ($motorHasFalta) {
+                $motorStatus = $motorValTotal > 0 ? 'R$ ' . number_format($motorValTotal, 2, ',', '.') : 'FALTA';
+            } else {
+                $motorStatus = 'OK';
+            }
+
+            if (!$hasAlternador) {
+                $alternadorStatus = '-';
+            } elseif ($alternadorHasFalta) {
+                $alternadorStatus = $alternadorValTotal > 0 ? 'R$ ' . number_format($alternadorValTotal, 2, ',', '.') : 'FALTA';
+            } else {
+                $alternadorStatus = 'OK';
+            }
+
+            if (!$hasBase) {
+                $baseStatus = '-';
+            } elseif ($baseHasFalta) {
+                $baseStatus = $baseValTotal > 0 ? 'R$ ' . number_format($baseValTotal, 2, ',', '.') : 'PEN';
+            } else {
+                $baseStatus = 'OK';
+            }
+
+            if (!$hasCarenagem) {
+                $carenagemStatus = '-';
+            } elseif ($carenagemHasFalta) {
+                $carenagemStatus = $carenagemValTotal > 0 ? 'R$ ' . number_format($carenagemValTotal, 2, ',', '.') : 'PEN';
+            } else {
+                $carenagemStatus = 'OK';
+            }
 
             // Valor Bruto Real do PV: 1. Override Manual do Usuário | 2. Valor Real do Protheus SC6010 (Soma C6_VALOR) | 3. Acumulado de Componentes
             $somaComponentesBruto = $valorBruto;

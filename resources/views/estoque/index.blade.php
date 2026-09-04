@@ -1,5 +1,6 @@
 @extends('layouts.app')
 
+@section('content')
 @php
     $canEditEstoque = auth()->user()->canEditEstoque();
 @endphp
